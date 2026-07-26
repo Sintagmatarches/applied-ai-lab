@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render(pathname = "/") {
@@ -37,10 +38,10 @@ test("server-renders the Applied AI Lab overview", async () => {
 
   const html = await response.text();
   assert.match(html, /Applied AI Lab/);
-  assert.match(html, /Useful AI starts with an honest baseline/);
-  assert.match(html, /No demos pretending to be models/);
+  assert.match(html, /Practical machine-learning tools/);
+  assert.match(html, /Release rule/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /https:\/\/lab\.example\/og-v20260726\.png/);
+  assert.match(html, /https:\/\/lab\.example\/og-v20260726-2\.png/);
 });
 
 test("renders the Olist model boundary without a fake prediction", async () => {
@@ -48,7 +49,8 @@ test("renders the Olist model boundary without a fake prediction", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Olist Delivery/);
+  assert.match(html, /Olist project/);
+  assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /No live model is connected/);
   assert.match(html, /Waiting for a validated model/);
   assert.match(html, /fieldset disabled/);
@@ -71,4 +73,16 @@ test("keeps every planned project available at a stable direct route", async () 
     assert.match(html, /Planned/);
     assert.match(html, /No dataset, trained model or performance result/);
   }
+});
+
+test("uses the flat Songbook visual system without decorative gradients", async () => {
+  const css = await readFile(
+    new URL("../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(css, /--color-base-100:\s*oklch\(25\.33%/);
+  assert.match(css, /--button-bg:\s*#10253f/);
+  assert.match(css, /--color-primary:\s*#19ccff/);
+  assert.doesNotMatch(css, /gradient|body::before|backdrop-filter/i);
 });

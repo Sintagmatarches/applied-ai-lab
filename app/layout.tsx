@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol =
     forwardedProtocol ?? (host?.startsWith("localhost") ? "http" : "https");
   const origin = host ? `${protocol}://${host}` : "https://applied-ai-lab.invalid";
-  const socialImage = `${origin}/og-v20260726.png`;
+  const socialImage = `${origin}/og-v20260726-2.png`;
 
   return {
     metadataBase: new URL(origin),
@@ -20,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "A growing laboratory for honest, production-minded machine learning tools.",
     icons: {
-      icon: "/favicon.svg?v=20260726",
-      shortcut: "/favicon.svg?v=20260726",
+      icon: "/favicon.svg?v=20260726-2",
+      shortcut: "/favicon.svg?v=20260726-2",
     },
     openGraph: {
       title: "Applied AI Lab",
