@@ -39,9 +39,9 @@ test("server-renders the Applied AI Lab overview", async () => {
   const html = await response.text();
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Practical machine-learning tools/);
-  assert.match(html, /Release rule/);
+  assert.match(html, /PROJECT IN DEVELOPMENT/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /https:\/\/lab\.example\/og-v20260726-2\.png/);
+  assert.match(html, /favicon\.svg\?v=20260726-3/);
 });
 
 test("renders the Olist model boundary without a fake prediction", async () => {
@@ -49,7 +49,7 @@ test("renders the Olist model boundary without a fake prediction", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Olist project/);
+  assert.match(html, /PROJECT 01 · OLIST/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /No live model is connected/);
   assert.match(html, /Waiting for a validated model/);
@@ -70,19 +70,24 @@ test("keeps every planned project available at a stable direct route", async () 
     assert.equal(response.status, 200, route);
     const html = await response.text();
     assert.match(html, new RegExp(title));
-    assert.match(html, /Planned/);
+    assert.match(html, /PLANNED PROJECT/);
     assert.match(html, /No dataset, trained model or performance result/);
   }
 });
 
-test("uses the flat Songbook visual system without decorative gradients", async () => {
+test("uses the flat Songbook visual system without decorative gradients or colored badges", async () => {
   const css = await readFile(
     new URL("../app/globals.css", import.meta.url),
     "utf8",
   );
 
-  assert.match(css, /--color-base-100:\s*oklch\(25\.33%/);
-  assert.match(css, /--button-bg:\s*#10253f/);
-  assert.match(css, /--color-primary:\s*#19ccff/);
-  assert.doesNotMatch(css, /gradient|body::before|backdrop-filter/i);
+  assert.match(css, /--page:\s*#12171d/);
+  assert.match(css, /--navy:\s*#0c2547/);
+  assert.match(css, /--cyan:\s*#19ccff/);
+  assert.match(css, /--rail-width:\s*104px/);
+  assert.match(css, /grid-template-columns:\s*repeat\(5,/);
+  assert.doesNotMatch(
+    css,
+    /gradient|body::before|backdrop-filter|status-badge|color-success|color-warning/i,
+  );
 });

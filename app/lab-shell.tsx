@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
 export type ProjectId =
   | "home"
@@ -20,8 +20,8 @@ const projects = [
     id: "olist" as const,
     href: "/olist-delivery-delay-predictor",
     title: "Olist Delivery Delay Predictor",
-    description: "Delivery delay probability for a new order.",
-    status: "In development",
+    description: "Delivery delay risk for a new order.",
+    status: "Model in development",
     symbol: "O",
   },
   {
@@ -66,7 +66,7 @@ const plannedCopy: Record<
     title: "Housing Value Forecast",
     description:
       "A future tool for estimating property value from documented location and property features.",
-    result: "Estimated value with an uncertainty range.",
+    result: "Estimated value with a validated uncertainty range.",
   },
   credit: {
     title: "Credit Risk Assessment",
@@ -88,257 +88,261 @@ const plannedCopy: Record<
   },
 };
 
-function BrandMark() {
+function BrandMark({ large = false }: { large?: boolean }) {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      AI
+    <span className={`brand-mark ${large ? "is-large" : ""}`} aria-hidden="true">
+      <span>AI</span>
+      {large && <small>LAB</small>}
     </span>
   );
 }
 
-function StatusBadge({
-  children,
-  tone = "neutral",
-}: {
-  children: React.ReactNode;
-  tone?: "neutral" | "success" | "warning";
-}) {
-  return <span className={`status-badge status-${tone}`}>{children}</span>;
+function NavGlyph({ id }: { id: ProjectId }) {
+  if (id !== "home") {
+    const project = projects.find((item) => item.id === id);
+    return <span className="nav-letter">{project?.symbol}</span>;
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 11.3 12 4l8 7.3V20h-5v-5H9v5H4z" />
+    </svg>
+  );
 }
 
 function Navigation({
   activeProject,
   onNavigate,
-}: LabShellProps & { onNavigate?: () => void }) {
+  expanded = false,
+}: LabShellProps & { onNavigate?: () => void; expanded?: boolean }) {
+  const items = [
+    { id: "home" as const, href: "/", title: "Overview" },
+    ...projects,
+  ];
+
   return (
     <>
-      <Link
-        href="/"
-        className={`nav-link ${activeProject === "home" ? "is-active" : ""}`}
-        aria-current={activeProject === "home" ? "page" : undefined}
-        onClick={onNavigate}
-      >
-        <span className="nav-icon" aria-hidden="true">⌂</span>
-        <span className="nav-text">Overview</span>
-      </Link>
-
-      <div className="nav-section-label">Projects</div>
-
-      {projects.map((project) => (
+      {items.map((item) => (
         <Link
-          href={project.href}
-          key={project.id}
-          className={`nav-link ${
-            activeProject === project.id ? "is-active" : ""
-          }`}
-          aria-current={activeProject === project.id ? "page" : undefined}
+          href={item.href}
+          key={item.id}
+          className={`rail-link ${activeProject === item.id ? "is-active" : ""}`}
+          aria-current={activeProject === item.id ? "page" : undefined}
+          aria-label={item.title}
+          title={expanded ? undefined : item.title}
           onClick={onNavigate}
         >
-          <span className="nav-icon nav-letter" aria-hidden="true">
-            {project.symbol}
+          <span className="rail-icon">
+            <NavGlyph id={item.id} />
           </span>
-          <span className="nav-text">{project.title}</span>
+          {expanded && <span className="rail-label">{item.title}</span>}
         </Link>
       ))}
     </>
   );
 }
 
-function SectionHeading({
-  title,
-  description,
+function ProjectSearch() {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const matches = useMemo(() => {
+    const value = query.trim().toLowerCase();
+    if (!value) return projects;
+    return projects.filter((project) =>
+      `${project.title} ${project.description}`.toLowerCase().includes(value),
+    );
+  }, [query]);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (matches[0]) window.location.assign(matches[0].href);
+  }
+
+  return (
+    <form className="project-search" onSubmit={submit}>
+      <div className="search-field-wrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4 4" />
+        </svg>
+        <input
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          placeholder="Find a project…"
+          aria-label="Find a project"
+        />
+        {open && (
+          <div className="search-results">
+            {matches.length > 0 ? (
+              matches.map((project) => (
+                <Link href={project.href} key={project.id}>
+                  <span>{project.symbol}</span>
+                  <strong>{project.title}</strong>
+                  <small>{project.status}</small>
+                </Link>
+              ))
+            ) : (
+              <p>No matching projects</p>
+            )}
+          </div>
+        )}
+      </div>
+      <button type="submit" disabled={!matches.length}>
+        Search
+      </button>
+    </form>
+  );
+}
+
+function ContextLink({
+  href,
+  children,
 }: {
-  title: string;
-  description?: string;
+  href: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="section-heading">
-      <div>
-        <h2>{title}</h2>
-        {description && <p>{description}</p>}
-      </div>
+    <Link className="context-link" href={href}>
+      <span>{children}</span>
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="m5 7 5 5 5-5" />
+      </svg>
+    </Link>
+  );
+}
+
+function SectionTitle({
+  children,
+  note,
+}: {
+  children: React.ReactNode;
+  note?: string;
+}) {
+  return (
+    <div className="section-title">
+      <h2>{children}</h2>
+      {note && <p>{note}</p>}
+    </div>
+  );
+}
+
+function ProjectGrid() {
+  return (
+    <div className="project-grid">
+      {projects.map((project) => (
+        <Link href={project.href} className="project-tile" key={project.id}>
+          <strong>{project.title}</strong>
+          <span className="tile-symbol" aria-hidden="true">
+            {project.symbol}
+          </span>
+          <small>{project.status}</small>
+          <span className="tile-arrow" aria-hidden="true">→</span>
+        </Link>
+      ))}
     </div>
   );
 }
 
 function HomeContent() {
   return (
-    <div className="page-stack">
-      <section className="card intro-card">
-        <div className="intro-main">
-          <span className="page-label">Applied AI Lab</span>
-          <h1>Practical machine-learning tools</h1>
+    <>
+      <ContextLink href="/olist-delivery-delay-predictor">
+        Applied AI Lab
+      </ContextLink>
+
+      <section className="hero-card home-hero">
+        <BrandMark large />
+        <div className="hero-copy">
+          <span className="eyebrow">PRACTICAL MACHINE-LEARNING TOOLS</span>
+          <h1>Applied AI Lab</h1>
           <p>
-            One place for working ML projects. A tool becomes active only after
-            its model is tested and connected.
+            A single workspace for useful AI projects. Tools appear here only
+            after their models are built, tested and connected.
           </p>
-          <Link className="btn" href="/olist-delivery-delay-predictor">
-            Open Olist project
+        </div>
+        <div className="hero-summary">
+          <strong>1</strong>
+          <span>PROJECT IN DEVELOPMENT</span>
+          <Link href="/olist-delivery-delay-predictor" className="hero-action">
+            <span className="action-icon">O</span>
+            <span>
+              <strong>Open Olist predictor</strong>
+              <small>View the current project state</small>
+            </span>
+            <span className="action-arrow">→</span>
           </Link>
         </div>
-
-        <div className="summary-panel" aria-label="Current lab status">
-          <div className="summary-row">
-            <span>Completed analytics</span>
-            <StatusBadge tone="success">Ready</StatusBadge>
-          </div>
-          <div className="summary-row">
-            <span>Prediction models</span>
-            <StatusBadge tone="warning">In development</StatusBadge>
-          </div>
-          <div className="summary-row">
-            <span>Live model APIs</span>
-            <StatusBadge>Not connected</StatusBadge>
-          </div>
-        </div>
       </section>
 
-      <section className="card">
-        <SectionHeading
-          title="Projects"
-          description="Choose a project. Every section has its own direct link."
-        />
-
-        <div className="project-list">
-          {projects.map((project) => (
-            <Link className="project-row" href={project.href} key={project.id}>
-              <span className="project-symbol" aria-hidden="true">
-                {project.symbol}
-              </span>
-              <span className="project-copy">
-                <strong>{project.title}</strong>
-                <small>{project.description}</small>
-              </span>
-              <StatusBadge
-                tone={project.status === "In development" ? "warning" : "neutral"}
-              >
-                {project.status}
-              </StatusBadge>
-              <span className="project-arrow" aria-hidden="true">›</span>
-            </Link>
-          ))}
-        </div>
+      <section className="content-section">
+        <SectionTitle>Projects</SectionTitle>
+        <ProjectGrid />
       </section>
-
-      <section className="card">
-        <SectionHeading title="Release rule" />
-        <div className="rule-list">
-          <div>
-            <span>1</span>
-            <p>Analyze the data.</p>
-          </div>
-          <div>
-            <span>2</span>
-            <p>Train and validate the model.</p>
-          </div>
-          <div>
-            <span>3</span>
-            <p>Connect the real API.</p>
-          </div>
-        </div>
-      </section>
-    </div>
+    </>
   );
 }
 
 function OlistContent() {
   return (
-    <div className="page-stack">
-      <section className="card project-header-card">
-        <div className="project-title-row">
-          <div>
-            <span className="page-label">Olist project</span>
-            <h1>Delivery Delay Predictor</h1>
-          </div>
-          <StatusBadge tone="warning">Model in development</StatusBadge>
-        </div>
-        <p className="project-lead">
-          The future model will estimate whether a new order will arrive at
-          least one day late.
-        </p>
-        <div className="notice warning-notice">
-          No live model is connected. This page does not generate a prediction.
-        </div>
-      </section>
+    <>
+      <ContextLink href="/">Olist Delivery Delay Predictor</ContextLink>
 
-      <section className="card">
-        <SectionHeading title="Current status" />
-        <div className="status-steps">
-          <div className="status-step is-complete">
-            <span className="step-icon">✓</span>
-            <div>
-              <strong>Data processing and SQL</strong>
-              <small>Completed</small>
-            </div>
-          </div>
-          <div className="status-step is-complete">
-            <span className="step-icon">✓</span>
-            <div>
-              <strong>Power BI and final report</strong>
-              <small>Completed</small>
-            </div>
-          </div>
-          <div className="status-step is-current">
-            <span className="step-icon">3</span>
-            <div>
-              <strong>Model training and validation</strong>
-              <small>In development</small>
-            </div>
-          </div>
-          <div className="status-step">
-            <span className="step-icon">4</span>
-            <div>
-              <strong>Prediction API</strong>
-              <small>Not connected</small>
-            </div>
-          </div>
+      <section className="hero-card project-hero">
+        <span className="project-hero-mark" aria-hidden="true">O</span>
+        <div className="hero-copy">
+          <span className="eyebrow">PROJECT 01 · OLIST</span>
+          <h1>Delivery Delay Predictor</h1>
+          <p>
+            The future model will estimate whether a new order will arrive at
+            least one day late.
+          </p>
+        </div>
+        <div className="hero-summary project-summary">
+          <span>CURRENT STATE</span>
+          <h2>Model in development</h2>
+          <p>No live model is connected. This page does not generate predictions.</p>
         </div>
       </section>
 
-      <section className="card">
-        <SectionHeading title="What the model will return" />
-        <div className="meta-grid">
-          <div className="meta-item">
-            <span>Target</span>
-            <strong>Delay of at least 1 day</strong>
-          </div>
-          <div className="meta-item">
-            <span>Input</span>
-            <strong>New order details</strong>
-          </div>
-          <div className="meta-item">
-            <span>Output</span>
-            <strong>Validated probability</strong>
-          </div>
-          <div className="meta-item">
-            <span>Result details</span>
-            <strong>Risk band and model version</strong>
-          </div>
+      <section className="content-section">
+        <SectionTitle>Project status</SectionTitle>
+        <div className="status-grid">
+          <article>
+            <span>01</span>
+            <strong>Data processing and SQL</strong>
+            <small>Completed</small>
+          </article>
+          <article>
+            <span>02</span>
+            <strong>Power BI and final report</strong>
+            <small>Completed</small>
+          </article>
+          <article className="is-current">
+            <span>03</span>
+            <strong>Model training and validation</strong>
+            <small>In development</small>
+          </article>
+          <article>
+            <span>04</span>
+            <strong>Prediction API</strong>
+            <small>Not connected</small>
+          </article>
         </div>
       </section>
 
-      <section className="card">
-        <SectionHeading
-          title="Analytics"
-          description="The analytical work is complete. Public links have not been supplied yet."
-        />
-        <div className="resource-actions">
-          <button className="btn" type="button" disabled>
-            Final report — link pending
-          </button>
-          <button className="btn" type="button" disabled>
-            Analytics project — link pending
-          </button>
-        </div>
-      </section>
+      <section className="content-section">
+        <SectionTitle
+          note="This area will be activated only after a validated model API is connected."
+        >
+          Future prediction
+        </SectionTitle>
 
-      <section className="card">
-        <SectionHeading
-          title="Prediction form"
-          description="The fields will be activated after the real model API is ready."
-        />
-
-        <div className="predictor-layout">
+        <div className="workspace-card">
           <form className="predictor-form" aria-label="Future prediction form">
             <fieldset disabled>
               <div className="field">
@@ -361,20 +365,33 @@ function OlistContent() {
                 <label htmlFor="freight">Freight value</label>
                 <input id="freight" placeholder="Not available yet" />
               </div>
-              <button className="btn form-submit" type="button">
-                Calculate probability
-              </button>
+              <button type="button">Calculate probability</button>
             </fieldset>
           </form>
-
           <div className="empty-result">
-            <span className="empty-result-icon" aria-hidden="true">—</span>
+            <span aria-hidden="true">—</span>
             <strong>Result unavailable</strong>
             <p>Waiting for a validated model and a real inference response.</p>
           </div>
         </div>
       </section>
-    </div>
+
+      <section className="content-section analytics-section">
+        <SectionTitle note="The analysis is complete; public URLs have not been supplied yet.">
+          Completed analytics
+        </SectionTitle>
+        <div className="resource-grid">
+          <button type="button" disabled>
+            <span>Final report</span>
+            <small>Link pending</small>
+          </button>
+          <button type="button" disabled>
+            <span>Analytics project</span>
+            <small>Link pending</small>
+          </button>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -384,36 +401,38 @@ function PlannedContent({
   activeProject: Exclude<ProjectId, "home" | "olist">;
 }) {
   const copy = plannedCopy[activeProject];
+  const symbol = projects.find((project) => project.id === activeProject)?.symbol;
+
   return (
-    <div className="page-stack">
-      <section className="card planned-card">
-        <span className="planned-symbol" aria-hidden="true">
-          {projects.find((project) => project.id === activeProject)?.symbol}
-        </span>
-        <StatusBadge>Planned</StatusBadge>
-        <h1>{copy.title}</h1>
-        <p>{copy.description}</p>
-        <div className="meta-item planned-result">
-          <span>Intended result</span>
-          <strong>{copy.result}</strong>
+    <>
+      <ContextLink href="/">{copy.title}</ContextLink>
+      <section className="hero-card project-hero planned-hero">
+        <span className="project-hero-mark" aria-hidden="true">{symbol}</span>
+        <div className="hero-copy">
+          <span className="eyebrow">PLANNED PROJECT</span>
+          <h1>{copy.title}</h1>
+          <p>{copy.description}</p>
         </div>
-        <div className="notice">
-          No dataset, trained model or performance result is claimed here.
+        <div className="hero-summary project-summary">
+          <span>INTENDED RESULT</span>
+          <h2>{copy.result}</h2>
+          <p>No dataset, trained model or performance result is claimed here.</p>
         </div>
-        <Link className="btn" href="/">
-          Back to overview
-        </Link>
       </section>
-    </div>
+      <section className="content-section">
+        <SectionTitle>Project availability</SectionTitle>
+        <div className="planned-note">
+          <strong>Coming later</strong>
+          <p>This section is reserved for a future working tool.</p>
+          <Link href="/">Return to all projects →</Link>
+        </div>
+      </section>
+    </>
   );
 }
 
 export function LabShell({ activeProject }: LabShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    setDrawerOpen(false);
-  }, [activeProject]);
 
   return (
     <div className="lab-app">
@@ -427,7 +446,9 @@ export function LabShell({ activeProject }: LabShellProps) {
             aria-controls="project-drawer"
             aria-label="Open project menu"
           >
-            ☰
+            <span />
+            <span />
+            <span />
           </button>
           <Link href="/" className="brand-link">
             <BrandMark />
@@ -437,9 +458,13 @@ export function LabShell({ activeProject }: LabShellProps) {
             </span>
           </Link>
         </div>
-        <Link className="topbar-button" href="/olist-delivery-delay-predictor">
-          Olist · In development
-        </Link>
+
+        <ProjectSearch />
+
+        <div className="top-actions">
+          <Link href="/">Projects</Link>
+          <Link href="/olist-delivery-delay-predictor">Olist</Link>
+        </div>
       </header>
 
       <nav className="project-rail" aria-label="Project navigation">
@@ -468,17 +493,16 @@ export function LabShell({ activeProject }: LabShellProps) {
         <Navigation
           activeProject={activeProject}
           onNavigate={() => setDrawerOpen(false)}
+          expanded
         />
       </aside>
 
       <main className="main-content">
-        <div className="app-shell">
-          {activeProject === "home" && <HomeContent />}
-          {activeProject === "olist" && <OlistContent />}
-          {activeProject !== "home" && activeProject !== "olist" && (
-            <PlannedContent activeProject={activeProject} />
-          )}
-        </div>
+        {activeProject === "home" && <HomeContent />}
+        {activeProject === "olist" && <OlistContent />}
+        {activeProject !== "home" && activeProject !== "olist" && (
+          <PlannedContent activeProject={activeProject} />
+        )}
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
