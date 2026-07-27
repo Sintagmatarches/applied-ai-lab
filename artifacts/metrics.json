@@ -1,0 +1,489 @@
+{
+  "model_version": "olist-xgb-2026-07-27.1",
+  "selection_rule": "Highest validation PR-AUC; final test was evaluated only after the model and working-threshold rule were fixed.",
+  "selected_model": "xgboost",
+  "working_threshold_rule": "Maximize validation F2 while alerting on at most 7.5% of validation orders.",
+  "splits": {
+    "train": {
+      "rows": 66636,
+      "late_orders": 5273,
+      "late_rate": 0.07913140044420433,
+      "starts_at": "2016-09-15T12:16:38+00:00",
+      "ends_at": "2018-04-15T11:31:05+00:00"
+    },
+    "validation": {
+      "rows": 14279,
+      "late_orders": 628,
+      "late_rate": 0.04398067091533021,
+      "starts_at": "2018-04-15T11:31:39+00:00",
+      "ends_at": "2018-06-20T20:25:37+00:00"
+    },
+    "test": {
+      "rows": 14280,
+      "late_orders": 620,
+      "late_rate": 0.04341736694677871,
+      "starts_at": "2018-06-20T20:27:50+00:00",
+      "ends_at": "2018-08-29T15:00:37+00:00"
+    }
+  },
+  "feature_policy": {
+    "included": [
+      "purchase_year",
+      "purchase_month",
+      "purchase_day_of_week",
+      "purchase_hour",
+      "promised_delivery_days",
+      "same_state",
+      "distance_km",
+      "item_count",
+      "total_item_value",
+      "total_freight_value",
+      "total_weight_g",
+      "total_volume_cm3",
+      "payment_installments",
+      "seller_state",
+      "customer_state",
+      "route",
+      "primary_category",
+      "primary_payment_type"
+    ],
+    "excluded": [
+      "order_id",
+      "order_purchase_timestamp (full value)",
+      "late_1d",
+      "all post-purchase and post-delivery facts"
+    ]
+  },
+  "models": {
+    "dummy": {
+      "validation": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 0,
+          "false_warnings": 0,
+          "missed_late_orders": 628,
+          "correct_safe_orders": 13651,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.04398067091533021,
+          "roc_auc": 0.5,
+          "brier": 0.0432819452875797,
+          "log_loss": 0.19037562064367994,
+          "alert_rate": 0.0,
+          "confusion_matrix": [
+            [
+              13651,
+              0
+            ],
+            [
+              628,
+              0
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 0,
+          "false_warnings": 0,
+          "missed_late_orders": 628,
+          "correct_safe_orders": 13651,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.04398067091533021,
+          "roc_auc": 0.5,
+          "brier": 0.0432819452875797,
+          "log_loss": 0.19037562064367994,
+          "alert_rate": 0.0,
+          "confusion_matrix": [
+            [
+              13651,
+              0
+            ],
+            [
+              628,
+              0
+            ]
+          ]
+        }
+      },
+      "test": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 0,
+          "false_warnings": 0,
+          "missed_late_orders": 620,
+          "correct_safe_orders": 13660,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.04341736694677871,
+          "roc_auc": 0.5,
+          "brier": 0.042807791382842714,
+          "log_loss": 0.1889931557702164,
+          "alert_rate": 0.0,
+          "confusion_matrix": [
+            [
+              13660,
+              0
+            ],
+            [
+              620,
+              0
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 0,
+          "false_warnings": 0,
+          "missed_late_orders": 620,
+          "correct_safe_orders": 13660,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "pr_auc": 0.04341736694677871,
+          "roc_auc": 0.5,
+          "brier": 0.042807791382842714,
+          "log_loss": 0.1889931557702164,
+          "alert_rate": 0.0,
+          "confusion_matrix": [
+            [
+              13660,
+              0
+            ],
+            [
+              620,
+              0
+            ]
+          ]
+        },
+        "calibration": []
+      }
+    },
+    "logistic": {
+      "validation": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 21,
+          "false_warnings": 102,
+          "missed_late_orders": 607,
+          "correct_safe_orders": 13549,
+          "precision": 0.17073170731707318,
+          "recall": 0.03343949044585987,
+          "f1": 0.0559254327563249,
+          "pr_auc": 0.12606967606518155,
+          "roc_auc": 0.7513794747777512,
+          "brier": 0.05424787210231499,
+          "log_loss": 0.22220361978052802,
+          "alert_rate": 0.008614048602843337,
+          "confusion_matrix": [
+            [
+              13549,
+              102
+            ],
+            [
+              607,
+              21
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.32580949422883515,
+          "detected_late_orders": 167,
+          "false_warnings": 887,
+          "missed_late_orders": 461,
+          "correct_safe_orders": 12764,
+          "precision": 0.15844402277039848,
+          "recall": 0.2659235668789809,
+          "f1": 0.1985731272294887,
+          "pr_auc": 0.12606967606518155,
+          "roc_auc": 0.7513794747777512,
+          "brier": 0.05424787210231499,
+          "log_loss": 0.22220361978052802,
+          "alert_rate": 0.07381469290566567,
+          "confusion_matrix": [
+            [
+              12764,
+              887
+            ],
+            [
+              461,
+              167
+            ]
+          ]
+        }
+      },
+      "test": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 88,
+          "false_warnings": 1047,
+          "missed_late_orders": 532,
+          "correct_safe_orders": 12613,
+          "precision": 0.07753303964757709,
+          "recall": 0.14193548387096774,
+          "f1": 0.10028490028490028,
+          "pr_auc": 0.07574531510187944,
+          "roc_auc": 0.6407124639871533,
+          "brier": 0.10263432349349372,
+          "log_loss": 0.35618667560858486,
+          "alert_rate": 0.07948179271708683,
+          "confusion_matrix": [
+            [
+              12613,
+              1047
+            ],
+            [
+              532,
+              88
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.32580949422883515,
+          "detected_late_orders": 213,
+          "false_warnings": 3454,
+          "missed_late_orders": 407,
+          "correct_safe_orders": 10206,
+          "precision": 0.05808562857922007,
+          "recall": 0.3435483870967742,
+          "f1": 0.099370188943317,
+          "pr_auc": 0.07574531510187944,
+          "roc_auc": 0.6407124639871533,
+          "brier": 0.10263432349349372,
+          "log_loss": 0.35618667560858486,
+          "alert_rate": 0.2567927170868347,
+          "confusion_matrix": [
+            [
+              10206,
+              3454
+            ],
+            [
+              407,
+              213
+            ]
+          ]
+        },
+        "calibration": [
+          {
+            "count": 1428,
+            "predicted_probability": 0.06517261392054008,
+            "observed_rate": 0.00980392156862745
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.11274387573334461,
+            "observed_rate": 0.02100840336134454
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.14842601431512625,
+            "observed_rate": 0.02100840336134454
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.18098469651328344,
+            "observed_rate": 0.02100840336134454
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.21186699846572604,
+            "observed_rate": 0.04831932773109244
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.2460930237127605,
+            "observed_rate": 0.05182072829131653
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.28250261281120126,
+            "observed_rate": 0.06442577030812324
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.3308625511678484,
+            "observed_rate": 0.08263305322128851
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.4131341192043175,
+            "observed_rate": 0.04131652661064426
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.5709962073192774,
+            "observed_rate": 0.07282913165266107
+          }
+        ]
+      }
+    },
+    "xgboost": {
+      "validation": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 1,
+          "false_warnings": 4,
+          "missed_late_orders": 627,
+          "correct_safe_orders": 13647,
+          "precision": 0.2,
+          "recall": 0.0015923566878980893,
+          "f1": 0.00315955766192733,
+          "pr_auc": 0.1489248552601213,
+          "roc_auc": 0.7795496421950842,
+          "brier": 0.03971634389326968,
+          "log_loss": 0.15793924166779846,
+          "alert_rate": 0.0003501645773513551,
+          "confusion_matrix": [
+            [
+              13647,
+              4
+            ],
+            [
+              627,
+              1
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.12336176841997896,
+          "detected_late_orders": 190,
+          "false_warnings": 864,
+          "missed_late_orders": 438,
+          "correct_safe_orders": 12787,
+          "precision": 0.18026565464895636,
+          "recall": 0.30254777070063693,
+          "f1": 0.2259215219976219,
+          "pr_auc": 0.1489248552601213,
+          "roc_auc": 0.7795496421950842,
+          "brier": 0.03971634389326968,
+          "log_loss": 0.15793924166779846,
+          "alert_rate": 0.07381469290566567,
+          "confusion_matrix": [
+            [
+              12787,
+              864
+            ],
+            [
+              438,
+              190
+            ]
+          ]
+        }
+      },
+      "test": {
+        "standard_threshold": {
+          "threshold": 0.5,
+          "detected_late_orders": 4,
+          "false_warnings": 21,
+          "missed_late_orders": 616,
+          "correct_safe_orders": 13639,
+          "precision": 0.16,
+          "recall": 0.0064516129032258064,
+          "f1": 0.012403100775193798,
+          "pr_auc": 0.060247731024515146,
+          "roc_auc": 0.5691749515892883,
+          "brier": 0.046269069681207003,
+          "log_loss": 0.19657518666817583,
+          "alert_rate": 0.0017507002801120449,
+          "confusion_matrix": [
+            [
+              13639,
+              21
+            ],
+            [
+              616,
+              4
+            ]
+          ]
+        },
+        "working_threshold": {
+          "threshold": 0.12336176841997896,
+          "detected_late_orders": 138,
+          "false_warnings": 2111,
+          "missed_late_orders": 482,
+          "correct_safe_orders": 11549,
+          "precision": 0.06136060471320587,
+          "recall": 0.22258064516129034,
+          "f1": 0.09620076681770652,
+          "pr_auc": 0.060247731024515146,
+          "roc_auc": 0.5691749515892883,
+          "brier": 0.046269069681207003,
+          "log_loss": 0.19657518666817583,
+          "alert_rate": 0.15749299719887955,
+          "confusion_matrix": [
+            [
+              11549,
+              2111
+            ],
+            [
+              482,
+              138
+            ]
+          ]
+        },
+        "calibration": [
+          {
+            "count": 1428,
+            "predicted_probability": 0.009147900333134685,
+            "observed_rate": 0.01330532212885154
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.015974272175237756,
+            "observed_rate": 0.03571428571428571
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.022129109329200904,
+            "observed_rate": 0.04201680672268908
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.028949645436883047,
+            "observed_rate": 0.04201680672268908
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.0371220173118564,
+            "observed_rate": 0.052521008403361345
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.04723486148277514,
+            "observed_rate": 0.04971988795518207
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.06082191492022021,
+            "observed_rate": 0.049019607843137254
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.0845965940487883,
+            "observed_rate": 0.0392156862745098
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.13125318852782542,
+            "observed_rate": 0.03361344537815126
+          },
+          {
+            "count": 1428,
+            "predicted_probability": 0.2578319117798484,
+            "observed_rate": 0.07703081232492998
+          }
+        ]
+      }
+    }
+  },
+  "probability_quality": {
+    "method": "Platt calibration fitted on the validation period",
+    "test_brier": 0.046269069681207003,
+    "test_mean_prediction": 0.06950614153457703,
+    "test_observed_rate": 0.04341736694677871,
+    "limitation": "The final period remains overestimated because order mix and delay prevalence drifted after the validation window."
+  }
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 export type ProjectId =
   | "home"
@@ -10,6 +11,7 @@ export type ProjectId =
 
 type LabShellProps = {
   activeProject: ProjectId;
+  children?: ReactNode;
 };
 
 const projects = [
@@ -19,7 +21,7 @@ const projects = [
     title: "Olist Delivery Delay Predictor",
     tabTitle: "Delivery Delay Predictor",
     description:
-      "A future tool that will estimate whether a new Olist order will arrive at least one day late. The model has not been built or connected yet.",
+      "A working model that estimates whether a new Olist order will arrive at least one full day late.",
   },
   {
     id: "housing" as const,
@@ -125,7 +127,7 @@ function ProjectContent({ projectId }: { projectId: Exclude<ProjectId, "home"> }
   );
 }
 
-export function LabShell({ activeProject }: LabShellProps) {
+export function LabShell({ activeProject, children }: LabShellProps) {
   return (
     <div className="lab-app">
       <header className="topbar">
@@ -141,7 +143,9 @@ export function LabShell({ activeProject }: LabShellProps) {
       <ProjectTabs activeProject={activeProject} />
 
       <main className="main-content">
-        {activeProject === "home" ? (
+        {children ? (
+          children
+        ) : activeProject === "home" ? (
           <HomeContent />
         ) : (
           <ProjectContent projectId={activeProject} />

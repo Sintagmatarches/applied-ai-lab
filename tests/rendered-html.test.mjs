@@ -47,22 +47,24 @@ test("renders a minimal home page with direct planned-project links", async () =
     html,
     /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
   );
-  assert.match(html, /favicon\.svg\?v=20260727-7/);
+  assert.match(html, /favicon\.svg\?v=20260727-8/);
+  assert.match(html, /og-v20260727-3\.png/);
 });
 
-test("renders only the Olist project name and description", async () => {
+test("renders the working Olist model, evidence and honest limitation", async () => {
   const response = await render("/olist-delivery-delay-predictor");
   assert.equal(response.status, 200);
 
   const html = await response.text();
   assert.match(html, /Olist Delivery Delay Predictor/);
-  assert.match(html, /estimate whether a new Olist order will arrive/);
-  assert.match(html, /model has not been built or connected yet/);
-  assert.doesNotMatch(
-    html,
-    /Project status|Future prediction|Completed analytics|fieldset|Model in development/,
-  );
-  assert.doesNotMatch(html, /\b\d{1,3}(?:\.\d+)?%\b/);
+  assert.match(html, /Check one order/);
+  assert.match(html, /Estimate delay risk/);
+  assert.match(html, /What the final time test showed/);
+  assert.match(html, /XGBoost \(selected\)/);
+  assert.match(html, /Performance weakened on the newest period/);
+  assert.match(html, /6\.1(?:<!-- -->)?%/);
+  assert.match(html, /22\.3(?:<!-- -->)?%/);
+  assert.doesNotMatch(html, /model has not been built or connected yet/i);
 });
 
 test("keeps every planned project as a minimal direct page and active tab", async () => {
@@ -86,7 +88,7 @@ test("keeps every planned project as a minimal direct page and active tab", asyn
   }
 });
 
-test("uses a flat minimal visual system without product-dashboard components", async () => {
+test("preserves the dark lab visual system and adds scoped predictor styles", async () => {
   const css = await readFile(
     new URL("../app/globals.css", import.meta.url),
     "utf8",
@@ -97,8 +99,7 @@ test("uses a flat minimal visual system without product-dashboard components", a
   assert.match(css, /--cyan:\s*#19ccff/);
   assert.match(css, /\.project-tabs\s*\{/);
   assert.match(css, /\.minimal-page\s*\{/);
-  assert.doesNotMatch(
-    css,
-    /hero-card|status-grid|workspace-card|predictor-form|resource-grid|planned-note|gradient|backdrop-filter/i,
-  );
+  assert.match(css, /\.predictor-form\s*\{/);
+  assert.match(css, /\.prediction-result\s*\{/);
+  assert.doesNotMatch(css, /gradient|backdrop-filter/i);
 });

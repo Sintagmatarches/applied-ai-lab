@@ -19,20 +19,29 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "A growing laboratory for honest, production-minded machine learning tools.",
     icons: {
-      icon: "/favicon.svg?v=20260727-7",
-      shortcut: "/favicon.svg?v=20260727-7",
+      icon: "/favicon.svg?v=20260727-8",
+      shortcut: "/favicon.svg?v=20260727-8",
     },
     openGraph: {
       title: "Applied AI Lab",
       description:
-        "Real analytical foundations. Working ML tools will appear only when their models are ready.",
+        "Working machine-learning tools with honest held-out evidence.",
       type: "website",
+      images: [
+        {
+          url: "/og-v20260727-3.png",
+          width: 1732,
+          height: 909,
+          alt: "Applied AI Lab — Olist Delivery Delay Predictor",
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: "Applied AI Lab",
       description:
-        "Real analytical foundations. Working ML tools will appear only when their models are ready.",
+        "Working machine-learning tools with honest held-out evidence.",
+      images: ["/og-v20260727-3.png"],
     },
   };
 }

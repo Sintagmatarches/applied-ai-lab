@@ -1,0 +1,401 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+
+type Prediction = {
+  probability_percent: number;
+  risk_level: "low" | "medium" | "high";
+  decision: string;
+  factors: Array<{
+    name: string;
+    effect: string;
+    probability_point_change: number;
+    explanation: string;
+  }>;
+  model_version: string;
+  threshold: number;
+  disclaimer: string;
+};
+
+type ErrorResponse = {
+  error?: string;
+  issues?: string[];
+};
+
+const states = [
+  "AC",
+  "AL",
+  "AM",
+  "AP",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MG",
+  "MS",
+  "MT",
+  "PA",
+  "PB",
+  "PE",
+  "PI",
+  "PR",
+  "RJ",
+  "RN",
+  "RO",
+  "RR",
+  "RS",
+  "SC",
+  "SE",
+  "SP",
+  "TO",
+];
+
+const categories = [
+  "bed_bath_table",
+  "health_beauty",
+  "sports_leisure",
+  "furniture_decor",
+  "computers_accessories",
+  "housewares",
+  "watches_gifts",
+  "telephony",
+  "garden_tools",
+  "auto",
+  "toys",
+  "cool_stuff",
+  "perfumery",
+  "baby",
+  "electronics",
+  "stationery",
+  "fashion_bags_accessories",
+  "pet_shop",
+  "office_furniture",
+  "luggage_accessories",
+  "construction_tools_construction",
+  "home_appliances",
+  "musical_instruments",
+  "books_general_interest",
+  "food",
+  "audio",
+];
+
+const example = {
+  seller_state: "SP",
+  customer_state: "RJ",
+  promised_delivery_days: "18",
+  primary_category: "health_beauty",
+  item_count: "2",
+  total_item_value: "149.90",
+  total_freight_value: "24.90",
+  distance_km: "430",
+  total_weight_g: "1600",
+  total_volume_cm3: "12000",
+  primary_payment_type: "credit_card",
+  payment_installments: "4",
+  purchase_timestamp: "2018-07-16T14:30",
+};
+
+export function OlistPredictor() {
+  const [form, setForm] = useState(example);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [pending, setPending] = useState(false);
+
+  function update(name: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setErrors([]);
+    setPrediction(null);
+
+    const payload = {
+      ...form,
+      promised_delivery_days: Number(form.promised_delivery_days),
+      item_count: Number(form.item_count),
+      total_item_value: Number(form.total_item_value),
+      total_freight_value: Number(form.total_freight_value),
+      distance_km: Number(form.distance_km),
+      total_weight_g: Number(form.total_weight_g),
+      total_volume_cm3: Number(form.total_volume_cm3),
+      payment_installments: Number(form.payment_installments),
+      purchase_timestamp: new Date(form.purchase_timestamp).toISOString(),
+    };
+
+    try {
+      const response = await fetch("/api/olist/predict", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await response.json()) as Prediction & ErrorResponse;
+      if (!response.ok) {
+        setErrors(body.issues?.length ? body.issues : [body.error ?? "Prediction failed."]);
+        return;
+      }
+      setPrediction(body);
+    } catch {
+      setErrors(["The prediction service is temporarily unavailable."]);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <section className="predictor-section" aria-labelledby="predictor-title">
+      <div className="section-heading">
+        <p className="eyebrow">Live model · server-side inference</p>
+        <h2 id="predictor-title">Check one order</h2>
+        <p>
+          Enter facts known when the order is placed. Distance is entered
+          explicitly because two state codes cannot determine it honestly.
+        </p>
+      </div>
+
+      <form className="predictor-form" onSubmit={submit}>
+        <div className="form-grid">
+          <label>
+            Seller state
+            <select
+              value={form.seller_state}
+              onChange={(event) => update("seller_state", event.target.value)}
+            >
+              {states.map((state) => (
+                <option key={state}>{state}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Customer state
+            <select
+              value={form.customer_state}
+              onChange={(event) => update("customer_state", event.target.value)}
+            >
+              {states.map((state) => (
+                <option key={state}>{state}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Promised delivery window, days
+            <input
+              type="number"
+              min="1"
+              max="180"
+              step="0.01"
+              required
+              value={form.promised_delivery_days}
+              onChange={(event) =>
+                update("promised_delivery_days", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            Shipping distance, km
+            <input
+              type="number"
+              min="0"
+              max="10000"
+              step="0.01"
+              required
+              value={form.distance_km}
+              onChange={(event) => update("distance_km", event.target.value)}
+            />
+          </label>
+          <label>
+            Product category
+            <input
+              list="olist-categories"
+              required
+              pattern="[A-Za-z0-9_]+"
+              value={form.primary_category}
+              onChange={(event) =>
+                update("primary_category", event.target.value)
+              }
+            />
+            <datalist id="olist-categories">
+              {categories.map((category) => (
+                <option key={category} value={category} />
+              ))}
+            </datalist>
+          </label>
+          <label>
+            Item count
+            <input
+              type="number"
+              min="1"
+              max="50"
+              step="1"
+              required
+              value={form.item_count}
+              onChange={(event) => update("item_count", event.target.value)}
+            />
+          </label>
+          <label>
+            Item value, BRL
+            <input
+              type="number"
+              min="0"
+              max="50000"
+              step="0.01"
+              required
+              value={form.total_item_value}
+              onChange={(event) =>
+                update("total_item_value", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            Freight value, BRL
+            <input
+              type="number"
+              min="0"
+              max="5000"
+              step="0.01"
+              required
+              value={form.total_freight_value}
+              onChange={(event) =>
+                update("total_freight_value", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            Parcel weight, g
+            <input
+              type="number"
+              min="0"
+              max="250000"
+              step="1"
+              required
+              value={form.total_weight_g}
+              onChange={(event) =>
+                update("total_weight_g", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            Parcel volume, cm³
+            <input
+              type="number"
+              min="0"
+              max="2000000"
+              step="1"
+              required
+              value={form.total_volume_cm3}
+              onChange={(event) =>
+                update("total_volume_cm3", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            Payment method
+            <select
+              value={form.primary_payment_type}
+              onChange={(event) =>
+                update("primary_payment_type", event.target.value)
+              }
+            >
+              <option value="credit_card">Credit card</option>
+              <option value="boleto">Boleto</option>
+              <option value="voucher">Voucher</option>
+              <option value="debit_card">Debit card</option>
+            </select>
+          </label>
+          <label>
+            Installments
+            <input
+              type="number"
+              min="0"
+              max="36"
+              step="1"
+              required
+              value={form.payment_installments}
+              onChange={(event) =>
+                update("payment_installments", event.target.value)
+              }
+            />
+          </label>
+          <label className="wide-field">
+            Purchase date and time
+            <input
+              type="datetime-local"
+              required
+              value={form.purchase_timestamp}
+              onChange={(event) =>
+                update("purchase_timestamp", event.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" disabled={pending}>
+            {pending ? "Calculating…" : "Estimate delay risk"}
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => {
+              setForm(example);
+              setPrediction(null);
+              setErrors([]);
+            }}
+          >
+            Load example order
+          </button>
+        </div>
+      </form>
+
+      {errors.length > 0 && (
+        <div className="form-errors" role="alert">
+          <strong>Prediction was not calculated.</strong>
+          <ul>
+            {errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {prediction && (
+        <article
+          className={`prediction-result risk-${prediction.risk_level}`}
+          aria-live="polite"
+        >
+          <div>
+            <p className="eyebrow">Estimated probability</p>
+            <strong className="probability">
+              {prediction.probability_percent.toFixed(1)}%
+            </strong>
+            <p className="risk-label">
+              {prediction.risk_level} risk · {prediction.decision}
+            </p>
+          </div>
+          <div>
+            <h3>Main factors in this result</h3>
+            <ul className="factor-list">
+              {prediction.factors.map((factor) => (
+                <li key={factor.name}>
+                  <strong>{factor.name}</strong>
+                  <span>
+                    {factor.effect} by about{" "}
+                    {factor.probability_point_change.toFixed(1)} percentage
+                    points compared with a typical training order
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <footer>
+            <span>Model {prediction.model_version}</span>
+            <span>{prediction.disclaimer}</span>
+          </footer>
+        </article>
+      )}
+    </section>
+  );
+}

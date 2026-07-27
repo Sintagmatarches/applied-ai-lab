@@ -41,3 +41,10 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Local BigQuery export; training artifacts contain no order identifiers.
+/data/*.csv
+
+# Python runtime caches
+__pycache__/
+*.py[cod]
