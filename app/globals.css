@@ -81,10 +81,8 @@ select:focus-visible {
   inset: 0 0 auto;
   z-index: 70;
   height: var(--topbar-height);
-  display: grid;
-  grid-template-columns: minmax(320px, 470px) minmax(360px, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 18px;
   padding: 18px 24px 18px 30px;
   background: var(--topbar);
 }
@@ -161,55 +159,6 @@ select:focus-visible {
   display: none;
 }
 
-.project-search {
-  min-width: 0;
-  height: 62px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 134px;
-  gap: 10px;
-}
-
-.search-field-wrap {
-  position: relative;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  border: 1px solid #1c4674;
-  border-radius: var(--radius-medium);
-  background: #111e31;
-}
-
-.search-field-wrap > svg {
-  width: 22px;
-  height: 22px;
-  margin-left: 20px;
-  fill: none;
-  stroke: var(--quiet);
-  stroke-linecap: round;
-  stroke-width: 2;
-}
-
-.search-field-wrap input {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  padding: 0 20px 0 14px;
-  border: 0;
-  outline: 0;
-  color: var(--text);
-  background: transparent;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.search-field-wrap input::placeholder {
-  color: #f1f4f8;
-  opacity: 1;
-}
-
-.project-search > button,
-.top-actions a,
-.context-link,
 .hero-action,
 .predictor-form button,
 .resource-grid button {
@@ -227,88 +176,9 @@ select:focus-visible {
     transform var(--motion);
 }
 
-.project-search > button:hover,
-.top-actions a:hover,
-.context-link:hover,
 .hero-action:hover {
   background: var(--navy-hover);
   transform: translateY(-1px);
-}
-
-.project-search > button:disabled {
-  color: var(--quiet);
-  cursor: default;
-}
-
-.search-results {
-  position: absolute;
-  z-index: 100;
-  top: calc(100% + 10px);
-  left: 0;
-  right: 0;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-medium);
-  background: var(--surface-raised);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-}
-
-.search-results a {
-  min-height: 58px;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 11px;
-}
-
-.search-results a:hover {
-  background: var(--navy);
-}
-
-.search-results a > span {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  color: var(--cyan);
-  background: var(--navy);
-  font-weight: 900;
-}
-
-.search-results a strong {
-  overflow: hidden;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.search-results a small {
-  color: var(--muted);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.search-results p {
-  margin: 0;
-  padding: 14px;
-  color: var(--muted);
-}
-
-.top-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.top-actions a {
-  min-width: 106px;
-  height: 62px;
-  display: grid;
-  place-items: center;
-  padding: 0 20px;
-  font-size: 16px;
 }
 
 .project-rail {
@@ -380,27 +250,6 @@ select:focus-visible {
   min-height: 100dvh;
   margin-left: calc(var(--rail-width) + var(--content-gap));
   padding: calc(var(--topbar-height) + 28px) 6.5vw 64px 0;
-}
-
-.context-link {
-  width: fit-content;
-  min-height: 58px;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 0 20px;
-  font-size: 20px;
-}
-
-.context-link svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.2;
 }
 
 .hero-card {
@@ -545,7 +394,7 @@ p {
 
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -829,14 +678,6 @@ p {
 }
 
 @media (max-width: 1500px) {
-  .topbar {
-    grid-template-columns: 330px minmax(300px, 1fr) auto;
-  }
-
-  .top-actions a {
-    min-width: 88px;
-  }
-
   .hero-card {
     grid-template-columns: 130px minmax(0, 1fr) minmax(290px, 360px);
     gap: 30px;
@@ -855,21 +696,12 @@ p {
 }
 
 @media (max-width: 1120px) {
-  .topbar {
-    grid-template-columns: 280px minmax(280px, 1fr) auto;
-  }
-
   .brand-text strong {
     font-size: 20px;
   }
 
-  .brand-text small,
-  .top-actions a:first-child {
+  .brand-text small {
     display: none;
-  }
-
-  .project-search {
-    grid-template-columns: minmax(0, 1fr) 100px;
   }
 
   .hero-card {
@@ -915,7 +747,6 @@ p {
   }
 
   .topbar {
-    grid-template-columns: 1fr;
     padding: 12px 16px;
   }
 
@@ -948,8 +779,6 @@ p {
     font-size: 19px;
   }
 
-  .project-search,
-  .top-actions,
   .project-rail {
     display: none;
   }
@@ -957,11 +786,6 @@ p {
   .main-content {
     margin-left: 0;
     padding: calc(var(--topbar-height) + 18px) 14px 28px;
-  }
-
-  .context-link {
-    min-height: 52px;
-    font-size: 17px;
   }
 
   .drawer-backdrop {

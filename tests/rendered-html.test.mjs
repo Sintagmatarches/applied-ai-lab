@@ -40,8 +40,10 @@ test("server-renders the Applied AI Lab overview", async () => {
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Practical machine-learning tools/);
   assert.match(html, /PROJECT IN DEVELOPMENT/);
+  assert.match(html, /Planned projects/);
+  assert.doesNotMatch(html, /Find a project|class="top-actions"|class="context-link"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /favicon\.svg\?v=20260726-3/);
+  assert.match(html, /favicon\.svg\?v=20260727-4/);
 });
 
 test("renders the Olist model boundary without a fake prediction", async () => {
@@ -85,7 +87,8 @@ test("uses the flat Songbook visual system without decorative gradients or color
   assert.match(css, /--navy:\s*#0c2547/);
   assert.match(css, /--cyan:\s*#19ccff/);
   assert.match(css, /--rail-width:\s*104px/);
-  assert.match(css, /grid-template-columns:\s*repeat\(5,/);
+  assert.match(css, /grid-template-columns:\s*repeat\(4,/);
+  assert.doesNotMatch(css, /project-search|top-actions|context-link/);
   assert.doesNotMatch(
     css,
     /gradient|body::before|backdrop-filter|status-badge|color-success|color-warning/i,

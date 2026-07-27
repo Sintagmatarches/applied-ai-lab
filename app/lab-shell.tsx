@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { useState } from "react";
 
 export type ProjectId =
   | "home"
@@ -117,7 +117,7 @@ function Navigation({
 }: LabShellProps & { onNavigate?: () => void; expanded?: boolean }) {
   const items = [
     { id: "home" as const, href: "/", title: "Overview" },
-    ...projects,
+    projects[0],
   ];
 
   return (
@@ -142,80 +142,6 @@ function Navigation({
   );
 }
 
-function ProjectSearch() {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const matches = useMemo(() => {
-    const value = query.trim().toLowerCase();
-    if (!value) return projects;
-    return projects.filter((project) =>
-      `${project.title} ${project.description}`.toLowerCase().includes(value),
-    );
-  }, [query]);
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (matches[0]) window.location.assign(matches[0].href);
-  }
-
-  return (
-    <form className="project-search" onSubmit={submit}>
-      <div className="search-field-wrap">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="m16 16 4 4" />
-        </svg>
-        <input
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-          placeholder="Find a project…"
-          aria-label="Find a project"
-        />
-        {open && (
-          <div className="search-results">
-            {matches.length > 0 ? (
-              matches.map((project) => (
-                <Link href={project.href} key={project.id}>
-                  <span>{project.symbol}</span>
-                  <strong>{project.title}</strong>
-                  <small>{project.status}</small>
-                </Link>
-              ))
-            ) : (
-              <p>No matching projects</p>
-            )}
-          </div>
-        )}
-      </div>
-      <button type="submit" disabled={!matches.length}>
-        Search
-      </button>
-    </form>
-  );
-}
-
-function ContextLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link className="context-link" href={href}>
-      <span>{children}</span>
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <path d="m5 7 5 5 5-5" />
-      </svg>
-    </Link>
-  );
-}
-
 function SectionTitle({
   children,
   note,
@@ -231,10 +157,10 @@ function SectionTitle({
   );
 }
 
-function ProjectGrid() {
+function PlannedProjectGrid() {
   return (
     <div className="project-grid">
-      {projects.map((project) => (
+      {projects.slice(1).map((project) => (
         <Link href={project.href} className="project-tile" key={project.id}>
           <strong>{project.title}</strong>
           <span className="tile-symbol" aria-hidden="true">
@@ -251,10 +177,6 @@ function ProjectGrid() {
 function HomeContent() {
   return (
     <>
-      <ContextLink href="/olist-delivery-delay-predictor">
-        Applied AI Lab
-      </ContextLink>
-
       <section className="hero-card home-hero">
         <BrandMark large />
         <div className="hero-copy">
@@ -280,8 +202,10 @@ function HomeContent() {
       </section>
 
       <section className="content-section">
-        <SectionTitle>Projects</SectionTitle>
-        <ProjectGrid />
+        <SectionTitle note="Reserved sections for future working tools.">
+          Planned projects
+        </SectionTitle>
+        <PlannedProjectGrid />
       </section>
     </>
   );
@@ -290,8 +214,6 @@ function HomeContent() {
 function OlistContent() {
   return (
     <>
-      <ContextLink href="/">Olist Delivery Delay Predictor</ContextLink>
-
       <section className="hero-card project-hero">
         <span className="project-hero-mark" aria-hidden="true">O</span>
         <div className="hero-copy">
@@ -405,7 +327,6 @@ function PlannedContent({
 
   return (
     <>
-      <ContextLink href="/">{copy.title}</ContextLink>
       <section className="hero-card project-hero planned-hero">
         <span className="project-hero-mark" aria-hidden="true">{symbol}</span>
         <div className="hero-copy">
@@ -457,13 +378,6 @@ export function LabShell({ activeProject }: LabShellProps) {
               <small>Practical machine-learning tools</small>
             </span>
           </Link>
-        </div>
-
-        <ProjectSearch />
-
-        <div className="top-actions">
-          <Link href="/">Projects</Link>
-          <Link href="/olist-delivery-delay-predictor">Olist</Link>
         </div>
       </header>
 
