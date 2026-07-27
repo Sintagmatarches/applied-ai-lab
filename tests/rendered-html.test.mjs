@@ -47,8 +47,8 @@ test("renders a minimal home page with direct planned-project links", async () =
     html,
     /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
   );
-  assert.match(html, /favicon\.svg\?v=20260727-8/);
-  assert.match(html, /og-v20260727-3\.png/);
+  assert.match(html, /favicon\.svg\?v=20260727-9/);
+  assert.match(html, /og-v20260727-4\.png/);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {
@@ -60,10 +60,10 @@ test("renders the working Olist model, evidence and honest limitation", async ()
   assert.match(html, /Check one order/);
   assert.match(html, /Estimate delay risk/);
   assert.match(html, /What the final time test showed/);
-  assert.match(html, /XGBoost \(selected\)/);
-  assert.match(html, /Performance weakened on the newest period/);
-  assert.match(html, /6\.1(?:<!-- -->)?%/);
-  assert.match(html, /22\.3(?:<!-- -->)?%/);
+  assert.match(html, /Logistic regression \(selected\)/);
+  assert.match(html, /relative risk score from 0 to 100/);
+  assert.match(html, /11\.9(?:<!-- -->)?%/);
+  assert.match(html, /27\.4(?:<!-- -->)?%/);
   assert.doesNotMatch(html, /model has not been built or connected yet/i);
 });
 

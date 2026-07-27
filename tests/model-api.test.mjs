@@ -53,10 +53,11 @@ test("scores one order with the exported server-side model", async () => {
   assert.equal(response.headers.get("cache-control"), "no-store");
 
   const result = await response.json();
-  assert.ok(Math.abs(result.probability - 0.15583432) < 0.00001);
-  assert.equal(result.model_version, "olist-xgb-2026-07-27.1");
-  assert.equal(result.risk_level, "high");
+  assert.ok(Math.abs(result.risk_score - 74.02224) < 0.001);
+  assert.equal(result.model_version, "olist-logistic-temporal-2026-07-27.2");
+  assert.equal(result.risk_level, "low");
   assert.equal(result.factors.length, 3);
+  assert.match(result.display_note, /not an exact probability/i);
   assert.match(result.disclaimer, /historical Olist orders/i);
 });
 
@@ -67,8 +68,8 @@ test("handles an unknown future product category", async () => {
   });
   assert.equal(response.status, 200);
   const result = await response.json();
-  assert.equal(typeof result.probability, "number");
-  assert.ok(result.probability >= 0 && result.probability <= 1);
+  assert.equal(typeof result.risk_score, "number");
+  assert.ok(result.risk_score >= 0 && result.risk_score <= 100);
 });
 
 test("rejects impossible form values without scoring", async () => {

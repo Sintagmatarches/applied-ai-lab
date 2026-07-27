@@ -11,7 +11,7 @@ DATA_FILE = Path("data/bq-results-20260727-111149-1785150786733.csv")
 TARGET = "late_1d"
 TIMESTAMP = "order_purchase_timestamp"
 
-NUMERIC_FEATURES = [
+BASE_NUMERIC_FEATURES = [
     "purchase_year",
     "purchase_month",
     "purchase_day_of_week",
@@ -27,7 +27,26 @@ NUMERIC_FEATURES = [
     "payment_installments",
 ]
 
-CATEGORICAL_FEATURES = [
+ENGINEERED_NUMERIC_FEATURES = [
+    "prior_global_late_rate",
+    "seller_state_prior_late_rate",
+    "seller_state_prior_order_count_log",
+    "seller_state_late_rate_30d",
+    "seller_state_late_rate_90d",
+    "seller_state_experience_days_log",
+    "route_prior_late_rate",
+    "route_order_count_7d_log",
+    "route_order_count_30d_log",
+    "route_late_rate_30d",
+    "route_late_rate_90d",
+    "category_prior_late_rate",
+    "freight_item_ratio",
+    "promised_days_per_500km",
+]
+
+NUMERIC_FEATURES = BASE_NUMERIC_FEATURES + ENGINEERED_NUMERIC_FEATURES
+
+BASE_CATEGORICAL_FEATURES = [
     "seller_state",
     "customer_state",
     "route",
@@ -35,12 +54,15 @@ CATEGORICAL_FEATURES = [
     "primary_payment_type",
 ]
 
+CATEGORICAL_FEATURES = BASE_CATEGORICAL_FEATURES + ["season"]
+
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
 REQUIRED_COLUMNS = [
     "order_id",
     TIMESTAMP,
-    *FEATURES,
+    *BASE_NUMERIC_FEATURES,
+    *BASE_CATEGORICAL_FEATURES,
     TARGET,
 ]
 

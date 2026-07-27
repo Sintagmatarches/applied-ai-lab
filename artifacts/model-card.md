@@ -1,66 +1,101 @@
-# Olist Delivery Delay Predictor
+# Olist Delivery Delay Risk Model
 
-Model version: `olist-xgb-2026-07-27.1`
+Model version: `olist-logistic-temporal-2026-07-27.2`
 
 ## Purpose
 
-Estimate, from facts available when an order is placed, whether an Olist order
-will be delivered at least 24 hours after its promised delivery date.
+Rank, from facts available when an order is placed, which Olist orders are at
+greatest risk of arriving at least 24 hours after the promised delivery date.
+
+The public result is a relative risk score, not an exact probability.
 
 ## Data
 
-- Source: a local BigQuery export of the public Olist order history.
-- Rows: 95,195 delivered orders, one unique `order_id` per row.
+- Source: local BigQuery export of the public Olist order history.
+- Rows: 95,195 delivered orders and 95,195 unique `order_id` values.
 - Period: 15 September 2016 through 29 August 2018.
 - Positive target: 6,521 orders (6.85%).
+- Limitation: the export has `seller_state` but no `seller_id`.
 
 ## Leakage policy
 
-The model excludes `order_id`, the full timestamp, `late_1d`, actual delivery
-dates and durations, reviews, realized delay size, and every other fact revealed
-after purchase. The full timestamp is used only for chronological sorting and
-to derive year, month, BigQuery weekday, and hour.
+Every historical feature uses aggregates from dates strictly before the order
+date. Orders from the same date and all later dates are excluded. This is more
+conservative than row-level shifting and prevents same-timestamp leakage.
 
-## Time split
+The model excludes `order_id`, the full timestamp as a unique value,
+`late_1d`, actual delivery dates and durations, reviews, realized delay size,
+and every other fact revealed after purchase.
 
-- Training: 66,636 oldest orders, through 15 April 2018.
-- Validation: 14,279 following orders, through 20 June 2018.
-- Final test: 14,280 newest orders, through 29 August 2018.
+Because the export does not include outcome-availability timestamps, it cannot
+prove when an earlier order's delay label became known. This limitation is
+explicitly documented.
 
-Imputation, scaling, category encoding, model fitting, calibration, and working
-threshold selection do not use the final test labels.
+## Historical and derived features
 
-## Selection
+- previous late rate and order count for the seller state;
+- seller-state late rate over the previous 30 and 90 days;
+- previous route late rate;
+- route order count over the previous 7 and 30 days;
+- route late rate over the previous 30 and 90 days;
+- previous category late rate;
+- seller-state experience in days;
+- freight-to-item-value ratio;
+- promised days relative to each 500 km;
+- season, weekday, and original order-time fields.
 
-The compared candidates were an always-on-time baseline, logistic regression,
-and XGBoost. XGBoost had the best validation PR-AUC (14.89%) and was selected
-before final-test evaluation. Platt calibration was fitted on validation
-margins. The working threshold (12.34%) maximizes validation F2 while limiting
-the validation alert rate to 7.5%.
+State-level seller history is an honest proxy, not a claim about a specific
+seller.
 
-## Final time-test result
+## Model selection
 
-- Detected late orders: 138 of 620.
-- False warnings: 2,111.
-- Precision: 6.14%.
-- Recall: 22.26%.
-- F1: 9.62%.
-- PR-AUC: 6.02%.
-- ROC-AUC: 56.92%.
-- Confusion matrix: `[[11549, 2111], [482, 138]]`.
+Logistic regression, XGBoost, and CatBoost were evaluated on four sequential
+time backtests:
 
-At the standard 0.5 threshold the model detects only 4 late orders. The lower
-working threshold is retained because the demonstration prioritizes detecting
-more risky orders while still flagging a minority of orders.
+1. September–October 2017;
+2. November–December 2017;
+3. January–February 2018;
+4. March through 14 April 2018.
 
-## Probability quality and limitations
+Selection uses mean PR-AUC minus its standard deviation. Logistic regression
+won with:
 
-The final-period Brier score is 0.0463. Mean predicted risk is 6.95%, while the
-observed final-period rate is 4.34%, so probabilities remain overestimated.
-Both delay prevalence and the relationship between features and delays drift
-over time. The final-period PR-AUC and ROC-AUC are weak and must be shown
-alongside every prediction experience.
+- mean PR-AUC: 23.77%;
+- PR-AUC standard deviation: 8.11 percentage points;
+- mean ROC-AUC: 71.47%;
+- mean capture in the top-risk 10%: 29.44%.
 
-This model is a historical demonstration, not an operational delivery
-guarantee. Exact distance is supplied by the user because state codes alone
-cannot determine it.
+## Final untouched time test
+
+The newest 14,280 orders contain 620 late deliveries.
+
+- PR-AUC: 9.90%.
+- ROC-AUC: 72.49%.
+- Top-risk 5%: 94 late orders found, 15.16% of all late orders, 6.60 false
+  warnings per found late order.
+- Top-risk 10%: 170 found, 27.42% capture, 11.90% precision, 1,258 false
+  warnings, 7.40 false warnings per found late order.
+- Top-risk 20%: 290 found, 46.77% capture, 10.15% precision, 2,566 false
+  warnings, 8.85 false warnings per found late order.
+
+## Calibration and display policy
+
+Identity, Platt, and isotonic calibration were compared on a later portion of a
+separate chronological calibration period. The identity transform had the best
+Brier score there.
+
+On the final test, however, the mean model probability was 9.53% while the
+observed late rate was 4.34%; expected calibration error was 5.19 percentage
+points. The probabilities are therefore not reliable enough to display as
+exact percentages.
+
+The server converts the internal model score into a percentile-like risk score
+using the calibration-period score distribution. High risk means score 90 or
+higher; medium risk means 80–89; otherwise risk is low.
+
+## Practical interpretation
+
+The new model ranks orders materially better than version 1, but 7.4 false
+warnings still accompany every late order found in the highest-risk 10%.
+It is useful for prioritizing a review queue, not for automatically deciding
+that an individual order will be late.

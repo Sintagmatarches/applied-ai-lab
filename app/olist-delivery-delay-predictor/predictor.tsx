@@ -3,17 +3,18 @@
 import { FormEvent, useState } from "react";
 
 type Prediction = {
-  probability_percent: number;
+  risk_score: number;
   risk_level: "low" | "medium" | "high";
   decision: string;
   factors: Array<{
     name: string;
     effect: string;
-    probability_point_change: number;
+    risk_score_point_change: number;
     explanation: string;
   }>;
   model_version: string;
-  threshold: number;
+  high_risk_score: number;
+  display_note: string;
   disclaimer: string;
 };
 
@@ -367,9 +368,10 @@ export function OlistPredictor() {
           aria-live="polite"
         >
           <div>
-            <p className="eyebrow">Estimated probability</p>
+            <p className="eyebrow">Relative risk score</p>
             <strong className="probability">
-              {prediction.probability_percent.toFixed(1)}%
+              {prediction.risk_score.toFixed(0)}
+              <small>/100</small>
             </strong>
             <p className="risk-label">
               {prediction.risk_level} risk · {prediction.decision}
@@ -383,7 +385,7 @@ export function OlistPredictor() {
                   <strong>{factor.name}</strong>
                   <span>
                     {factor.effect} by about{" "}
-                    {factor.probability_point_change.toFixed(1)} percentage
+                    {factor.risk_score_point_change.toFixed(1)} risk-score
                     points compared with a typical training order
                   </span>
                 </li>
@@ -392,6 +394,7 @@ export function OlistPredictor() {
           </div>
           <footer>
             <span>Model {prediction.model_version}</span>
+            <span>{prediction.display_note}</span>
             <span>{prediction.disclaimer}</span>
           </footer>
         </article>

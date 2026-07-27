@@ -2,23 +2,21 @@ from __future__ import annotations
 
 import json
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+from catboost import CatBoostClassifier
 from sklearn.compose import ColumnTransformer
-from sklearn.dummy import DummyClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
     brier_score_loss,
-    confusion_matrix,
-    f1_score,
     log_loss,
-    precision_score,
-    recall_score,
     roc_auc_score,
 )
 from sklearn.pipeline import Pipeline
@@ -31,232 +29,465 @@ from ml.common import (
     FEATURES,
     NUMERIC_FEATURES,
     TARGET,
-    chronological_split,
-    json_value,
     read_orders,
-    split_summary,
 )
+from ml.temporal_features import add_temporal_features, export_daily_histories
 from ml.validate_data import build_audit
 
 
 ARTIFACTS = Path("artifacts")
-MODEL_VERSION = "olist-xgb-2026-07-27.1"
-WORKING_ALERT_CAP = 0.075
+MODEL_VERSION = "olist-logistic-temporal-2026-07-27.2"
+OLD_MODEL_VERSION = "olist-xgb-2026-07-27.1"
+FINAL_TRAIN_FRACTION = 0.70
+CALIBRATION_END_FRACTION = 0.85
+
+
+@dataclass(frozen=True)
+class BacktestPeriod:
+    name: str
+    starts_at: str
+    ends_at: str
+
+
+BACKTEST_PERIODS = [
+    BacktestPeriod("2017-09/10", "2017-09-01", "2017-11-01"),
+    BacktestPeriod("2017-11/12", "2017-11-01", "2018-01-01"),
+    BacktestPeriod("2018-01/02", "2018-01-01", "2018-03-01"),
+    BacktestPeriod("2018-03/04", "2018-03-01", "2018-04-15"),
+]
 
 
 def build_preprocessor() -> ColumnTransformer:
-    numeric = Pipeline(
+    return ColumnTransformer(
         [
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scale", StandardScaler()),
-        ]
-    )
-    categorical = Pipeline(
-        [
-            ("imputer", SimpleImputer(strategy="most_frequent")),
             (
-                "one_hot",
-                OneHotEncoder(
-                    handle_unknown="ignore",
-                    min_frequency=5,
-                    sparse_output=True,
+                "numeric",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="median")),
+                        ("scale", StandardScaler()),
+                    ]
                 ),
+                NUMERIC_FEATURES,
+            ),
+            (
+                "categorical",
+                Pipeline(
+                    [
+                        (
+                            "imputer",
+                            SimpleImputer(strategy="most_frequent"),
+                        ),
+                        (
+                            "one_hot",
+                            OneHotEncoder(
+                                handle_unknown="ignore",
+                                min_frequency=5,
+                                sparse_output=True,
+                            ),
+                        ),
+                    ]
+                ),
+                CATEGORICAL_FEATURES,
             ),
         ]
     )
-    return ColumnTransformer(
-        [
-            ("numeric", numeric, NUMERIC_FEATURES),
-            ("categorical", categorical, CATEGORICAL_FEATURES),
-        ]
+
+
+def build_linear_model() -> LogisticRegression:
+    return LogisticRegression(
+        max_iter=1_500,
+        C=0.5,
+        solver="liblinear",
+        random_state=42,
     )
 
 
-def metrics(y_true: np.ndarray, probability: np.ndarray, threshold: float) -> dict:
-    predicted = (probability >= threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(
-        y_true, predicted, labels=[0, 1]
-    ).ravel()
+def build_xgboost_model() -> XGBClassifier:
+    return XGBClassifier(
+        n_estimators=350,
+        max_depth=4,
+        learning_rate=0.05,
+        min_child_weight=10,
+        subsample=0.85,
+        colsample_bytree=0.85,
+        reg_lambda=3,
+        reg_alpha=0.1,
+        objective="binary:logistic",
+        eval_metric="aucpr",
+        n_jobs=4,
+        random_state=42,
+    )
+
+
+def build_catboost_model() -> CatBoostClassifier:
+    return CatBoostClassifier(
+        iterations=350,
+        depth=6,
+        learning_rate=0.05,
+        l2_leaf_reg=5,
+        loss_function="Logloss",
+        eval_metric="PRAUC:type=Classic",
+        random_seed=42,
+        verbose=False,
+        allow_writing_files=False,
+        thread_count=4,
+    )
+
+
+def catboost_frame(
+    frame: pd.DataFrame,
+    training_rows: np.ndarray,
+) -> pd.DataFrame:
+    prepared = frame[FEATURES].copy()
+    medians = prepared.loc[training_rows, NUMERIC_FEATURES].median()
+    prepared.loc[:, NUMERIC_FEATURES] = prepared[
+        NUMERIC_FEATURES
+    ].fillna(medians)
+    prepared.loc[:, CATEGORICAL_FEATURES] = (
+        prepared[CATEGORICAL_FEATURES]
+        .fillna("__missing__")
+        .astype(str)
+    )
+    return prepared
+
+
+def top_group_metrics(
+    y_true: np.ndarray, probability: np.ndarray, fraction: float
+) -> dict:
+    size = max(1, int(math.ceil(len(probability) * fraction)))
+    selected = np.argsort(-probability, kind="stable")[:size]
+    found = int(y_true[selected].sum())
+    false_warnings = int(size - found)
+    total_late = int(y_true.sum())
+    total_safe = int(len(y_true) - total_late)
     return {
-        "threshold": float(threshold),
-        "detected_late_orders": int(tp),
-        "false_warnings": int(fp),
-        "missed_late_orders": int(fn),
-        "correct_safe_orders": int(tn),
-        "precision": float(precision_score(y_true, predicted, zero_division=0)),
-        "recall": float(recall_score(y_true, predicted, zero_division=0)),
-        "f1": float(f1_score(y_true, predicted, zero_division=0)),
-        "pr_auc": float(average_precision_score(y_true, probability)),
-        "roc_auc": float(roc_auc_score(y_true, probability)),
-        "brier": float(brier_score_loss(y_true, probability)),
-        "log_loss": float(log_loss(y_true, probability)),
-        "alert_rate": float(predicted.mean()),
-        "confusion_matrix": [[int(tn), int(fp)], [int(fn), int(tp)]],
+        "fraction": float(fraction),
+        "orders": int(size),
+        "detected_late_orders": found,
+        "false_warnings": false_warnings,
+        "missed_late_orders": int(total_late - found),
+        "correct_safe_orders": int(total_safe - false_warnings),
+        "precision": float(found / size),
+        "recall": float(found / total_late) if total_late else 0.0,
+        "false_warnings_per_detected_late_order": (
+            float(false_warnings / found) if found else None
+        ),
+        "confusion_matrix": [
+            [int(total_safe - false_warnings), false_warnings],
+            [int(total_late - found), found],
+        ],
     }
 
 
-def select_threshold(y_true: np.ndarray, probability: np.ndarray) -> dict:
-    candidates = np.unique(
-        np.quantile(probability, np.linspace(0.01, 0.99, 800))
+def ranking_metrics(
+    y_true: np.ndarray, probability: np.ndarray
+) -> dict:
+    return {
+        "pr_auc": float(average_precision_score(y_true, probability)),
+        "roc_auc": float(roc_auc_score(y_true, probability)),
+        "top_risk_groups": {
+            f"{int(fraction * 100)}%": top_group_metrics(
+                y_true, probability, fraction
+            )
+            for fraction in (0.05, 0.10, 0.20)
+        },
+    }
+
+
+def fit_fold_candidates(
+    frame: pd.DataFrame,
+    train_rows: np.ndarray,
+    validation_rows: np.ndarray,
+) -> dict[str, dict]:
+    x = frame[FEATURES]
+    y = frame[TARGET].to_numpy()
+
+    preprocessor = build_preprocessor()
+    x_train = preprocessor.fit_transform(x.loc[train_rows])
+    x_validation = preprocessor.transform(x.loc[validation_rows])
+    results: dict[str, dict] = {}
+
+    for name, model in (
+        ("logistic", build_linear_model()),
+        ("xgboost", build_xgboost_model()),
+    ):
+        model.fit(x_train, y[train_rows])
+        probability = model.predict_proba(x_validation)[:, 1]
+        results[name] = ranking_metrics(y[validation_rows], probability)
+
+    cat_frame = catboost_frame(frame, train_rows)
+    catboost = build_catboost_model()
+    catboost.fit(
+        cat_frame.loc[train_rows, FEATURES],
+        y[train_rows],
+        cat_features=CATEGORICAL_FEATURES,
     )
-    scored: list[tuple[float, dict]] = []
-    for threshold in candidates:
-        result = metrics(y_true, probability, float(threshold))
-        if result["alert_rate"] > WORKING_ALERT_CAP:
-            continue
-        precision = result["precision"]
-        recall = result["recall"]
-        f2 = (
-            5 * precision * recall / (4 * precision + recall)
-            if precision + recall
-            else 0.0
+    probability = catboost.predict_proba(
+        cat_frame.loc[validation_rows, FEATURES]
+    )[:, 1]
+    results["catboost"] = ranking_metrics(
+        y[validation_rows], probability
+    )
+    return results
+
+
+def backtest_models(frame: pd.DataFrame) -> tuple[dict, dict, str]:
+    timestamps = frame["order_purchase_timestamp"]
+    fold_results: dict[str, list[dict]] = {
+        "logistic": [],
+        "xgboost": [],
+        "catboost": [],
+    }
+    for period in BACKTEST_PERIODS:
+        start = pd.Timestamp(period.starts_at, tz="UTC")
+        end = pd.Timestamp(period.ends_at, tz="UTC")
+        train_rows = (timestamps < start).to_numpy()
+        validation_rows = (
+            (timestamps >= start) & (timestamps < end)
+        ).to_numpy()
+        results = fit_fold_candidates(
+            frame, train_rows, validation_rows
         )
-        scored.append((f2, result))
-    if not scored:
-        raise RuntimeError("No threshold candidate satisfied the alert-rate cap")
-    return max(scored, key=lambda item: item[0])[1]
+        for name, result in results.items():
+            fold_results[name].append(
+                {
+                    "period": period.name,
+                    "train_rows": int(train_rows.sum()),
+                    "validation_rows": int(validation_rows.sum()),
+                    "validation_late_rate": float(
+                        frame.loc[validation_rows, TARGET].mean()
+                    ),
+                    **result,
+                }
+            )
+
+    summary: dict[str, dict] = {}
+    for name, folds in fold_results.items():
+        pr_auc = np.array([fold["pr_auc"] for fold in folds])
+        roc_auc = np.array([fold["roc_auc"] for fold in folds])
+        capture = np.array(
+            [
+                fold["top_risk_groups"]["10%"]["recall"]
+                for fold in folds
+            ]
+        )
+        summary[name] = {
+            "mean_pr_auc": float(pr_auc.mean()),
+            "std_pr_auc": float(pr_auc.std()),
+            "minimum_pr_auc": float(pr_auc.min()),
+            "mean_roc_auc": float(roc_auc.mean()),
+            "std_roc_auc": float(roc_auc.std()),
+            "mean_top_10_percent_capture": float(capture.mean()),
+            "stability_score": float(pr_auc.mean() - pr_auc.std()),
+        }
+
+    selected = max(
+        summary,
+        key=lambda name: (
+            summary[name]["stability_score"],
+            summary[name]["mean_pr_auc"],
+            summary[name]["mean_roc_auc"],
+        ),
+    )
+    return fold_results, summary, selected
 
 
-def calibration_table(y_true: np.ndarray, probability: np.ndarray) -> list[dict]:
-    table = pd.DataFrame({"actual": y_true, "probability": probability})
+def expected_calibration_error(
+    y_true: np.ndarray, probability: np.ndarray
+) -> tuple[float, list[dict]]:
+    table = pd.DataFrame(
+        {"actual": y_true, "probability": probability}
+    )
     table["bin"] = pd.qcut(
         table["probability"], q=10, duplicates="drop"
     )
     grouped = table.groupby("bin", observed=True).agg(
         count=("actual", "size"),
-        predicted_probability=("probability", "mean"),
-        observed_rate=("actual", "mean"),
+        predicted=("probability", "mean"),
+        observed=("actual", "mean"),
     )
-    return [
+    ece = float(
+        (
+            grouped["count"]
+            / len(table)
+            * (grouped["predicted"] - grouped["observed"]).abs()
+        ).sum()
+    )
+    rows = [
         {
             "count": int(row["count"]),
-            "predicted_probability": float(row["predicted_probability"]),
-            "observed_rate": float(row["observed_rate"]),
+            "predicted": float(row["predicted"]),
+            "observed": float(row["observed"]),
         }
         for _, row in grouped.iterrows()
     ]
+    return ece, rows
+
+
+def choose_calibration(
+    raw_score: np.ndarray, y_true: np.ndarray
+) -> dict:
+    cutoff = int(len(raw_score) * 0.60)
+    train_score = raw_score[:cutoff]
+    train_y = y_true[:cutoff]
+    check_score = raw_score[cutoff:]
+    check_y = y_true[cutoff:]
+
+    identity = 1 / (1 + np.exp(-check_score))
+    platt = LogisticRegression(
+        C=1_000_000, solver="lbfgs", random_state=42
+    ).fit(train_score.reshape(-1, 1), train_y)
+    platt_probability = platt.predict_proba(
+        check_score.reshape(-1, 1)
+    )[:, 1]
+    isotonic = IsotonicRegression(out_of_bounds="clip").fit(
+        train_score, train_y
+    )
+    isotonic_probability = isotonic.predict(check_score)
+
+    candidates = {
+        "identity": identity,
+        "platt": platt_probability,
+        "isotonic": isotonic_probability,
+    }
+    evaluation = {
+        name: {
+            "brier": float(brier_score_loss(check_y, probability)),
+            "log_loss": float(
+                log_loss(
+                    check_y,
+                    np.clip(probability, 1e-8, 1 - 1e-8),
+                )
+            ),
+            "mean_prediction": float(probability.mean()),
+            "observed_rate": float(check_y.mean()),
+        }
+        for name, probability in candidates.items()
+    }
+    selected = min(
+        evaluation,
+        key=lambda name: (
+            evaluation[name]["brier"],
+            evaluation[name]["log_loss"],
+        ),
+    )
+
+    if selected == "platt":
+        fitted = LogisticRegression(
+            C=1_000_000, solver="lbfgs", random_state=42
+        ).fit(raw_score.reshape(-1, 1), y_true)
+        parameters = {
+            "type": "platt",
+            "slope": float(fitted.coef_[0, 0]),
+            "intercept": float(fitted.intercept_[0]),
+        }
+    elif selected == "isotonic":
+        fitted = IsotonicRegression(out_of_bounds="clip").fit(
+            raw_score, y_true
+        )
+        parameters = {
+            "type": "isotonic",
+            "x": [float(value) for value in fitted.X_thresholds_],
+            "y": [float(value) for value in fitted.y_thresholds_],
+        }
+    else:
+        fitted = None
+        parameters = {"type": "identity"}
+
+    return {
+        "selected": selected,
+        "selection_evaluation": evaluation,
+        "fitted": fitted,
+        "parameters": parameters,
+    }
+
+
+def calibrated_probability(
+    raw_score: np.ndarray, calibration: dict
+) -> np.ndarray:
+    selected = calibration["selected"]
+    if selected == "platt":
+        return calibration["fitted"].predict_proba(
+            raw_score.reshape(-1, 1)
+        )[:, 1]
+    if selected == "isotonic":
+        return calibration["fitted"].predict(raw_score)
+    return 1 / (1 + np.exp(-raw_score))
 
 
 def category_index_maps(
-    preprocessor: ColumnTransformer, frame: pd.DataFrame
+    preprocessor: ColumnTransformer,
 ) -> tuple[dict[str, dict[str, int]], dict[str, str]]:
-    categorical_pipeline = preprocessor.named_transformers_["categorical"]
-    imputer: SimpleImputer = categorical_pipeline.named_steps["imputer"]
-    encoder: OneHotEncoder = categorical_pipeline.named_steps["one_hot"]
+    pipeline = preprocessor.named_transformers_["categorical"]
+    imputer: SimpleImputer = pipeline.named_steps["imputer"]
+    encoder: OneHotEncoder = pipeline.named_steps["one_hot"]
     numeric_count = len(NUMERIC_FEATURES)
-    total_width = len(preprocessor.get_feature_names_out())
-    field_widths = list(encoder._n_features_outs)
-    field_offsets = np.cumsum([0, *field_widths[:-1]]).tolist()
-    maps: dict[str, dict[str, int]] = {}
+    widths = list(encoder._n_features_outs)
+    offsets = np.cumsum([0, *widths[:-1]]).tolist()
     defaults: dict[str, str] = {}
-
-    baseline = {}
-    for index, name in enumerate(CATEGORICAL_FEATURES):
-        default = str(imputer.statistics_[index])
-        defaults[name] = default
-        baseline[name] = default
+    maps: dict[str, dict[str, int]] = {}
+    baseline = {
+        name: str(imputer.statistics_[index])
+        for index, name in enumerate(CATEGORICAL_FEATURES)
+    }
 
     for field_index, name in enumerate(CATEGORICAL_FEATURES):
+        defaults[name] = baseline[name]
+        start = int(offsets[field_index])
+        end = start + int(widths[field_index])
         field_map: dict[str, int] = {}
-        field_start = int(field_offsets[field_index])
-        field_end = field_start + int(field_widths[field_index])
         for raw_value in encoder.categories_[field_index]:
             sample = pd.DataFrame([{**baseline, name: raw_value}])
-            encoded = categorical_pipeline.transform(
-                sample[CATEGORICAL_FEATURES]
+            encoded = pipeline.transform(sample[CATEGORICAL_FEATURES])
+            row = (
+                encoded.toarray()[0]
+                if hasattr(encoded, "toarray")
+                else encoded[0]
             )
-            row = encoded.toarray()[0] if hasattr(encoded, "toarray") else encoded[0]
-            # Infrequent categories intentionally share one active bucket.
-            active = np.flatnonzero(row[field_start:field_end])
+            active = np.flatnonzero(row[start:end])
             if len(active):
                 field_map[str(raw_value)] = (
-                    numeric_count + field_start + int(active[0])
+                    numeric_count + start + int(active[0])
                 )
         maps[name] = field_map
-
-    if any(
-        index < numeric_count or index >= total_width
-        for field_map in maps.values()
-        for index in field_map.values()
-    ):
-        raise RuntimeError("Exported category feature index is out of range")
-
     return maps, defaults
 
 
-def tree_leaf_sum(tree: dict, vector: np.ndarray) -> float:
-    node = tree
-    while "leaf" not in node:
-        feature_index = int(str(node["split"]).removeprefix("f"))
-        value = vector[feature_index]
-        next_id = node["missing"] if math.isnan(value) else (
-            node["yes"]
-            if np.float32(value) < np.float32(node["split_condition"])
-            else node["no"]
-        )
-        node = next(
-            child for child in node["children"] if child["nodeid"] == next_id
-        )
-    return float(node["leaf"])
-
-
-def export_model(
-    preprocessor: ColumnTransformer,
-    model: XGBClassifier,
-    calibrator: LogisticRegression,
+def export_linear_model(
     frame: pd.DataFrame,
-    split_summaries: dict,
-    working_threshold: float,
+    preprocessor: ColumnTransformer,
+    model: LogisticRegression,
+    calibration: dict,
+    calibration_probability: np.ndarray,
     results: dict,
 ) -> dict:
     numeric_pipeline = preprocessor.named_transformers_["numeric"]
-    numeric_imputer: SimpleImputer = numeric_pipeline.named_steps["imputer"]
+    imputer: SimpleImputer = numeric_pipeline.named_steps["imputer"]
     scaler: StandardScaler = numeric_pipeline.named_steps["scale"]
-    category_maps, category_defaults = category_index_maps(
-        preprocessor, frame
-    )
-    trees = [
-        json.loads(tree)
-        for tree in model.get_booster().get_dump(dump_format="json")
-    ]
-
-    reference = frame.iloc[[0]][FEATURES]
-    reference_vector = preprocessor.transform(reference)
-    if hasattr(reference_vector, "tocsr"):
-        reference_sparse = reference_vector.tocsr()
-        reference_dense = np.full(
-            reference_sparse.shape[1], np.nan, dtype=float
+    category_maps, category_defaults = category_index_maps(preprocessor)
+    risk_quantiles = [
+        float(value)
+        for value in np.quantile(
+            calibration_probability, np.linspace(0, 1, 101)
         )
-        reference_dense[reference_sparse.indices] = reference_sparse.data
-    else:
-        reference_dense = np.asarray(reference_vector)[0]
-    raw_margin = float(
-        model.predict(reference_vector, output_margin=True)[0]
-    )
-    intercept = raw_margin - sum(
-        tree_leaf_sum(tree, reference_dense) for tree in trees
-    )
-
-    numeric = {
-        name: {
-            "index": index,
-            "median": float(numeric_imputer.statistics_[index]),
-            "mean": float(scaler.mean_[index]),
-            "scale": float(scaler.scale_[index]),
-        }
-        for index, name in enumerate(NUMERIC_FEATURES)
-    }
-
+    ]
     return {
         "model_version": MODEL_VERSION,
-        "model_type": "XGBoost binary classifier with Platt calibration",
+        "model_type": "Logistic regression with leakage-safe temporal history",
+        "display_mode": results["display_mode"],
         "target": TARGET,
-        "positive_definition": (
-            "Delivered at least 24 hours after the promised delivery date"
-        ),
         "feature_count": int(len(preprocessor.get_feature_names_out())),
         "features": FEATURES,
-        "numeric": numeric,
+        "numeric": {
+            name: {
+                "index": index,
+                "median": float(imputer.statistics_[index]),
+                "mean": float(scaler.mean_[index]),
+                "scale": float(scaler.scale_[index]),
+            }
+            for index, name in enumerate(NUMERIC_FEATURES)
+        },
         "categorical": {
             name: {
                 "default": category_defaults[name],
@@ -264,28 +495,65 @@ def export_model(
             }
             for name in CATEGORICAL_FEATURES
         },
-        "trees": trees,
-        "raw_margin_intercept": float(intercept),
-        "calibration": {
-            "type": "platt",
-            "slope": float(calibrator.coef_[0, 0]),
-            "intercept": float(calibrator.intercept_[0]),
+        "linear": {
+            "intercept": float(model.intercept_[0]),
+            "coefficients": [
+                float(value) for value in model.coef_[0]
+            ],
         },
-        "thresholds": {
-            "standard": 0.5,
-            "working": float(working_threshold),
-            "working_alert_cap_on_validation": WORKING_ALERT_CAP,
-            "low_medium_boundary": 0.05,
+        "calibration": calibration["parameters"],
+        "risk_score_probability_quantiles": risk_quantiles,
+        "risk_levels": {
+            "medium_score": 80,
+            "high_score": 90,
         },
-        "training": split_summaries,
-        "test_metrics": results["xgboost"]["test"],
+        "history": export_daily_histories(frame),
+        "test_metrics": results["final_test"],
         "limitations": [
             "Historical Olist orders only, September 2016 through August 2018.",
-            "The final time period has measurable drift and weaker ranking performance.",
-            "State-to-state distance is supplied by the user; states alone do not determine exact distance.",
-            "A probability is an estimate, not a delivery guarantee.",
+            "The export has seller_state but no seller_id, so seller-specific history cannot be calculated without changing the data and form.",
+            "Historical labels are restricted to earlier purchase dates; actual label-availability dates are absent from the export.",
+            "Final-period probabilities remain overestimated, so the product displays a relative risk score instead of an exact probability.",
         ],
     }
+
+
+def final_candidate_evaluation(
+    frame: pd.DataFrame,
+    train_end: int,
+    test_start: int,
+) -> tuple[dict, dict]:
+    x = frame[FEATURES]
+    y = frame[TARGET].to_numpy()
+    train_rows = np.arange(len(frame)) < train_end
+    test_rows = np.arange(len(frame)) >= test_start
+    preprocessor = build_preprocessor()
+    x_train = preprocessor.fit_transform(x.loc[train_rows])
+    x_test = preprocessor.transform(x.loc[test_rows])
+    fitted: dict[str, object] = {}
+    results: dict[str, dict] = {}
+    for name, model in (
+        ("logistic", build_linear_model()),
+        ("xgboost", build_xgboost_model()),
+    ):
+        model.fit(x_train, y[train_rows])
+        probability = model.predict_proba(x_test)[:, 1]
+        results[name] = ranking_metrics(y[test_rows], probability)
+        fitted[name] = (preprocessor, model)
+
+    cat_frame = catboost_frame(frame, train_rows)
+    catboost = build_catboost_model()
+    catboost.fit(
+        cat_frame.loc[train_rows, FEATURES],
+        y[train_rows],
+        cat_features=CATEGORICAL_FEATURES,
+    )
+    probability = catboost.predict_proba(
+        cat_frame.loc[test_rows, FEATURES]
+    )[:, 1]
+    results["catboost"] = ranking_metrics(y[test_rows], probability)
+    fitted["catboost"] = catboost
+    return results, fitted
 
 
 def main() -> None:
@@ -296,184 +564,164 @@ def main() -> None:
             + json.dumps(audit["blocking_errors"], ensure_ascii=False)
         )
 
-    frame = read_orders(DATA_FILE)
-    split = chronological_split(frame)
-    x = frame[FEATURES]
-    y = frame[TARGET].astype(int).to_numpy()
-
-    preprocessor = build_preprocessor()
-    x_train = preprocessor.fit_transform(x.iloc[split.train])
-    x_validation = preprocessor.transform(x.iloc[split.validation])
-    x_test = preprocessor.transform(x.iloc[split.test])
-
-    models = {
-        "dummy": DummyClassifier(strategy="prior").fit(
-            x_train, y[split.train]
-        ),
-        "logistic": LogisticRegression(
-            max_iter=1000,
-            C=1.0,
-            solver="liblinear",
-            random_state=42,
-        ).fit(x_train, y[split.train]),
-        "xgboost": XGBClassifier(
-            n_estimators=450,
-            max_depth=5,
-            learning_rate=0.05,
-            min_child_weight=8,
-            subsample=0.85,
-            colsample_bytree=0.85,
-            reg_lambda=2,
-            reg_alpha=0.05,
-            objective="binary:logistic",
-            eval_metric="aucpr",
-            n_jobs=4,
-            random_state=42,
-        ).fit(
-            x_train,
-            y[split.train],
-            eval_set=[(x_validation, y[split.validation])],
-            verbose=False,
-        ),
-    }
-
-    validation_probability = {
-        name: model.predict_proba(x_validation)[:, 1]
-        for name, model in models.items()
-    }
-    validation_raw_margin = models["xgboost"].predict(
-        x_validation, output_margin=True
-    )
-    calibrator = LogisticRegression(
-        C=1_000_000,
-        solver="lbfgs",
-        random_state=42,
-    ).fit(
-        validation_raw_margin.reshape(-1, 1),
-        y[split.validation],
-    )
-    validation_probability["xgboost"] = calibrator.predict_proba(
-        validation_raw_margin.reshape(-1, 1)
-    )[:, 1]
-
-    selected_model = max(
-        ("logistic", "xgboost"),
-        key=lambda name: average_precision_score(
-            y[split.validation], validation_probability[name]
-        ),
-    )
-    if selected_model != "xgboost":
+    base_frame = read_orders(DATA_FILE)
+    frame = add_temporal_features(base_frame)
+    fold_results, summary, selected = backtest_models(frame)
+    if selected != "logistic":
         raise RuntimeError(
-            f"Expected validation selection to choose xgboost, got {selected_model}"
+            f"Expected stable backtests to select logistic, got {selected}"
         )
 
-    working = {
-        name: select_threshold(
-            y[split.validation], validation_probability[name]
-        )
-        for name in ("logistic", "xgboost")
+    total = len(frame)
+    train_end = int(total * FINAL_TRAIN_FRACTION)
+    test_start = int(total * CALIBRATION_END_FRACTION)
+    final_candidates, fitted_candidates = final_candidate_evaluation(
+        frame, train_end, test_start
+    )
+    preprocessor, model = fitted_candidates["logistic"]
+
+    x = frame[FEATURES]
+    y = frame[TARGET].to_numpy()
+    x_calibration = preprocessor.transform(
+        x.iloc[train_end:test_start]
+    )
+    x_test = preprocessor.transform(x.iloc[test_start:])
+    calibration_raw = model.decision_function(x_calibration)
+    test_raw = model.decision_function(x_test)
+    calibration = choose_calibration(
+        calibration_raw, y[train_end:test_start]
+    )
+    calibration_probability = calibrated_probability(
+        calibration_raw, calibration
+    )
+    test_probability = calibrated_probability(test_raw, calibration)
+    ece, calibration_table = expected_calibration_error(
+        y[test_start:], test_probability
+    )
+    probability_quality = {
+        "method": calibration["selected"],
+        "selection_evaluation": calibration["selection_evaluation"],
+        "test_brier": float(
+            brier_score_loss(y[test_start:], test_probability)
+        ),
+        "test_log_loss": float(
+            log_loss(y[test_start:], test_probability)
+        ),
+        "test_ece": ece,
+        "test_mean_prediction": float(test_probability.mean()),
+        "test_observed_rate": float(y[test_start:].mean()),
+        "calibration_table": calibration_table,
+    }
+    relative_mean_error = abs(
+        probability_quality["test_mean_prediction"]
+        - probability_quality["test_observed_rate"]
+    ) / probability_quality["test_observed_rate"]
+    display_mode = (
+        "probability"
+        if ece <= 0.02 and relative_mean_error <= 0.20
+        else "risk_score"
+    )
+
+    split_summary = {
+        "train": {
+            "rows": train_end,
+            "late_orders": int(y[:train_end].sum()),
+            "late_rate": float(y[:train_end].mean()),
+            "starts_at": frame["order_purchase_timestamp"].iloc[0].isoformat(),
+            "ends_at": frame["order_purchase_timestamp"]
+            .iloc[train_end - 1]
+            .isoformat(),
+        },
+        "calibration": {
+            "rows": test_start - train_end,
+            "late_orders": int(y[train_end:test_start].sum()),
+            "late_rate": float(y[train_end:test_start].mean()),
+            "starts_at": frame["order_purchase_timestamp"]
+            .iloc[train_end]
+            .isoformat(),
+            "ends_at": frame["order_purchase_timestamp"]
+            .iloc[test_start - 1]
+            .isoformat(),
+        },
+        "test": {
+            "rows": total - test_start,
+            "late_orders": int(y[test_start:].sum()),
+            "late_rate": float(y[test_start:].mean()),
+            "starts_at": frame["order_purchase_timestamp"]
+            .iloc[test_start]
+            .isoformat(),
+            "ends_at": frame["order_purchase_timestamp"].iloc[-1].isoformat(),
+        },
     }
 
-    results: dict[str, dict] = {}
-    for name, model in models.items():
-        test_probability = model.predict_proba(x_test)[:, 1]
-        if name == "xgboost":
-            raw = model.predict(x_test, output_margin=True)
-            test_probability = calibrator.predict_proba(
-                raw.reshape(-1, 1)
-            )[:, 1]
-
-        if name == "dummy":
-            threshold = 0.5
-        else:
-            threshold = working[name]["threshold"]
-        results[name] = {
-            "validation": {
-                "standard_threshold": metrics(
-                    y[split.validation],
-                    validation_probability[name],
-                    0.5,
-                ),
-                "working_threshold": (
-                    metrics(
-                        y[split.validation],
-                        validation_probability[name],
-                        threshold,
-                    )
-                    if name != "dummy"
-                    else metrics(
-                        y[split.validation],
-                        validation_probability[name],
-                        0.5,
-                    )
-                ),
-            },
-            "test": {
-                "standard_threshold": metrics(
-                    y[split.test], test_probability, 0.5
-                ),
-                "working_threshold": metrics(
-                    y[split.test], test_probability, threshold
-                ),
-                "calibration": calibration_table(
-                    y[split.test], test_probability
-                ),
-            },
-        }
-
-    summaries = split_summary(frame, split)
+    final_test = {
+        **ranking_metrics(y[test_start:], test_probability),
+        "rows": int(total - test_start),
+        "late_orders": int(y[test_start:].sum()),
+    }
     report = {
         "model_version": MODEL_VERSION,
+        "previous_model_version": OLD_MODEL_VERSION,
         "selection_rule": (
-            "Highest validation PR-AUC; final test was evaluated only after "
-            "the model and working-threshold rule were fixed."
+            "Highest mean PR-AUC minus its standard deviation across four "
+            "sequential time backtests; final test excluded from selection."
         ),
-        "selected_model": selected_model,
-        "working_threshold_rule": (
-            "Maximize validation F2 while alerting on at most 7.5% of "
-            "validation orders."
-        ),
-        "splits": summaries,
+        "selected_model": selected,
+        "backtest_folds": fold_results,
+        "backtest_summary": summary,
+        "splits": split_summary,
         "feature_policy": {
             "included": FEATURES,
+            "history_cutoff": (
+                "Only aggregate rows from dates strictly before each order date."
+            ),
+            "seller_limitation": (
+                "seller_id is absent; seller_state history is used and labeled "
+                "as a state-level proxy."
+            ),
             "excluded": [
                 "order_id",
-                "order_purchase_timestamp (full value)",
+                "full timestamp as a unique model value",
                 "late_1d",
                 "all post-purchase and post-delivery facts",
             ],
         },
-        "models": results,
-        "probability_quality": {
-            "method": "Platt calibration fitted on the validation period",
-            "test_brier": results["xgboost"]["test"]["working_threshold"][
-                "brier"
-            ],
-            "test_mean_prediction": float(
-                np.mean(
-                    calibrator.predict_proba(
-                        models["xgboost"]
-                        .predict(x_test, output_margin=True)
-                        .reshape(-1, 1)
-                    )[:, 1]
-                )
-            ),
-            "test_observed_rate": float(y[split.test].mean()),
-            "limitation": (
-                "The final period remains overestimated because order mix and "
-                "delay prevalence drifted after the validation window."
-            ),
+        "final_candidate_test": final_candidates,
+        "probability_quality": probability_quality,
+        "display_mode": display_mode,
+        "final_test": final_test,
+        "old_vs_new": {
+            "old": {
+                "model": "XGBoost selected on one validation period",
+                "pr_auc": 0.060247731024515146,
+                "roc_auc": 0.5691749515892883,
+                "top_group": {
+                    "orders": 2249,
+                    "detected_late_orders": 138,
+                    "false_warnings": 2111,
+                    "precision": 0.06136060471320587,
+                    "recall": 0.22258064516129034,
+                    "false_warnings_per_detected_late_order": (
+                        2111 / 138
+                    ),
+                },
+            },
+            "new": {
+                "model": "Logistic regression selected across four backtests",
+                "pr_auc": final_test["pr_auc"],
+                "roc_auc": final_test["roc_auc"],
+                "top_group": final_test["top_risk_groups"]["10%"],
+            },
         },
     }
 
-    export = export_model(
+    export = export_linear_model(
+        frame=base_frame,
         preprocessor=preprocessor,
-        model=models["xgboost"],
-        calibrator=calibrator,
-        frame=frame.iloc[split.train],
-        split_summaries=summaries,
-        working_threshold=working["xgboost"]["threshold"],
-        results=results,
+        model=model,
+        calibration=calibration,
+        calibration_probability=calibration_probability,
+        results=report,
     )
 
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
@@ -488,21 +736,22 @@ def main() -> None:
     joblib.dump(
         {
             "preprocessor": preprocessor,
-            "model": models["xgboost"],
-            "calibrator": calibrator,
-            "threshold": working["xgboost"]["threshold"],
+            "model": model,
+            "calibration": calibration["parameters"],
             "version": MODEL_VERSION,
+            "features": FEATURES,
         },
         ARTIFACTS / "olist-model.joblib",
         compress=3,
     )
-
     print(
         json.dumps(
             {
-                "selected_model": selected_model,
-                "working_threshold": working["xgboost"]["threshold"],
-                "test": results["xgboost"]["test"]["working_threshold"],
+                "selected_model": selected,
+                "backtest_summary": summary[selected],
+                "display_mode": display_mode,
+                "probability_quality": probability_quality,
+                "final_test": final_test,
             },
             indent=2,
         )

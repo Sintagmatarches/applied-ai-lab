@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function OlistDeliveryDelayPredictor() {
-  const selected = metrics.models.xgboost.test.working_threshold;
+  const selected = metrics.final_test.top_risk_groups["10%"];
   const comparison = [
-    ["Always on time", metrics.models.dummy.test.working_threshold],
-    ["Logistic regression", metrics.models.logistic.test.working_threshold],
-    ["XGBoost (selected)", selected],
+    ["Logistic regression (selected)", metrics.final_candidate_test.logistic],
+    ["XGBoost", metrics.final_candidate_test.xgboost],
+    ["CatBoost", metrics.final_candidate_test.catboost],
   ] as const;
 
   return (
@@ -24,13 +24,13 @@ export default function OlistDeliveryDelayPredictor() {
           <p className="eyebrow">Applied AI Lab · Project 01</p>
           <h1>Olist Delivery Delay Predictor</h1>
           <p className="intro-copy">
-            A real model trained on order-time facts to estimate whether a
-            delivered Olist order would arrive at least 24 hours after its
-            promised date.
+            A real model trained on order-time facts and strictly earlier
+            order history to rank delivery-delay risk without presenting an
+            unreliable probability as precise.
           </p>
           <div className="project-facts" aria-label="Project facts">
             <span>95,195 historical orders</span>
-            <span>Strict chronological test</span>
+            <span>4 sequential backtests</span>
             <span>Server-side prediction</span>
           </div>
         </header>
@@ -43,7 +43,8 @@ export default function OlistDeliveryDelayPredictor() {
             <h2 id="results-title">What the final time test showed</h2>
             <p>
               The newest 14,280 orders were never used to select the model or
-              tune its threshold. They contain 620 one-day-late deliveries.
+              choose its calibration. They contain 620 one-day-late
+              deliveries. Metrics below describe the 10% highest-risk group.
             </p>
           </div>
 
@@ -53,24 +54,26 @@ export default function OlistDeliveryDelayPredictor() {
               <dd>{(selected.precision * 100).toFixed(1)}%</dd>
             </div>
             <div>
-              <dt>Recall</dt>
+              <dt>Delay capture</dt>
               <dd>{(selected.recall * 100).toFixed(1)}%</dd>
             </div>
             <div>
-              <dt>F1</dt>
-              <dd>{(selected.f1 * 100).toFixed(1)}%</dd>
+              <dt>False / found</dt>
+              <dd>
+                {selected.false_warnings_per_detected_late_order.toFixed(1)}
+              </dd>
             </div>
             <div>
               <dt>PR-AUC</dt>
-              <dd>{(selected.pr_auc * 100).toFixed(1)}%</dd>
+              <dd>{(metrics.final_test.pr_auc * 100).toFixed(1)}%</dd>
             </div>
             <div>
               <dt>ROC-AUC</dt>
-              <dd>{(selected.roc_auc * 100).toFixed(1)}%</dd>
+              <dd>{(metrics.final_test.roc_auc * 100).toFixed(1)}%</dd>
             </div>
             <div>
-              <dt>Working threshold</dt>
-              <dd>{(selected.threshold * 100).toFixed(1)}%</dd>
+              <dt>Evaluated group</dt>
+              <dd>Top 10%</dd>
             </div>
           </dl>
 
@@ -97,9 +100,9 @@ export default function OlistDeliveryDelayPredictor() {
             <p className="eyebrow">Model comparison</p>
             <h2 id="comparison-title">Selection used validation only</h2>
             <p>
-              XGBoost won on validation PR-AUC. The table below reports every
-              candidate on the untouched final period; these results did not
-              change the selection.
+              Logistic regression had the best average and stability-adjusted
+              PR-AUC across four earlier sequential backtests. The table below
+              reports every candidate on the untouched final period.
             </p>
           </div>
           <div className="table-wrap">
@@ -119,10 +122,24 @@ export default function OlistDeliveryDelayPredictor() {
                 {comparison.map(([name, result]) => (
                   <tr key={name}>
                     <th>{name}</th>
-                    <td>{result.detected_late_orders}</td>
-                    <td>{result.false_warnings}</td>
-                    <td>{(result.precision * 100).toFixed(1)}%</td>
-                    <td>{(result.recall * 100).toFixed(1)}%</td>
+                    <td>
+                      {result.top_risk_groups["10%"].detected_late_orders}
+                    </td>
+                    <td>
+                      {result.top_risk_groups["10%"].false_warnings}
+                    </td>
+                    <td>
+                      {(
+                        result.top_risk_groups["10%"].precision * 100
+                      ).toFixed(1)}
+                      %
+                    </td>
+                    <td>
+                      {(result.top_risk_groups["10%"].recall * 100).toFixed(
+                        1,
+                      )}
+                      %
+                    </td>
                     <td>{(result.pr_auc * 100).toFixed(1)}%</td>
                     <td>{(result.roc_auc * 100).toFixed(1)}%</td>
                   </tr>
@@ -140,16 +157,16 @@ export default function OlistDeliveryDelayPredictor() {
           <div className="method-copy">
             <p>
               Training: 66,636 older orders. Validation: 14,279 following
-              orders. Final test: 14,280 newest orders, ending August 2018.
-              Imputation, scaling and category encoding were fitted on training
-              data only.
+              orders reserved for calibration. Final test: 14,280 newest
+              orders, ending August 2018. Model choice came from four earlier
+              rolling time checks. Imputation, scaling and category encoding
+              were fitted on training data only.
             </p>
             <p>
-              The model uses purchase calendar fields, seller and customer
-              states, route, promised window, user-supplied distance, category,
-              item count, values, parcel size and payment facts. It excludes
-              order ID, the full timestamp, the target and every fact revealed
-              after purchase.
+              The model adds prior state, route and category delay rates,
+              recent 7/30/90-day route activity, state experience, freight
+              ratio, delivery-window-to-distance ratio and season. Each
+              historical value excludes the order’s date and every later date.
             </p>
           </div>
         </section>
@@ -157,10 +174,11 @@ export default function OlistDeliveryDelayPredictor() {
         <aside className="limitation-note">
           <h2>Important limitation</h2>
           <p>
-            Performance weakened on the newest period because both order mix
-            and delay prevalence changed. The calibrated model still
-            overestimates the average final-period risk. This tool is an honest
-            historical demonstration—not an operational SLA or guarantee.
+            The separate calibration period did not transfer reliably: average
+            final-period probability remained too high. The live result
+            therefore uses a relative risk score from 0 to 100, not an exact
+            probability. The export has seller state but no seller ID, so
+            state-level history is the honest available proxy.
           </p>
         </aside>
       </div>

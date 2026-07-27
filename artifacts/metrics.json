@@ -1,8 +1,921 @@
 {
-  "model_version": "olist-xgb-2026-07-27.1",
-  "selection_rule": "Highest validation PR-AUC; final test was evaluated only after the model and working-threshold rule were fixed.",
-  "selected_model": "xgboost",
-  "working_threshold_rule": "Maximize validation F2 while alerting on at most 7.5% of validation orders.",
+  "model_version": "olist-logistic-temporal-2026-07-27.2",
+  "previous_model_version": "olist-xgb-2026-07-27.1",
+  "selection_rule": "Highest mean PR-AUC minus its standard deviation across four sequential time backtests; final test excluded from selection.",
+  "selected_model": "logistic",
+  "backtest_folds": {
+    "logistic": [
+      {
+        "period": "2017-09/10",
+        "train_rows": 22043,
+        "validation_rows": 8520,
+        "validation_late_rate": 0.043309859154929575,
+        "pr_auc": 0.1084967224928508,
+        "roc_auc": 0.6836612728782178,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 426,
+            "detected_late_orders": 68,
+            "false_warnings": 358,
+            "missed_late_orders": 301,
+            "correct_safe_orders": 7793,
+            "precision": 0.1596244131455399,
+            "recall": 0.1842818428184282,
+            "false_warnings_per_detected_late_order": 5.264705882352941,
+            "confusion_matrix": [
+              [
+                7793,
+                358
+              ],
+              [
+                301,
+                68
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 852,
+            "detected_late_orders": 106,
+            "false_warnings": 746,
+            "missed_late_orders": 263,
+            "correct_safe_orders": 7405,
+            "precision": 0.12441314553990611,
+            "recall": 0.2872628726287263,
+            "false_warnings_per_detected_late_order": 7.037735849056604,
+            "confusion_matrix": [
+              [
+                7405,
+                746
+              ],
+              [
+                263,
+                106
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1704,
+            "detected_late_orders": 160,
+            "false_warnings": 1544,
+            "missed_late_orders": 209,
+            "correct_safe_orders": 6607,
+            "precision": 0.09389671361502347,
+            "recall": 0.43360433604336046,
+            "false_warnings_per_detected_late_order": 9.65,
+            "confusion_matrix": [
+              [
+                6607,
+                1544
+              ],
+              [
+                209,
+                160
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2017-11/12",
+        "train_rows": 30563,
+        "validation_rows": 12649,
+        "validation_late_rate": 0.10356549924895249,
+        "pr_auc": 0.271580785689675,
+        "roc_auc": 0.7311232798508693,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 633,
+            "detected_late_orders": 243,
+            "false_warnings": 390,
+            "missed_late_orders": 1067,
+            "correct_safe_orders": 10949,
+            "precision": 0.38388625592417064,
+            "recall": 0.18549618320610686,
+            "false_warnings_per_detected_late_order": 1.6049382716049383,
+            "confusion_matrix": [
+              [
+                10949,
+                390
+              ],
+              [
+                1067,
+                243
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1265,
+            "detected_late_orders": 428,
+            "false_warnings": 837,
+            "missed_late_orders": 882,
+            "correct_safe_orders": 10502,
+            "precision": 0.3383399209486166,
+            "recall": 0.3267175572519084,
+            "false_warnings_per_detected_late_order": 1.955607476635514,
+            "confusion_matrix": [
+              [
+                10502,
+                837
+              ],
+              [
+                882,
+                428
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2530,
+            "detected_late_orders": 648,
+            "false_warnings": 1882,
+            "missed_late_orders": 662,
+            "correct_safe_orders": 9457,
+            "precision": 0.25612648221343876,
+            "recall": 0.4946564885496183,
+            "false_warnings_per_detected_late_order": 2.904320987654321,
+            "confusion_matrix": [
+              [
+                9457,
+                1882
+              ],
+              [
+                662,
+                648
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-01/02",
+        "train_rows": 43212,
+        "validation_rows": 13472,
+        "validation_late_rate": 0.09857482185273159,
+        "pr_auc": 0.24101465922839177,
+        "roc_auc": 0.7099026044891026,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 674,
+            "detected_late_orders": 246,
+            "false_warnings": 428,
+            "missed_late_orders": 1082,
+            "correct_safe_orders": 11716,
+            "precision": 0.3649851632047478,
+            "recall": 0.1852409638554217,
+            "false_warnings_per_detected_late_order": 1.7398373983739837,
+            "confusion_matrix": [
+              [
+                11716,
+                428
+              ],
+              [
+                1082,
+                246
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1348,
+            "detected_late_orders": 388,
+            "false_warnings": 960,
+            "missed_late_orders": 940,
+            "correct_safe_orders": 11184,
+            "precision": 0.2878338278931751,
+            "recall": 0.2921686746987952,
+            "false_warnings_per_detected_late_order": 2.4742268041237114,
+            "confusion_matrix": [
+              [
+                11184,
+                960
+              ],
+              [
+                940,
+                388
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2695,
+            "detected_late_orders": 616,
+            "false_warnings": 2079,
+            "missed_late_orders": 712,
+            "correct_safe_orders": 10065,
+            "precision": 0.22857142857142856,
+            "recall": 0.463855421686747,
+            "false_warnings_per_detected_late_order": 3.375,
+            "confusion_matrix": [
+              [
+                10065,
+                2079
+              ],
+              [
+                712,
+                616
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-03/04",
+        "train_rows": 56684,
+        "validation_rows": 9923,
+        "validation_late_rate": 0.1506600826362995,
+        "pr_auc": 0.3296435503230053,
+        "roc_auc": 0.734182443296989,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 497,
+            "detected_late_orders": 221,
+            "false_warnings": 276,
+            "missed_late_orders": 1274,
+            "correct_safe_orders": 8152,
+            "precision": 0.44466800804828976,
+            "recall": 0.14782608695652175,
+            "false_warnings_per_detected_late_order": 1.248868778280543,
+            "confusion_matrix": [
+              [
+                8152,
+                276
+              ],
+              [
+                1274,
+                221
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 993,
+            "detected_late_orders": 406,
+            "false_warnings": 587,
+            "missed_late_orders": 1089,
+            "correct_safe_orders": 7841,
+            "precision": 0.40886203423967776,
+            "recall": 0.27157190635451506,
+            "false_warnings_per_detected_late_order": 1.4458128078817734,
+            "confusion_matrix": [
+              [
+                7841,
+                587
+              ],
+              [
+                1089,
+                406
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1985,
+            "detected_late_orders": 687,
+            "false_warnings": 1298,
+            "missed_late_orders": 808,
+            "correct_safe_orders": 7130,
+            "precision": 0.34609571788413096,
+            "recall": 0.45953177257525085,
+            "false_warnings_per_detected_late_order": 1.8893740902474527,
+            "confusion_matrix": [
+              [
+                7130,
+                1298
+              ],
+              [
+                808,
+                687
+              ]
+            ]
+          }
+        }
+      }
+    ],
+    "xgboost": [
+      {
+        "period": "2017-09/10",
+        "train_rows": 22043,
+        "validation_rows": 8520,
+        "validation_late_rate": 0.043309859154929575,
+        "pr_auc": 0.08966614288728846,
+        "roc_auc": 0.650314075217798,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 426,
+            "detected_late_orders": 56,
+            "false_warnings": 370,
+            "missed_late_orders": 313,
+            "correct_safe_orders": 7781,
+            "precision": 0.13145539906103287,
+            "recall": 0.15176151761517614,
+            "false_warnings_per_detected_late_order": 6.607142857142857,
+            "confusion_matrix": [
+              [
+                7781,
+                370
+              ],
+              [
+                313,
+                56
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 852,
+            "detected_late_orders": 90,
+            "false_warnings": 762,
+            "missed_late_orders": 279,
+            "correct_safe_orders": 7389,
+            "precision": 0.1056338028169014,
+            "recall": 0.24390243902439024,
+            "false_warnings_per_detected_late_order": 8.466666666666667,
+            "confusion_matrix": [
+              [
+                7389,
+                762
+              ],
+              [
+                279,
+                90
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1704,
+            "detected_late_orders": 137,
+            "false_warnings": 1567,
+            "missed_late_orders": 232,
+            "correct_safe_orders": 6584,
+            "precision": 0.08039906103286384,
+            "recall": 0.3712737127371274,
+            "false_warnings_per_detected_late_order": 11.437956204379562,
+            "confusion_matrix": [
+              [
+                6584,
+                1567
+              ],
+              [
+                232,
+                137
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2017-11/12",
+        "train_rows": 30563,
+        "validation_rows": 12649,
+        "validation_late_rate": 0.10356549924895249,
+        "pr_auc": 0.161719253647844,
+        "roc_auc": 0.6265330962718013,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 633,
+            "detected_late_orders": 137,
+            "false_warnings": 496,
+            "missed_late_orders": 1173,
+            "correct_safe_orders": 10843,
+            "precision": 0.21642969984202212,
+            "recall": 0.10458015267175573,
+            "false_warnings_per_detected_late_order": 3.6204379562043796,
+            "confusion_matrix": [
+              [
+                10843,
+                496
+              ],
+              [
+                1173,
+                137
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1265,
+            "detected_late_orders": 252,
+            "false_warnings": 1013,
+            "missed_late_orders": 1058,
+            "correct_safe_orders": 10326,
+            "precision": 0.1992094861660079,
+            "recall": 0.19236641221374046,
+            "false_warnings_per_detected_late_order": 4.01984126984127,
+            "confusion_matrix": [
+              [
+                10326,
+                1013
+              ],
+              [
+                1058,
+                252
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2530,
+            "detected_late_orders": 451,
+            "false_warnings": 2079,
+            "missed_late_orders": 859,
+            "correct_safe_orders": 9260,
+            "precision": 0.1782608695652174,
+            "recall": 0.34427480916030534,
+            "false_warnings_per_detected_late_order": 4.609756097560975,
+            "confusion_matrix": [
+              [
+                9260,
+                2079
+              ],
+              [
+                859,
+                451
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-01/02",
+        "train_rows": 43212,
+        "validation_rows": 13472,
+        "validation_late_rate": 0.09857482185273159,
+        "pr_auc": 0.20036372417825069,
+        "roc_auc": 0.6870796550827818,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 674,
+            "detected_late_orders": 186,
+            "false_warnings": 488,
+            "missed_late_orders": 1142,
+            "correct_safe_orders": 11656,
+            "precision": 0.27596439169139464,
+            "recall": 0.14006024096385541,
+            "false_warnings_per_detected_late_order": 2.6236559139784945,
+            "confusion_matrix": [
+              [
+                11656,
+                488
+              ],
+              [
+                1142,
+                186
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1348,
+            "detected_late_orders": 340,
+            "false_warnings": 1008,
+            "missed_late_orders": 988,
+            "correct_safe_orders": 11136,
+            "precision": 0.2522255192878338,
+            "recall": 0.2560240963855422,
+            "false_warnings_per_detected_late_order": 2.9647058823529413,
+            "confusion_matrix": [
+              [
+                11136,
+                1008
+              ],
+              [
+                988,
+                340
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2695,
+            "detected_late_orders": 585,
+            "false_warnings": 2110,
+            "missed_late_orders": 743,
+            "correct_safe_orders": 10034,
+            "precision": 0.21706864564007422,
+            "recall": 0.44051204819277107,
+            "false_warnings_per_detected_late_order": 3.606837606837607,
+            "confusion_matrix": [
+              [
+                10034,
+                2110
+              ],
+              [
+                743,
+                585
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-03/04",
+        "train_rows": 56684,
+        "validation_rows": 9923,
+        "validation_late_rate": 0.1506600826362995,
+        "pr_auc": 0.3539109674285127,
+        "roc_auc": 0.7357568655524744,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 497,
+            "detected_late_orders": 252,
+            "false_warnings": 245,
+            "missed_late_orders": 1243,
+            "correct_safe_orders": 8183,
+            "precision": 0.5070422535211268,
+            "recall": 0.16856187290969898,
+            "false_warnings_per_detected_late_order": 0.9722222222222222,
+            "confusion_matrix": [
+              [
+                8183,
+                245
+              ],
+              [
+                1243,
+                252
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 993,
+            "detected_late_orders": 404,
+            "false_warnings": 589,
+            "missed_late_orders": 1091,
+            "correct_safe_orders": 7839,
+            "precision": 0.4068479355488419,
+            "recall": 0.2702341137123746,
+            "false_warnings_per_detected_late_order": 1.4579207920792079,
+            "confusion_matrix": [
+              [
+                7839,
+                589
+              ],
+              [
+                1091,
+                404
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1985,
+            "detected_late_orders": 672,
+            "false_warnings": 1313,
+            "missed_late_orders": 823,
+            "correct_safe_orders": 7115,
+            "precision": 0.3385390428211587,
+            "recall": 0.44949832775919735,
+            "false_warnings_per_detected_late_order": 1.9538690476190477,
+            "confusion_matrix": [
+              [
+                7115,
+                1313
+              ],
+              [
+                823,
+                672
+              ]
+            ]
+          }
+        }
+      }
+    ],
+    "catboost": [
+      {
+        "period": "2017-09/10",
+        "train_rows": 22043,
+        "validation_rows": 8520,
+        "validation_late_rate": 0.043309859154929575,
+        "pr_auc": 0.10938314839146485,
+        "roc_auc": 0.6802749857948832,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 426,
+            "detected_late_orders": 63,
+            "false_warnings": 363,
+            "missed_late_orders": 306,
+            "correct_safe_orders": 7788,
+            "precision": 0.14788732394366197,
+            "recall": 0.17073170731707318,
+            "false_warnings_per_detected_late_order": 5.761904761904762,
+            "confusion_matrix": [
+              [
+                7788,
+                363
+              ],
+              [
+                306,
+                63
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 852,
+            "detected_late_orders": 99,
+            "false_warnings": 753,
+            "missed_late_orders": 270,
+            "correct_safe_orders": 7398,
+            "precision": 0.11619718309859155,
+            "recall": 0.2682926829268293,
+            "false_warnings_per_detected_late_order": 7.606060606060606,
+            "confusion_matrix": [
+              [
+                7398,
+                753
+              ],
+              [
+                270,
+                99
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1704,
+            "detected_late_orders": 147,
+            "false_warnings": 1557,
+            "missed_late_orders": 222,
+            "correct_safe_orders": 6594,
+            "precision": 0.08626760563380281,
+            "recall": 0.3983739837398374,
+            "false_warnings_per_detected_late_order": 10.591836734693878,
+            "confusion_matrix": [
+              [
+                6594,
+                1557
+              ],
+              [
+                222,
+                147
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2017-11/12",
+        "train_rows": 30563,
+        "validation_rows": 12649,
+        "validation_late_rate": 0.10356549924895249,
+        "pr_auc": 0.20164505418248324,
+        "roc_auc": 0.6806238214525426,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 633,
+            "detected_late_orders": 192,
+            "false_warnings": 441,
+            "missed_late_orders": 1118,
+            "correct_safe_orders": 10898,
+            "precision": 0.3033175355450237,
+            "recall": 0.1465648854961832,
+            "false_warnings_per_detected_late_order": 2.296875,
+            "confusion_matrix": [
+              [
+                10898,
+                441
+              ],
+              [
+                1118,
+                192
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1265,
+            "detected_late_orders": 332,
+            "false_warnings": 933,
+            "missed_late_orders": 978,
+            "correct_safe_orders": 10406,
+            "precision": 0.2624505928853755,
+            "recall": 0.2534351145038168,
+            "false_warnings_per_detected_late_order": 2.8102409638554215,
+            "confusion_matrix": [
+              [
+                10406,
+                933
+              ],
+              [
+                978,
+                332
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2530,
+            "detected_late_orders": 538,
+            "false_warnings": 1992,
+            "missed_late_orders": 772,
+            "correct_safe_orders": 9347,
+            "precision": 0.2126482213438735,
+            "recall": 0.41068702290076337,
+            "false_warnings_per_detected_late_order": 3.7026022304832713,
+            "confusion_matrix": [
+              [
+                9347,
+                1992
+              ],
+              [
+                772,
+                538
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-01/02",
+        "train_rows": 43212,
+        "validation_rows": 13472,
+        "validation_late_rate": 0.09857482185273159,
+        "pr_auc": 0.20926290044049894,
+        "roc_auc": 0.682002962442656,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 674,
+            "detected_late_orders": 205,
+            "false_warnings": 469,
+            "missed_late_orders": 1123,
+            "correct_safe_orders": 11675,
+            "precision": 0.30415430267062316,
+            "recall": 0.15436746987951808,
+            "false_warnings_per_detected_late_order": 2.2878048780487803,
+            "confusion_matrix": [
+              [
+                11675,
+                469
+              ],
+              [
+                1123,
+                205
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 1348,
+            "detected_late_orders": 369,
+            "false_warnings": 979,
+            "missed_late_orders": 959,
+            "correct_safe_orders": 11165,
+            "precision": 0.2737388724035608,
+            "recall": 0.27786144578313254,
+            "false_warnings_per_detected_late_order": 2.6531165311653115,
+            "confusion_matrix": [
+              [
+                11165,
+                979
+              ],
+              [
+                959,
+                369
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 2695,
+            "detected_late_orders": 585,
+            "false_warnings": 2110,
+            "missed_late_orders": 743,
+            "correct_safe_orders": 10034,
+            "precision": 0.21706864564007422,
+            "recall": 0.44051204819277107,
+            "false_warnings_per_detected_late_order": 3.606837606837607,
+            "confusion_matrix": [
+              [
+                10034,
+                2110
+              ],
+              [
+                743,
+                585
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "period": "2018-03/04",
+        "train_rows": 56684,
+        "validation_rows": 9923,
+        "validation_late_rate": 0.1506600826362995,
+        "pr_auc": 0.33066993401509465,
+        "roc_auc": 0.7383359418279251,
+        "top_risk_groups": {
+          "5%": {
+            "fraction": 0.05,
+            "orders": 497,
+            "detected_late_orders": 232,
+            "false_warnings": 265,
+            "missed_late_orders": 1263,
+            "correct_safe_orders": 8163,
+            "precision": 0.46680080482897385,
+            "recall": 0.1551839464882943,
+            "false_warnings_per_detected_late_order": 1.1422413793103448,
+            "confusion_matrix": [
+              [
+                8163,
+                265
+              ],
+              [
+                1263,
+                232
+              ]
+            ]
+          },
+          "10%": {
+            "fraction": 0.1,
+            "orders": 993,
+            "detected_late_orders": 391,
+            "false_warnings": 602,
+            "missed_late_orders": 1104,
+            "correct_safe_orders": 7826,
+            "precision": 0.39375629405840884,
+            "recall": 0.26153846153846155,
+            "false_warnings_per_detected_late_order": 1.5396419437340154,
+            "confusion_matrix": [
+              [
+                7826,
+                602
+              ],
+              [
+                1104,
+                391
+              ]
+            ]
+          },
+          "20%": {
+            "fraction": 0.2,
+            "orders": 1985,
+            "detected_late_orders": 652,
+            "false_warnings": 1333,
+            "missed_late_orders": 843,
+            "correct_safe_orders": 7095,
+            "precision": 0.32846347607052895,
+            "recall": 0.4361204013377926,
+            "false_warnings_per_detected_late_order": 2.044478527607362,
+            "confusion_matrix": [
+              [
+                7095,
+                1333
+              ],
+              [
+                843,
+                652
+              ]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "backtest_summary": {
+    "logistic": {
+      "mean_pr_auc": 0.2376839294334807,
+      "std_pr_auc": 0.08109561784752309,
+      "minimum_pr_auc": 0.1084967224928508,
+      "mean_roc_auc": 0.7147174001287946,
+      "std_roc_auc": 0.02022193173172925,
+      "mean_top_10_percent_capture": 0.2944302527334862,
+      "stability_score": 0.15658831158595762
+    },
+    "xgboost": {
+      "mean_pr_auc": 0.20141502203547396,
+      "std_pr_auc": 0.09659151697646821,
+      "minimum_pr_auc": 0.08966614288728846,
+      "mean_roc_auc": 0.6749209230312139,
+      "std_roc_auc": 0.04121809495040823,
+      "mean_top_10_percent_capture": 0.24063176533401187,
+      "stability_score": 0.10482350505900574
+    },
+    "catboost": {
+      "mean_pr_auc": 0.21274025925738543,
+      "std_pr_auc": 0.07862139682523579,
+      "minimum_pr_auc": 0.10938314839146485,
+      "mean_roc_auc": 0.6953094278795018,
+      "std_roc_auc": 0.024849770672478688,
+      "mean_top_10_percent_capture": 0.26528192618806,
+      "stability_score": 0.13411886243214965
+    }
+  },
   "splits": {
     "train": {
       "rows": 66636,
@@ -11,7 +924,7 @@
       "starts_at": "2016-09-15T12:16:38+00:00",
       "ends_at": "2018-04-15T11:31:05+00:00"
     },
-    "validation": {
+    "calibration": {
       "rows": 14279,
       "late_orders": 628,
       "late_rate": 0.04398067091533021,
@@ -41,449 +954,436 @@
       "total_weight_g",
       "total_volume_cm3",
       "payment_installments",
+      "prior_global_late_rate",
+      "seller_state_prior_late_rate",
+      "seller_state_prior_order_count_log",
+      "seller_state_late_rate_30d",
+      "seller_state_late_rate_90d",
+      "seller_state_experience_days_log",
+      "route_prior_late_rate",
+      "route_order_count_7d_log",
+      "route_order_count_30d_log",
+      "route_late_rate_30d",
+      "route_late_rate_90d",
+      "category_prior_late_rate",
+      "freight_item_ratio",
+      "promised_days_per_500km",
       "seller_state",
       "customer_state",
       "route",
       "primary_category",
-      "primary_payment_type"
+      "primary_payment_type",
+      "season"
     ],
+    "history_cutoff": "Only aggregate rows from dates strictly before each order date.",
+    "seller_limitation": "seller_id is absent; seller_state history is used and labeled as a state-level proxy.",
     "excluded": [
       "order_id",
-      "order_purchase_timestamp (full value)",
+      "full timestamp as a unique model value",
       "late_1d",
       "all post-purchase and post-delivery facts"
     ]
   },
-  "models": {
-    "dummy": {
-      "validation": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 0,
-          "false_warnings": 0,
-          "missed_late_orders": 628,
-          "correct_safe_orders": 13651,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "pr_auc": 0.04398067091533021,
-          "roc_auc": 0.5,
-          "brier": 0.0432819452875797,
-          "log_loss": 0.19037562064367994,
-          "alert_rate": 0.0,
-          "confusion_matrix": [
-            [
-              13651,
-              0
-            ],
-            [
-              628,
-              0
-            ]
-          ]
-        },
-        "working_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 0,
-          "false_warnings": 0,
-          "missed_late_orders": 628,
-          "correct_safe_orders": 13651,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "pr_auc": 0.04398067091533021,
-          "roc_auc": 0.5,
-          "brier": 0.0432819452875797,
-          "log_loss": 0.19037562064367994,
-          "alert_rate": 0.0,
-          "confusion_matrix": [
-            [
-              13651,
-              0
-            ],
-            [
-              628,
-              0
-            ]
-          ]
-        }
-      },
-      "test": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 0,
-          "false_warnings": 0,
-          "missed_late_orders": 620,
-          "correct_safe_orders": 13660,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "pr_auc": 0.04341736694677871,
-          "roc_auc": 0.5,
-          "brier": 0.042807791382842714,
-          "log_loss": 0.1889931557702164,
-          "alert_rate": 0.0,
-          "confusion_matrix": [
-            [
-              13660,
-              0
-            ],
-            [
-              620,
-              0
-            ]
-          ]
-        },
-        "working_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 0,
-          "false_warnings": 0,
-          "missed_late_orders": 620,
-          "correct_safe_orders": 13660,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "pr_auc": 0.04341736694677871,
-          "roc_auc": 0.5,
-          "brier": 0.042807791382842714,
-          "log_loss": 0.1889931557702164,
-          "alert_rate": 0.0,
-          "confusion_matrix": [
-            [
-              13660,
-              0
-            ],
-            [
-              620,
-              0
-            ]
-          ]
-        },
-        "calibration": []
-      }
-    },
+  "final_candidate_test": {
     "logistic": {
-      "validation": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 21,
-          "false_warnings": 102,
-          "missed_late_orders": 607,
-          "correct_safe_orders": 13549,
-          "precision": 0.17073170731707318,
-          "recall": 0.03343949044585987,
-          "f1": 0.0559254327563249,
-          "pr_auc": 0.12606967606518155,
-          "roc_auc": 0.7513794747777512,
-          "brier": 0.05424787210231499,
-          "log_loss": 0.22220361978052802,
-          "alert_rate": 0.008614048602843337,
+      "pr_auc": 0.0989865941736296,
+      "roc_auc": 0.7248868842393614,
+      "top_risk_groups": {
+        "5%": {
+          "fraction": 0.05,
+          "orders": 714,
+          "detected_late_orders": 94,
+          "false_warnings": 620,
+          "missed_late_orders": 526,
+          "correct_safe_orders": 13040,
+          "precision": 0.13165266106442577,
+          "recall": 0.15161290322580645,
+          "false_warnings_per_detected_late_order": 6.595744680851064,
           "confusion_matrix": [
             [
-              13549,
-              102
+              13040,
+              620
             ],
             [
-              607,
-              21
+              526,
+              94
             ]
           ]
         },
-        "working_threshold": {
-          "threshold": 0.32580949422883515,
-          "detected_late_orders": 167,
-          "false_warnings": 887,
-          "missed_late_orders": 461,
-          "correct_safe_orders": 12764,
-          "precision": 0.15844402277039848,
-          "recall": 0.2659235668789809,
-          "f1": 0.1985731272294887,
-          "pr_auc": 0.12606967606518155,
-          "roc_auc": 0.7513794747777512,
-          "brier": 0.05424787210231499,
-          "log_loss": 0.22220361978052802,
-          "alert_rate": 0.07381469290566567,
+        "10%": {
+          "fraction": 0.1,
+          "orders": 1428,
+          "detected_late_orders": 170,
+          "false_warnings": 1258,
+          "missed_late_orders": 450,
+          "correct_safe_orders": 12402,
+          "precision": 0.11904761904761904,
+          "recall": 0.27419354838709675,
+          "false_warnings_per_detected_late_order": 7.4,
           "confusion_matrix": [
             [
-              12764,
-              887
+              12402,
+              1258
             ],
             [
-              461,
-              167
+              450,
+              170
+            ]
+          ]
+        },
+        "20%": {
+          "fraction": 0.2,
+          "orders": 2856,
+          "detected_late_orders": 290,
+          "false_warnings": 2566,
+          "missed_late_orders": 330,
+          "correct_safe_orders": 11094,
+          "precision": 0.1015406162464986,
+          "recall": 0.46774193548387094,
+          "false_warnings_per_detected_late_order": 8.848275862068965,
+          "confusion_matrix": [
+            [
+              11094,
+              2566
+            ],
+            [
+              330,
+              290
             ]
           ]
         }
-      },
-      "test": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 88,
-          "false_warnings": 1047,
-          "missed_late_orders": 532,
-          "correct_safe_orders": 12613,
-          "precision": 0.07753303964757709,
-          "recall": 0.14193548387096774,
-          "f1": 0.10028490028490028,
-          "pr_auc": 0.07574531510187944,
-          "roc_auc": 0.6407124639871533,
-          "brier": 0.10263432349349372,
-          "log_loss": 0.35618667560858486,
-          "alert_rate": 0.07948179271708683,
-          "confusion_matrix": [
-            [
-              12613,
-              1047
-            ],
-            [
-              532,
-              88
-            ]
-          ]
-        },
-        "working_threshold": {
-          "threshold": 0.32580949422883515,
-          "detected_late_orders": 213,
-          "false_warnings": 3454,
-          "missed_late_orders": 407,
-          "correct_safe_orders": 10206,
-          "precision": 0.05808562857922007,
-          "recall": 0.3435483870967742,
-          "f1": 0.099370188943317,
-          "pr_auc": 0.07574531510187944,
-          "roc_auc": 0.6407124639871533,
-          "brier": 0.10263432349349372,
-          "log_loss": 0.35618667560858486,
-          "alert_rate": 0.2567927170868347,
-          "confusion_matrix": [
-            [
-              10206,
-              3454
-            ],
-            [
-              407,
-              213
-            ]
-          ]
-        },
-        "calibration": [
-          {
-            "count": 1428,
-            "predicted_probability": 0.06517261392054008,
-            "observed_rate": 0.00980392156862745
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.11274387573334461,
-            "observed_rate": 0.02100840336134454
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.14842601431512625,
-            "observed_rate": 0.02100840336134454
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.18098469651328344,
-            "observed_rate": 0.02100840336134454
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.21186699846572604,
-            "observed_rate": 0.04831932773109244
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.2460930237127605,
-            "observed_rate": 0.05182072829131653
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.28250261281120126,
-            "observed_rate": 0.06442577030812324
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.3308625511678484,
-            "observed_rate": 0.08263305322128851
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.4131341192043175,
-            "observed_rate": 0.04131652661064426
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.5709962073192774,
-            "observed_rate": 0.07282913165266107
-          }
-        ]
       }
     },
     "xgboost": {
-      "validation": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 1,
-          "false_warnings": 4,
-          "missed_late_orders": 627,
-          "correct_safe_orders": 13647,
-          "precision": 0.2,
-          "recall": 0.0015923566878980893,
-          "f1": 0.00315955766192733,
-          "pr_auc": 0.1489248552601213,
-          "roc_auc": 0.7795496421950842,
-          "brier": 0.03971634389326968,
-          "log_loss": 0.15793924166779846,
-          "alert_rate": 0.0003501645773513551,
+      "pr_auc": 0.09429241525460744,
+      "roc_auc": 0.6801750460492135,
+      "top_risk_groups": {
+        "5%": {
+          "fraction": 0.05,
+          "orders": 714,
+          "detected_late_orders": 78,
+          "false_warnings": 636,
+          "missed_late_orders": 542,
+          "correct_safe_orders": 13024,
+          "precision": 0.1092436974789916,
+          "recall": 0.12580645161290321,
+          "false_warnings_per_detected_late_order": 8.153846153846153,
           "confusion_matrix": [
             [
-              13647,
-              4
+              13024,
+              636
             ],
             [
-              627,
-              1
+              542,
+              78
             ]
           ]
         },
-        "working_threshold": {
-          "threshold": 0.12336176841997896,
-          "detected_late_orders": 190,
-          "false_warnings": 864,
-          "missed_late_orders": 438,
-          "correct_safe_orders": 12787,
-          "precision": 0.18026565464895636,
-          "recall": 0.30254777070063693,
-          "f1": 0.2259215219976219,
-          "pr_auc": 0.1489248552601213,
-          "roc_auc": 0.7795496421950842,
-          "brier": 0.03971634389326968,
-          "log_loss": 0.15793924166779846,
-          "alert_rate": 0.07381469290566567,
+        "10%": {
+          "fraction": 0.1,
+          "orders": 1428,
+          "detected_late_orders": 137,
+          "false_warnings": 1291,
+          "missed_late_orders": 483,
+          "correct_safe_orders": 12369,
+          "precision": 0.09593837535014006,
+          "recall": 0.22096774193548388,
+          "false_warnings_per_detected_late_order": 9.423357664233576,
           "confusion_matrix": [
             [
-              12787,
-              864
+              12369,
+              1291
             ],
             [
-              438,
-              190
+              483,
+              137
+            ]
+          ]
+        },
+        "20%": {
+          "fraction": 0.2,
+          "orders": 2856,
+          "detected_late_orders": 242,
+          "false_warnings": 2614,
+          "missed_late_orders": 378,
+          "correct_safe_orders": 11046,
+          "precision": 0.08473389355742297,
+          "recall": 0.3903225806451613,
+          "false_warnings_per_detected_late_order": 10.801652892561984,
+          "confusion_matrix": [
+            [
+              11046,
+              2614
+            ],
+            [
+              378,
+              242
             ]
           ]
         }
-      },
-      "test": {
-        "standard_threshold": {
-          "threshold": 0.5,
-          "detected_late_orders": 4,
-          "false_warnings": 21,
-          "missed_late_orders": 616,
-          "correct_safe_orders": 13639,
-          "precision": 0.16,
-          "recall": 0.0064516129032258064,
-          "f1": 0.012403100775193798,
-          "pr_auc": 0.060247731024515146,
-          "roc_auc": 0.5691749515892883,
-          "brier": 0.046269069681207003,
-          "log_loss": 0.19657518666817583,
-          "alert_rate": 0.0017507002801120449,
+      }
+    },
+    "catboost": {
+      "pr_auc": 0.08029751496351803,
+      "roc_auc": 0.6528258867425496,
+      "top_risk_groups": {
+        "5%": {
+          "fraction": 0.05,
+          "orders": 714,
+          "detected_late_orders": 75,
+          "false_warnings": 639,
+          "missed_late_orders": 545,
+          "correct_safe_orders": 13021,
+          "precision": 0.10504201680672269,
+          "recall": 0.12096774193548387,
+          "false_warnings_per_detected_late_order": 8.52,
           "confusion_matrix": [
             [
-              13639,
-              21
+              13021,
+              639
             ],
             [
-              616,
-              4
+              545,
+              75
             ]
           ]
         },
-        "working_threshold": {
-          "threshold": 0.12336176841997896,
-          "detected_late_orders": 138,
-          "false_warnings": 2111,
-          "missed_late_orders": 482,
-          "correct_safe_orders": 11549,
-          "precision": 0.06136060471320587,
-          "recall": 0.22258064516129034,
-          "f1": 0.09620076681770652,
-          "pr_auc": 0.060247731024515146,
-          "roc_auc": 0.5691749515892883,
-          "brier": 0.046269069681207003,
-          "log_loss": 0.19657518666817583,
-          "alert_rate": 0.15749299719887955,
+        "10%": {
+          "fraction": 0.1,
+          "orders": 1428,
+          "detected_late_orders": 122,
+          "false_warnings": 1306,
+          "missed_late_orders": 498,
+          "correct_safe_orders": 12354,
+          "precision": 0.08543417366946779,
+          "recall": 0.1967741935483871,
+          "false_warnings_per_detected_late_order": 10.704918032786885,
           "confusion_matrix": [
             [
-              11549,
-              2111
+              12354,
+              1306
             ],
             [
-              482,
-              138
+              498,
+              122
             ]
           ]
         },
-        "calibration": [
-          {
-            "count": 1428,
-            "predicted_probability": 0.009147900333134685,
-            "observed_rate": 0.01330532212885154
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.015974272175237756,
-            "observed_rate": 0.03571428571428571
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.022129109329200904,
-            "observed_rate": 0.04201680672268908
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.028949645436883047,
-            "observed_rate": 0.04201680672268908
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.0371220173118564,
-            "observed_rate": 0.052521008403361345
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.04723486148277514,
-            "observed_rate": 0.04971988795518207
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.06082191492022021,
-            "observed_rate": 0.049019607843137254
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.0845965940487883,
-            "observed_rate": 0.0392156862745098
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.13125318852782542,
-            "observed_rate": 0.03361344537815126
-          },
-          {
-            "count": 1428,
-            "predicted_probability": 0.2578319117798484,
-            "observed_rate": 0.07703081232492998
-          }
-        ]
+        "20%": {
+          "fraction": 0.2,
+          "orders": 2856,
+          "detected_late_orders": 191,
+          "false_warnings": 2665,
+          "missed_late_orders": 429,
+          "correct_safe_orders": 10995,
+          "precision": 0.06687675070028011,
+          "recall": 0.30806451612903224,
+          "false_warnings_per_detected_late_order": 13.952879581151832,
+          "confusion_matrix": [
+            [
+              10995,
+              2665
+            ],
+            [
+              429,
+              191
+            ]
+          ]
+        }
       }
     }
   },
   "probability_quality": {
-    "method": "Platt calibration fitted on the validation period",
-    "test_brier": 0.046269069681207003,
-    "test_mean_prediction": 0.06950614153457703,
+    "method": "identity",
+    "selection_evaluation": {
+      "identity": {
+        "brier": 0.020167895200267842,
+        "log_loss": 0.09395070530738783,
+        "mean_prediction": 0.027458665125041498,
+        "observed_rate": 0.021183473389355743
+      },
+      "platt": {
+        "brier": 0.02150423831924973,
+        "log_loss": 0.10628051337876177,
+        "mean_prediction": 0.052570198160354686,
+        "observed_rate": 0.021183473389355743
+      },
+      "isotonic": {
+        "brier": 0.022266144890750558,
+        "log_loss": 0.10890379865190462,
+        "mean_prediction": 0.05568027473535778,
+        "observed_rate": 0.021183473389355743
+      }
+    },
+    "test_brier": 0.044662859634144604,
+    "test_log_loss": 0.1859497407687861,
+    "test_ece": 0.05189372705402597,
+    "test_mean_prediction": 0.09531109400080467,
     "test_observed_rate": 0.04341736694677871,
-    "limitation": "The final period remains overestimated because order mix and delay prevalence drifted after the validation window."
+    "calibration_table": [
+      {
+        "count": 1428,
+        "predicted": 0.016304900191113535,
+        "observed": 0.0056022408963585435
+      },
+      {
+        "count": 1428,
+        "predicted": 0.029097172245273334,
+        "observed": 0.011904761904761904
+      },
+      {
+        "count": 1428,
+        "predicted": 0.03954553395739616,
+        "observed": 0.018907563025210083
+      },
+      {
+        "count": 1428,
+        "predicted": 0.05168652073718954,
+        "observed": 0.01750700280112045
+      },
+      {
+        "count": 1428,
+        "predicted": 0.06663037236756862,
+        "observed": 0.03081232492997199
+      },
+      {
+        "count": 1428,
+        "predicted": 0.08453293282493538,
+        "observed": 0.03711484593837535
+      },
+      {
+        "count": 1428,
+        "predicted": 0.10703977665747998,
+        "observed": 0.04481792717086835
+      },
+      {
+        "count": 1428,
+        "predicted": 0.136068232015867,
+        "observed": 0.06442577030812324
+      },
+      {
+        "count": 1428,
+        "predicted": 0.17292426381984694,
+        "observed": 0.08403361344537816
+      },
+      {
+        "count": 1428,
+        "predicted": 0.24928123519137632,
+        "observed": 0.11904761904761904
+      }
+    ]
+  },
+  "display_mode": "risk_score",
+  "final_test": {
+    "pr_auc": 0.0989865941736296,
+    "roc_auc": 0.7248868842393614,
+    "top_risk_groups": {
+      "5%": {
+        "fraction": 0.05,
+        "orders": 714,
+        "detected_late_orders": 94,
+        "false_warnings": 620,
+        "missed_late_orders": 526,
+        "correct_safe_orders": 13040,
+        "precision": 0.13165266106442577,
+        "recall": 0.15161290322580645,
+        "false_warnings_per_detected_late_order": 6.595744680851064,
+        "confusion_matrix": [
+          [
+            13040,
+            620
+          ],
+          [
+            526,
+            94
+          ]
+        ]
+      },
+      "10%": {
+        "fraction": 0.1,
+        "orders": 1428,
+        "detected_late_orders": 170,
+        "false_warnings": 1258,
+        "missed_late_orders": 450,
+        "correct_safe_orders": 12402,
+        "precision": 0.11904761904761904,
+        "recall": 0.27419354838709675,
+        "false_warnings_per_detected_late_order": 7.4,
+        "confusion_matrix": [
+          [
+            12402,
+            1258
+          ],
+          [
+            450,
+            170
+          ]
+        ]
+      },
+      "20%": {
+        "fraction": 0.2,
+        "orders": 2856,
+        "detected_late_orders": 290,
+        "false_warnings": 2566,
+        "missed_late_orders": 330,
+        "correct_safe_orders": 11094,
+        "precision": 0.1015406162464986,
+        "recall": 0.46774193548387094,
+        "false_warnings_per_detected_late_order": 8.848275862068965,
+        "confusion_matrix": [
+          [
+            11094,
+            2566
+          ],
+          [
+            330,
+            290
+          ]
+        ]
+      }
+    },
+    "rows": 14280,
+    "late_orders": 620
+  },
+  "old_vs_new": {
+    "old": {
+      "model": "XGBoost selected on one validation period",
+      "pr_auc": 0.060247731024515146,
+      "roc_auc": 0.5691749515892883,
+      "top_group": {
+        "orders": 2249,
+        "detected_late_orders": 138,
+        "false_warnings": 2111,
+        "precision": 0.06136060471320587,
+        "recall": 0.22258064516129034,
+        "false_warnings_per_detected_late_order": 15.297101449275363
+      }
+    },
+    "new": {
+      "model": "Logistic regression selected across four backtests",
+      "pr_auc": 0.0989865941736296,
+      "roc_auc": 0.7248868842393614,
+      "top_group": {
+        "fraction": 0.1,
+        "orders": 1428,
+        "detected_late_orders": 170,
+        "false_warnings": 1258,
+        "missed_late_orders": 450,
+        "correct_safe_orders": 12402,
+        "precision": 0.11904761904761904,
+        "recall": 0.27419354838709675,
+        "false_warnings_per_detected_late_order": 7.4,
+        "confusion_matrix": [
+          [
+            12402,
+            1258
+          ],
+          [
+            450,
+            170
+          ]
+        ]
+      }
+    }
   }
 }

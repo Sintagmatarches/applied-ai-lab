@@ -65,6 +65,8 @@ def build_audit() -> dict:
             "Categorical missing values are imputed from training modes only.",
             "Unknown future categories are encoded as all-zero one-hot groups.",
             "order_id and the full timestamp are excluded from model features.",
+            "Historical aggregates exclude the current order date and every later date.",
+            "seller_id is absent, so seller_state history is the available proxy.",
         ],
     }
 
