@@ -47,7 +47,7 @@ test("renders a minimal home page with direct planned-project links", async () =
     html,
     /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
   );
-  assert.match(html, /favicon\.svg\?v=20260727-9/);
+  assert.match(html, /favicon\.svg\?v=20260727-10/);
   assert.match(html, /og-v20260727-4\.png/);
 });
 
@@ -60,6 +60,12 @@ test("renders the working Olist model, evidence and honest limitation", async ()
   assert.match(html, /Check one order/);
   assert.match(html, /Estimate delay risk/);
   assert.match(html, /What the final time test showed/);
+  assert.match(html, /Selection used rolling time validation/);
+  assert.match(
+    html,
+    /Precision, Delay capture, False \/ found, and the confusion matrix/,
+  );
+  assert.match(html, /all 14,280 orders in the final test period/);
   assert.match(html, /Logistic regression \(selected\)/);
   assert.match(html, /relative risk score from 0 to 100/);
   assert.match(html, /11\.9(?:<!-- -->)?%/);

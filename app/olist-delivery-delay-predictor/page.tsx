@@ -43,8 +43,11 @@ export default function OlistDeliveryDelayPredictor() {
             <h2 id="results-title">What the final time test showed</h2>
             <p>
               The newest 14,280 orders were never used to select the model or
-              choose its calibration. They contain 620 one-day-late
-              deliveries. Metrics below describe the 10% highest-risk group.
+              choose its calibration. They contain 620 one-day-late deliveries.
+              Precision, Delay capture, False / found, and the confusion matrix
+              are calculated for the 10% of test orders with the highest risk
+              score. PR-AUC and ROC-AUC are calculated across all 14,280 orders
+              in the final test period.
             </p>
           </div>
 
@@ -98,7 +101,9 @@ export default function OlistDeliveryDelayPredictor() {
         <section className="evidence-section" aria-labelledby="comparison-title">
           <div className="section-heading">
             <p className="eyebrow">Model comparison</p>
-            <h2 id="comparison-title">Selection used validation only</h2>
+            <h2 id="comparison-title">
+              Selection used rolling time validation
+            </h2>
             <p>
               Logistic regression had the best average and stability-adjusted
               PR-AUC across four earlier sequential backtests. The table below
