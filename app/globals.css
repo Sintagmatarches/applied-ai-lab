@@ -12,8 +12,7 @@
   --cyan: #19ccff;
   --line: #2a3440;
   --topbar-height: 100px;
-  --rail-width: 104px;
-  --content-gap: 30px;
+  --tabbar-height: 72px;
   --radius-large: 28px;
   --radius-medium: 16px;
   --motion: 170ms ease;
@@ -155,10 +154,6 @@ select:focus-visible {
   white-space: nowrap;
 }
 
-.menu-trigger {
-  display: none;
-}
-
 .hero-action,
 .predictor-form button,
 .resource-grid button {
@@ -181,75 +176,64 @@ select:focus-visible {
   transform: translateY(-1px);
 }
 
-.project-rail {
+.project-tabs {
   position: fixed;
-  z-index: 50;
-  top: calc(var(--topbar-height) + 16px);
-  left: 10px;
-  width: var(--rail-width);
-  display: grid;
-  gap: 10px;
-  max-height: calc(100dvh - var(--topbar-height) - 32px);
-  padding: 12px;
-  border-radius: 24px;
-  overflow-y: auto;
+  z-index: 60;
+  top: var(--topbar-height);
+  left: 0;
+  right: 0;
+  height: var(--tabbar-height);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 6.5vw;
   background: var(--topbar);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
 }
 
-.rail-link {
-  width: 80px;
-  height: 62px;
+.project-tabs-inner {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.project-tabs a {
+  min-width: 190px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 15px;
-  color: var(--text);
+  padding: 0 26px;
+  border-radius: 14px 14px 0 0;
+  color: var(--muted);
   background: var(--navy);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.24);
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
   transition:
-    background var(--motion),
-    transform var(--motion);
+    color var(--motion),
+    background var(--motion);
 }
 
-.rail-link:hover {
-  background: var(--navy-hover);
-  transform: translateY(-1px);
+.project-tabs a:nth-child(2) {
+  min-width: 300px;
 }
 
-.rail-link.is-active {
-  background: var(--navy-active);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.4);
-}
-
-.rail-icon {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
+.project-tabs a:hover {
   color: var(--text);
+  background: var(--navy-hover);
 }
 
-.rail-icon svg {
-  width: 27px;
-  height: 27px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-.nav-letter {
-  color: var(--cyan);
-  font-size: 19px;
-  font-weight: 900;
+.project-tabs a.is-active {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 -4px 0 var(--cyan);
 }
 
 .main-content {
   width: auto;
   min-height: 100dvh;
-  margin-left: calc(var(--rail-width) + var(--content-gap));
-  padding: calc(var(--topbar-height) + 28px) 6.5vw 64px 0;
+  padding: calc(var(--topbar-height) + var(--tabbar-height) + 30px) 6.5vw 64px;
 }
 
 .hero-card {
@@ -311,42 +295,31 @@ p {
   border-left: 1px solid var(--line);
 }
 
-.hero-summary > strong {
-  font-size: 68px;
-  font-weight: 900;
-  line-height: 0.9;
-  letter-spacing: -0.05em;
-}
-
 .hero-summary > span {
-  margin-top: 6px;
+  color: var(--cyan);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.09em;
 }
 
+.hero-summary > h2 {
+  margin: 10px 0 0;
+  font-size: 30px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
 .hero-action {
   min-height: 78px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 26px;
+  grid-template-columns: minmax(0, 1fr) 26px;
   align-items: center;
   gap: 12px;
   margin-top: 20px;
   padding: 12px 18px;
 }
 
-.action-icon {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
-  color: var(--cyan);
-  background: var(--navy-active);
-  font-weight: 900;
-}
-
-.hero-action > span:nth-child(2) {
+.hero-action > span:first-child {
   min-width: 0;
   display: grid;
 }
@@ -496,30 +469,18 @@ p {
 
 .status-grid article {
   min-height: 132px;
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
-  gap: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
   padding: 16px;
   border-radius: var(--radius-medium);
   background: var(--surface);
 }
 
-.status-grid article > span {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  color: var(--muted);
-  background: var(--navy);
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.status-grid article.is-current > span {
-  color: var(--cyan);
-  background: var(--navy-active);
+.status-grid article.is-current {
+  background: var(--surface-raised);
+  box-shadow: inset 0 -4px 0 var(--cyan);
 }
 
 .status-grid article strong {
@@ -529,7 +490,6 @@ p {
 }
 
 .status-grid article small {
-  grid-column: 1 / -1;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
@@ -671,12 +631,6 @@ p {
   font-weight: 800;
 }
 
-.drawer-backdrop,
-.project-drawer,
-.mobile-nav {
-  display: none;
-}
-
 @media (max-width: 1500px) {
   .hero-card {
     grid-template-columns: 130px minmax(0, 1fr) minmax(290px, 360px);
@@ -738,35 +692,13 @@ p {
 }
 
 @media (max-width: 860px) {
-  body {
-    padding-bottom: 70px;
-  }
-
   :root {
     --topbar-height: 76px;
+    --tabbar-height: 64px;
   }
 
   .topbar {
     padding: 12px 16px;
-  }
-
-  .menu-trigger {
-    width: 48px;
-    height: 48px;
-    display: grid;
-    place-content: center;
-    gap: 4px;
-    margin-right: 10px;
-    border: 0;
-    border-radius: 12px;
-    background: var(--navy);
-  }
-
-  .menu-trigger span {
-    width: 20px;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--text);
   }
 
   .brand-mark {
@@ -779,123 +711,28 @@ p {
     font-size: 19px;
   }
 
-  .project-rail {
-    display: none;
+  .project-tabs {
+    padding: 0 14px;
+    overflow-x: auto;
+  }
+
+  .project-tabs-inner {
+    min-width: max-content;
+  }
+
+  .project-tabs a {
+    min-width: 150px;
+    height: 50px;
+    padding: 0 20px;
+    font-size: 13px;
+  }
+
+  .project-tabs a:nth-child(2) {
+    min-width: 240px;
   }
 
   .main-content {
-    margin-left: 0;
-    padding: calc(var(--topbar-height) + 18px) 14px 28px;
-  }
-
-  .drawer-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    display: block;
-    pointer-events: none;
-    opacity: 0;
-    background: rgba(0, 0, 0, 0.72);
-    transition: opacity var(--motion);
-  }
-
-  .drawer-backdrop.is-open {
-    pointer-events: auto;
-    opacity: 1;
-  }
-
-  .project-drawer {
-    position: fixed;
-    inset: 0 auto 0 0;
-    z-index: 90;
-    width: min(88vw, 380px);
-    display: grid;
-    align-content: start;
-    gap: 10px;
-    padding: 16px;
-    overflow-y: auto;
-    background: var(--topbar);
-    transform: translateX(-102%);
-    transition: transform 220ms ease;
-  }
-
-  .project-drawer.is-open {
-    transform: translateX(0);
-  }
-
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .drawer-header strong {
-    font-size: 20px;
-  }
-
-  .drawer-header button {
-    width: 44px;
-    height: 44px;
-    border: 0;
-    border-radius: 12px;
-    color: var(--text);
-    background: var(--navy);
-    font-size: 24px;
-  }
-
-  .project-drawer .rail-link {
-    width: 100%;
-    min-height: 58px;
-    justify-content: flex-start;
-    gap: 14px;
-    padding: 0 16px;
-  }
-
-  .rail-label {
-    overflow: hidden;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mobile-nav {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 70;
-    height: 70px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    background: var(--topbar);
-  }
-
-  .mobile-nav a,
-  .mobile-nav button {
-    display: grid;
-    place-items: center;
-    align-content: center;
-    gap: 2px;
-    border: 0;
-    color: var(--muted);
-    background: var(--navy);
-    font-size: 10px;
-    font-weight: 800;
-  }
-
-  .mobile-nav > :not(:last-child) {
-    border-right: 2px solid var(--topbar);
-  }
-
-  .mobile-nav span {
-    color: var(--cyan);
-    font-size: 18px;
-  }
-
-  .mobile-nav .is-active {
-    color: var(--text);
-    background: var(--navy-active);
+    padding: calc(var(--topbar-height) + var(--tabbar-height) + 18px) 14px 28px;
   }
 
   .hero-card {
@@ -964,10 +801,6 @@ p {
     display: flex;
     margin-top: 24px;
     padding-top: 22px;
-  }
-
-  .hero-summary > strong {
-    font-size: 48px;
   }
 
   .hero-action {

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 export type ProjectId =
   | "home"
@@ -97,48 +96,26 @@ function BrandMark({ large = false }: { large?: boolean }) {
   );
 }
 
-function NavGlyph({ id }: { id: ProjectId }) {
-  if (id !== "home") {
-    const project = projects.find((item) => item.id === id);
-    return <span className="nav-letter">{project?.symbol}</span>;
-  }
-
+function ProjectTabs({ activeProject }: LabShellProps) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 11.3 12 4l8 7.3V20h-5v-5H9v5H4z" />
-    </svg>
-  );
-}
-
-function Navigation({
-  activeProject,
-  onNavigate,
-  expanded = false,
-}: LabShellProps & { onNavigate?: () => void; expanded?: boolean }) {
-  const items = [
-    { id: "home" as const, href: "/", title: "Overview" },
-    projects[0],
-  ];
-
-  return (
-    <>
-      {items.map((item) => (
+    <nav className="project-tabs" aria-label="Project navigation">
+      <div className="project-tabs-inner">
         <Link
-          href={item.href}
-          key={item.id}
-          className={`rail-link ${activeProject === item.id ? "is-active" : ""}`}
-          aria-current={activeProject === item.id ? "page" : undefined}
-          aria-label={item.title}
-          title={expanded ? undefined : item.title}
-          onClick={onNavigate}
+          href="/"
+          className={activeProject === "home" ? "is-active" : ""}
+          aria-current={activeProject === "home" ? "page" : undefined}
         >
-          <span className="rail-icon">
-            <NavGlyph id={item.id} />
-          </span>
-          {expanded && <span className="rail-label">{item.title}</span>}
+          Home Page
         </Link>
-      ))}
-    </>
+        <Link
+          href="/olist-delivery-delay-predictor"
+          className={activeProject === "olist" ? "is-active" : ""}
+          aria-current={activeProject === "olist" ? "page" : undefined}
+        >
+          Delivery Delay Predictor
+        </Link>
+      </div>
+    </nav>
   );
 }
 
@@ -188,12 +165,11 @@ function HomeContent() {
           </p>
         </div>
         <div className="hero-summary">
-          <strong>1</strong>
-          <span>PROJECT IN DEVELOPMENT</span>
+          <span>ACTIVE PROJECT</span>
+          <h2>Olist Delivery Delay Predictor</h2>
           <Link href="/olist-delivery-delay-predictor" className="hero-action">
-            <span className="action-icon">O</span>
             <span>
-              <strong>Open Olist predictor</strong>
+              <strong>Open Delivery Delay Predictor</strong>
               <small>View the current project state</small>
             </span>
             <span className="action-arrow">→</span>
@@ -217,7 +193,7 @@ function OlistContent() {
       <section className="hero-card project-hero">
         <span className="project-hero-mark" aria-hidden="true">O</span>
         <div className="hero-copy">
-          <span className="eyebrow">PROJECT 01 · OLIST</span>
+          <span className="eyebrow">OLIST PROJECT</span>
           <h1>Delivery Delay Predictor</h1>
           <p>
             The future model will estimate whether a new order will arrive at
@@ -235,22 +211,18 @@ function OlistContent() {
         <SectionTitle>Project status</SectionTitle>
         <div className="status-grid">
           <article>
-            <span>01</span>
             <strong>Data processing and SQL</strong>
             <small>Completed</small>
           </article>
           <article>
-            <span>02</span>
             <strong>Power BI and final report</strong>
             <small>Completed</small>
           </article>
           <article className="is-current">
-            <span>03</span>
             <strong>Model training and validation</strong>
             <small>In development</small>
           </article>
           <article>
-            <span>04</span>
             <strong>Prediction API</strong>
             <small>Not connected</small>
           </article>
@@ -353,24 +325,10 @@ function PlannedContent({
 }
 
 export function LabShell({ activeProject }: LabShellProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
   return (
     <div className="lab-app">
       <header className="topbar">
         <div className="brand">
-          <button
-            className="menu-trigger"
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            aria-expanded={drawerOpen}
-            aria-controls="project-drawer"
-            aria-label="Open project menu"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
           <Link href="/" className="brand-link">
             <BrandMark />
             <span className="brand-text">
@@ -381,35 +339,7 @@ export function LabShell({ activeProject }: LabShellProps) {
         </div>
       </header>
 
-      <nav className="project-rail" aria-label="Project navigation">
-        <Navigation activeProject={activeProject} />
-      </nav>
-
-      <div
-        className={`drawer-backdrop ${drawerOpen ? "is-open" : ""}`}
-        onClick={() => setDrawerOpen(false)}
-      />
-      <aside
-        className={`project-drawer ${drawerOpen ? "is-open" : ""}`}
-        id="project-drawer"
-        aria-hidden={!drawerOpen}
-      >
-        <div className="drawer-header">
-          <strong>Projects</strong>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            aria-label="Close project menu"
-          >
-            ×
-          </button>
-        </div>
-        <Navigation
-          activeProject={activeProject}
-          onNavigate={() => setDrawerOpen(false)}
-          expanded
-        />
-      </aside>
+      <ProjectTabs activeProject={activeProject} />
 
       <main className="main-content">
         {activeProject === "home" && <HomeContent />}
@@ -419,23 +349,6 @@ export function LabShell({ activeProject }: LabShellProps) {
         )}
       </main>
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        <button type="button" onClick={() => setDrawerOpen(true)}>
-          <span aria-hidden="true">☰</span>
-          Menu
-        </button>
-        <Link href="/" className={activeProject === "home" ? "is-active" : ""}>
-          <span aria-hidden="true">⌂</span>
-          Overview
-        </Link>
-        <Link
-          href="/olist-delivery-delay-predictor"
-          className={activeProject === "olist" ? "is-active" : ""}
-        >
-          <span aria-hidden="true">O</span>
-          Olist
-        </Link>
-      </nav>
     </div>
   );
 }

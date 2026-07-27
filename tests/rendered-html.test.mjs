@@ -39,11 +39,13 @@ test("server-renders the Applied AI Lab overview", async () => {
   const html = await response.text();
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Practical machine-learning tools/);
-  assert.match(html, /PROJECT IN DEVELOPMENT/);
+  assert.match(html, /ACTIVE PROJECT/);
+  assert.match(html, /Home Page/);
+  assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /Planned projects/);
   assert.doesNotMatch(html, /Find a project|class="top-actions"|class="context-link"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /favicon\.svg\?v=20260727-4/);
+  assert.match(html, /favicon\.svg\?v=20260727-5/);
 });
 
 test("renders the Olist model boundary without a fake prediction", async () => {
@@ -51,11 +53,12 @@ test("renders the Olist model boundary without a fake prediction", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /PROJECT 01 · OLIST/);
+  assert.match(html, /OLIST PROJECT/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /No live model is connected/);
   assert.match(html, /Waiting for a validated model/);
   assert.match(html, /fieldset disabled/);
+  assert.doesNotMatch(html, />0[1-4]</);
   assert.doesNotMatch(html, /\b\d{1,3}(?:\.\d+)?%\b/);
 });
 
@@ -86,9 +89,12 @@ test("uses the flat Songbook visual system without decorative gradients or color
   assert.match(css, /--page:\s*#12171d/);
   assert.match(css, /--navy:\s*#0c2547/);
   assert.match(css, /--cyan:\s*#19ccff/);
-  assert.match(css, /--rail-width:\s*104px/);
+  assert.match(css, /\.project-tabs\s*\{/);
   assert.match(css, /grid-template-columns:\s*repeat\(4,/);
-  assert.doesNotMatch(css, /project-search|top-actions|context-link/);
+  assert.doesNotMatch(
+    css,
+    /project-search|top-actions|context-link|project-rail|project-drawer|mobile-nav/,
+  );
   assert.doesNotMatch(
     css,
     /gradient|body::before|backdrop-filter|status-badge|color-success|color-warning/i,
