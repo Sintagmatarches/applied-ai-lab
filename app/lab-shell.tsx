@@ -87,11 +87,10 @@ const plannedCopy: Record<
   },
 };
 
-function BrandMark({ large = false }: { large?: boolean }) {
+function BrandMark() {
   return (
-    <span className={`brand-mark ${large ? "is-large" : ""}`} aria-hidden="true">
+    <span className="brand-mark" aria-hidden="true">
       <span>AI</span>
-      {large && <small>LAB</small>}
     </span>
   );
 }
@@ -134,54 +133,27 @@ function SectionTitle({
   );
 }
 
-function PlannedProjectGrid() {
-  return (
-    <div className="project-grid">
-      {projects.slice(1).map((project) => (
-        <Link href={project.href} className="project-tile" key={project.id}>
-          <strong>{project.title}</strong>
-          <span className="tile-symbol" aria-hidden="true">
-            {project.symbol}
-          </span>
-          <small>{project.status}</small>
-          <span className="tile-arrow" aria-hidden="true">→</span>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 function HomeContent() {
   return (
     <>
-      <section className="hero-card home-hero">
-        <BrandMark large />
-        <div className="hero-copy">
-          <span className="eyebrow">PRACTICAL MACHINE-LEARNING TOOLS</span>
-          <h1>Applied AI Lab</h1>
-          <p>
-            A single workspace for useful AI projects. Tools appear here only
-            after their models are built, tested and connected.
-          </p>
-        </div>
-        <div className="hero-summary">
-          <span>ACTIVE PROJECT</span>
-          <h2>Olist Delivery Delay Predictor</h2>
-          <Link href="/olist-delivery-delay-predictor" className="hero-action">
-            <span>
-              <strong>Open Delivery Delay Predictor</strong>
-              <small>View the current project state</small>
-            </span>
-            <span className="action-arrow">→</span>
-          </Link>
-        </div>
+      <section className="home-heading">
+        <span className="eyebrow">PRACTICAL MACHINE-LEARNING TOOLS</span>
+        <h1>Applied AI Lab</h1>
+        <p>
+          Working projects receive their own page and appear as a tab above.
+        </p>
       </section>
 
       <section className="content-section">
-        <SectionTitle note="Reserved sections for future working tools.">
-          Planned projects
-        </SectionTitle>
-        <PlannedProjectGrid />
+        <SectionTitle>Planned projects</SectionTitle>
+        <ul className="planned-project-list">
+          {projects.slice(1).map((project) => (
+            <li key={project.id}>
+              <Link href={project.href}>{project.title}</Link>
+              <span>{project.status}</span>
+            </li>
+          ))}
+        </ul>
       </section>
     </>
   );

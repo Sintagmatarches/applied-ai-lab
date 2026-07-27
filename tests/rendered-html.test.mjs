@@ -39,13 +39,15 @@ test("server-renders the Applied AI Lab overview", async () => {
   const html = await response.text();
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Practical machine-learning tools/);
-  assert.match(html, /ACTIVE PROJECT/);
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /Planned projects/);
+  assert.match(html, /href="\/housing-value-forecast"/);
+  assert.match(html, /href="\/credit-risk-assessment"/);
+  assert.doesNotMatch(html, /class="hero-card|class="project-tile"/);
   assert.doesNotMatch(html, /Find a project|class="top-actions"|class="context-link"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /favicon\.svg\?v=20260727-5/);
+  assert.match(html, /favicon\.svg\?v=20260727-6/);
 });
 
 test("renders the Olist model boundary without a fake prediction", async () => {
@@ -90,10 +92,11 @@ test("uses the flat Songbook visual system without decorative gradients or color
   assert.match(css, /--navy:\s*#0c2547/);
   assert.match(css, /--cyan:\s*#19ccff/);
   assert.match(css, /\.project-tabs\s*\{/);
-  assert.match(css, /grid-template-columns:\s*repeat\(4,/);
+  assert.match(css, /\.planned-project-list\s*\{/);
+  assert.match(css, /background:\s*#eaf2fb/);
   assert.doesNotMatch(
     css,
-    /project-search|top-actions|context-link|project-rail|project-drawer|mobile-nav/,
+    /project-search|top-actions|context-link|project-rail|project-drawer|mobile-nav|project-tile|project-grid/,
   );
   assert.doesNotMatch(
     css,

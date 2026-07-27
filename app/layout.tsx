@@ -19,8 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "A growing laboratory for honest, production-minded machine learning tools.",
     icons: {
-      icon: "/favicon.svg?v=20260727-5",
-      shortcut: "/favicon.svg?v=20260727-5",
+      icon: "/favicon.svg?v=20260727-6",
+      shortcut: "/favicon.svg?v=20260727-6",
     },
     openGraph: {
       title: "Applied AI Lab",
