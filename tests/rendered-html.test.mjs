@@ -31,40 +31,41 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders the Applied AI Lab overview", async () => {
+test("renders a minimal home page with direct planned-project links", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
   assert.match(html, /Applied AI Lab/);
-  assert.match(html, /Practical machine-learning tools/);
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /Planned projects/);
   assert.match(html, /href="\/housing-value-forecast"/);
   assert.match(html, /href="\/credit-risk-assessment"/);
-  assert.doesNotMatch(html, /class="hero-card|class="project-tile"/);
-  assert.doesNotMatch(html, /Find a project|class="top-actions"|class="context-link"/);
-  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.match(html, /favicon\.svg\?v=20260727-6/);
+  assert.doesNotMatch(
+    html,
+    /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
+  );
+  assert.match(html, /favicon\.svg\?v=20260727-7/);
 });
 
-test("renders the Olist model boundary without a fake prediction", async () => {
+test("renders only the Olist project name and description", async () => {
   const response = await render("/olist-delivery-delay-predictor");
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /OLIST PROJECT/);
-  assert.match(html, /Delivery Delay Predictor/);
-  assert.match(html, /No live model is connected/);
-  assert.match(html, /Waiting for a validated model/);
-  assert.match(html, /fieldset disabled/);
-  assert.doesNotMatch(html, />0[1-4]</);
+  assert.match(html, /Olist Delivery Delay Predictor/);
+  assert.match(html, /estimate whether a new Olist order will arrive/);
+  assert.match(html, /model has not been built or connected yet/);
+  assert.doesNotMatch(
+    html,
+    /Project status|Future prediction|Completed analytics|fieldset|Model in development/,
+  );
   assert.doesNotMatch(html, /\b\d{1,3}(?:\.\d+)?%\b/);
 });
 
-test("keeps every planned project available at a stable direct route", async () => {
+test("keeps every planned project as a minimal direct page and active tab", async () => {
   const routes = [
     ["/housing-value-forecast", "Housing Value Forecast"],
     ["/credit-risk-assessment", "Credit Risk Assessment"],
@@ -77,12 +78,15 @@ test("keeps every planned project available at a stable direct route", async () 
     assert.equal(response.status, 200, route);
     const html = await response.text();
     assert.match(html, new RegExp(title));
-    assert.match(html, /PLANNED PROJECT/);
-    assert.match(html, /No dataset, trained model or performance result/);
+    assert.match(html, new RegExp(`aria-current="page"[^>]*>${title}`));
+    assert.doesNotMatch(
+      html,
+      /INTENDED RESULT|Project availability|Coming later|hero-card/,
+    );
   }
 });
 
-test("uses the flat Songbook visual system without decorative gradients or colored badges", async () => {
+test("uses a flat minimal visual system without product-dashboard components", async () => {
   const css = await readFile(
     new URL("../app/globals.css", import.meta.url),
     "utf8",
@@ -92,14 +96,9 @@ test("uses the flat Songbook visual system without decorative gradients or color
   assert.match(css, /--navy:\s*#0c2547/);
   assert.match(css, /--cyan:\s*#19ccff/);
   assert.match(css, /\.project-tabs\s*\{/);
-  assert.match(css, /\.planned-project-list\s*\{/);
-  assert.match(css, /background:\s*#eaf2fb/);
+  assert.match(css, /\.minimal-page\s*\{/);
   assert.doesNotMatch(
     css,
-    /project-search|top-actions|context-link|project-rail|project-drawer|mobile-nav|project-tile|project-grid/,
-  );
-  assert.doesNotMatch(
-    css,
-    /gradient|body::before|backdrop-filter|status-badge|color-success|color-warning/i,
+    /hero-card|status-grid|workspace-card|predictor-form|resource-grid|planned-note|gradient|backdrop-filter/i,
   );
 });
