@@ -48,7 +48,7 @@ test("renders a minimal home page with direct planned-project links", async () =
     /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
   );
   assert.match(html, /favicon\.svg\?v=20260727-10/);
-  assert.match(html, /og-v20260727-4\.png/);
+  assert.match(html, /og-v20260730-5\.png/);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {

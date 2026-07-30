@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: "/og-v20260727-4.png",
+          url: "/og-v20260730-5.png",
           width: 1732,
           height: 909,
           alt: "Applied AI Lab — Olist Delivery Delay Predictor",
@@ -41,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Applied AI Lab",
       description:
         "Working machine-learning tools with honest held-out evidence.",
-      images: ["/og-v20260727-4.png"],
+      images: ["/og-v20260730-5.png"],
     },
   };
 }
