@@ -1,137 +1,71 @@
 # Applied AI Lab
 
-Applied AI Lab is a standalone website for practical, evidence-backed
-machine-learning tools. Its first working project is the Olist Delivery Delay
-Predictor.
+[![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
-## Olist model
+Applied machine-learning projects presented as working, evidence-backed web tools.
 
-The model ranks whether a delivered order is at risk of arriving at least 24
-hours after the promised date (`late_1d = 1`). The public result is a relative
-risk score from 0 to 100, not an exact probability.
+[Open the live site](https://applied-ai-lab.smjlw.chatgpt.site/) · [Try the Olist predictor](https://applied-ai-lab.smjlw.chatgpt.site/olist-delivery-delay-predictor)
 
-The model uses:
+## Olist Delivery Delay Predictor
 
-- purchase calendar fields and season;
-- promised delivery window;
-- seller state, customer state, route, and same-state flag;
-- user-supplied distance;
-- item count, category, values, parcel size, and payment facts;
-- strictly earlier seller-state, route, and category history;
-- recent route counts and state/route late rates over 7, 30, and 90 days;
-- freight-to-item-value and promised-days-to-distance ratios.
+The first completed project ranks an order's risk of arriving at least 24 hours after the promised date. It returns a relative score from 0 to 100, not an exact probability.
 
-The source export does not contain `seller_id`, and the existing form does not
-request it. Seller history is therefore calculated at seller-state level and
-is never described as a specific seller's record.
+The implementation includes:
 
-## Leakage protection
+- a reproducible Python training and validation pipeline;
+- sequential backtests, a separate calibration period, and an untouched final time-test period;
+- leakage-aware historical features calculated from strictly earlier purchase dates;
+- an exported logistic-regression model evaluated in the server runtime;
+- input validation, counterfactual risk factors, and end-to-end API tests.
 
-Historical features are calculated by date. For any row, only aggregate orders
-from dates strictly before that row's purchase date are available. Orders from
-the same day and every later date are excluded.
+## Evaluation
 
-The model never uses `order_id`, the full timestamp as a unique identifier, the
-target, actual delivery facts, reviews, or realized delay information.
+The source dataset contains 95,195 unique orders from September 2016 through August 2018. The final time-test contains 14,280 orders, including 620 late deliveries.
 
-The export lacks timestamps showing when each historical delay label became
-available. Consequently, the pipeline can guarantee earlier purchase dates,
-but cannot prove that every earlier order had already completed delivery.
+| Metric | Final time-test |
+| --- | ---: |
+| PR-AUC | 9.90% |
+| ROC-AUC | 72.49% |
+| Late deliveries found in top-risk 10% | 170 of 620 |
+| Top-risk 10% precision | 11.90% |
 
-## Data and validation
+The model is suitable for ranking and operational prioritization. Its output is not presented as a calibrated delivery probability or guarantee.
 
-The local BigQuery export contains 95,195 unique orders from September 2016
-through August 2018 and 6,521 positive targets (6.85%).
+## Leakage controls
 
-```text
+For each row, aggregate route, seller-state, and category features use purchase dates strictly earlier than that row. The model excludes order identifiers, actual delivery facts, reviews, the target, and realized delay information.
+
+The source export does not record when every historical delay label became available. This limitation is stated in the model card and prevents a stronger point-in-time claim.
+
+## Repository structure
+
+- `app/` — interface and prediction API;
+- `lib/olist-model.ts` — validation, feature preparation, inference, and factor calculation;
+- `ml/` — data validation, temporal features, model selection, calibration, and tests;
+- `artifacts/` — model card, audit, metrics, and deployable model artifacts;
+- `tests/` — rendered-page and prediction API tests;
+- `docs/screenshots/` — filenames reserved for future screenshots.
+
+The raw BigQuery export is excluded from version control.
+
+## Run locally
+
+Requires Node.js 22.13 or later and Python 3.11 or later.
+
+```bash
+npm ci
 python -m pip install -r requirements-ml.txt
-python -m ml.validate_data
-```
-
-The audit is saved to `artifacts/data-audit.json`.
-
-## Multi-period model selection
-
-Logistic regression, XGBoost, and CatBoost are compared on four sequential
-backtests: September–October 2017, November–December 2017,
-January–February 2018, and March through 14 April 2018.
-
-Selection uses mean PR-AUC minus its standard deviation. Logistic regression
-was selected because it had both the strongest mean result and the best
-stability:
-
-- mean PR-AUC: 23.77%;
-- mean ROC-AUC: 71.47%;
-- mean top-10% delay capture: 29.44%.
-
-The later 14,279-order period is reserved for calibration. The newest 14,280
-orders remain untouched until final evaluation.
-
-Retrain with:
-
-```text
-python -m ml.train_model
-```
-
-Training writes `metrics.json`, a compact server model, a reproducible joblib
-bundle, and the model card under `artifacts/`.
-
-## Final time-test result
-
-The final period contains 620 late orders.
-
-- PR-AUC: 9.90%;
-- ROC-AUC: 72.49%;
-- top-risk 5%: 94 late orders found, 15.16% capture;
-- top-risk 10%: 170 found, 27.42% capture, 11.90% precision;
-- top-risk 20%: 290 found, 46.77% capture, 10.15% precision;
-- false warnings per found late order in the top 10%: 7.40.
-
-Version 1's selected XGBoost model had 6.02% PR-AUC and 56.92% ROC-AUC on the
-same final period.
-
-## Probability quality
-
-Identity, Platt, and isotonic calibration are compared inside the separate
-calibration period. Nevertheless, the final-period mean probability remains
-9.53% against an observed 4.34% late rate. The site therefore does not label
-the output as a precise probability.
-
-The server maps the internal score to a relative 0–100 risk score based on the
-calibration-period score distribution. It is useful for prioritizing orders,
-not for guaranteeing that one order will be late.
-
-## Server prediction
-
-`POST /api/olist/predict` accepts the unchanged raw order form. The server:
-
-1. derives route, same-state, season, and calendar fields;
-2. retrieves only historical daily aggregates before the supplied date;
-3. builds the exact training feature vector;
-4. evaluates the exported logistic model;
-5. returns risk score, risk level, model version, and counterfactual factors.
-
-The model and historical lookup tables stay in the server bundle.
-
-## Local development and validation
-
-```text
-npm install
-npm run dev
 npm run test:ml
 npm test
 npm run lint
+npm run dev
 ```
 
-## Routes
+Retraining is explicit:
 
-- `/` — lab overview
-- `/olist-delivery-delay-predictor` — working model and evidence
-- `/api/olist/predict` — server inference
-- `/housing-value-forecast` — planned
-- `/credit-risk-assessment` — planned
-- `/document-processing` — planned
-- `/image-recognition` — planned
+```bash
+python -m ml.validate_data
+python -m ml.train_model
+```
 
-The site is deployed as a Cloudflare-compatible Worker through Sites. Stable
-assets use explicit cache-busting versions.
+The application is deployed as a Cloudflare-compatible Worker. Stable public assets use explicit cache-busting versions.

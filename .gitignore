@@ -41,6 +41,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/.openai/
 
 # Local BigQuery export; training artifacts contain no order identifiers.
 /data/*.csv
