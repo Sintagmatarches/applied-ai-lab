@@ -1,5 +1,7 @@
 # Applied AI Lab
 
+![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260803)
+
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
 Applied machine-learning projects presented as working, evidence-backed web tools.
@@ -31,6 +33,13 @@ The source dataset contains 95,195 unique orders from September 2016 through Aug
 
 The model is suitable for ranking and operational prioritization. Its output is not presented as a calibrated delivery probability or guarantee.
 
+## Key decisions
+
+- **Metric:** I chose PR-AUC as the primary model-selection metric because only 6.85% of orders are late, so accuracy and ROC-AUC alone can look strong while hiding weak positive-class performance. I selected on mean PR-AUC minus its standard deviation across four backtests to reward both quality and stability, and I report top-risk 10% capture because it maps directly to a bounded operations queue.
+- **Model:** I compared logistic regression, XGBoost, and CatBoost, then chose logistic regression because it won the stability-adjusted backtest rule. Its coefficients are easier to audit, and the fitted pipeline can be exported deterministically for the production runtime.
+- **Time split:** I used four expanding-window backtests, followed by a separate chronological calibration period and an untouched newest time-test. A random split would let future purchasing patterns influence earlier predictions and would not represent deployment on later orders.
+- **Architecture:** I train and audit in Python, export the preprocessing pipeline and coefficients to a versioned JSON artifact, and reproduce inference in TypeScript behind a server-side API on a Cloudflare-compatible Worker. This keeps training tooling out of production, avoids exposing scoring as client-side logic, and lets API and parity tests verify the deployed path.
+
 ## Leakage controls
 
 For each row, aggregate route, seller-state, and category features use purchase dates strictly earlier than that row. The model excludes order identifiers, actual delivery facts, reviews, the target, and realized delay information.
@@ -44,7 +53,7 @@ The source export does not record when every historical delay label became avail
 - `ml/` — data validation, temporal features, model selection, calibration, and tests;
 - `artifacts/` — model card, audit, metrics, and deployable model artifacts;
 - `tests/` — rendered-page and prediction API tests;
-- `docs/screenshots/` — filenames reserved for future screenshots.
+- `docs/screenshots/` — versioned production screenshots used in repository documentation.
 
 The raw BigQuery export is excluded from version control.
 
