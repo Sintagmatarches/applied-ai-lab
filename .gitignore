@@ -43,9 +43,13 @@ next-env.d.ts
 /work/
 /.openai/
 
-# Local BigQuery export; training artifacts contain no order identifiers.
-/data/*.csv
+# Downloaded Olist source tables and the derived training dataset.
+# Recreate them with the documented Kaggle download + build commands.
+/data/
 
 # Python runtime caches
 __pycache__/
 *.py[cod]
+
+# Incremental TypeScript compiler cache
+*.tsbuildinfo

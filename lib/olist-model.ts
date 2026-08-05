@@ -12,13 +12,35 @@ type CategoryTransform = {
   indices: Record<string, number>;
 };
 
-type DailyRecord = [number, number, number];
+type CountRecord = [number, number];
+type OutcomeRecord = [number, number, number];
+
+type GroupHistory = {
+  orders: CountRecord[];
+  outcomes: OutcomeRecord[];
+};
 
 type ModelArtifact = {
   model_version: string;
   model_type: string;
   display_mode: "risk_score" | "probability";
   feature_count: number;
+  feature_contract: {
+    version: number;
+    timestamp: string;
+    calendar_timezone: string;
+    weekday: string;
+    route: string;
+    history_granularity: string;
+    history_cutoff: string;
+    order_count_event: string;
+    outcome_event: string;
+  };
+  prediction_domain: {
+    purchase_timestamp_min: string;
+    purchase_timestamp_max: string;
+    policy: string;
+  };
   numeric: Record<string, NumericTransform>;
   categorical: Record<string, CategoryTransform>;
   linear: {
@@ -35,10 +57,14 @@ type ModelArtifact = {
     high_score: number;
   };
   history: {
-    global: DailyRecord[];
-    seller_state: Record<string, DailyRecord[]>;
-    route: Record<string, DailyRecord[]>;
-    primary_category: Record<string, DailyRecord[]>;
+    granularity: string;
+    cutoff: string;
+    global_outcomes: OutcomeRecord[];
+    groups: {
+      seller_state: Record<string, GroupHistory>;
+      route: Record<string, GroupHistory>;
+      primary_category: Record<string, GroupHistory>;
+    };
     constants: {
       seconds_per_day: number;
       default_late_prior: number;
@@ -71,7 +97,7 @@ export type OlistPrediction = {
   decision: "top risk group" | "below top risk group";
   factors: Array<{
     name: string;
-    effect: "raises risk" | "lowers risk";
+    effect: "higher than reference" | "lower than reference";
     risk_score_point_change: number;
     explanation: string;
   }>;
@@ -79,6 +105,13 @@ export type OlistPrediction = {
   high_risk_score: number;
   display_note: string;
   disclaimer: string;
+};
+
+export type OlistModelScore = {
+  feature_vector: number[];
+  raw_score: number;
+  probability: number;
+  risk_score: number;
 };
 
 export class PredictionInputError extends Error {
@@ -91,7 +124,38 @@ export class PredictionInputError extends Error {
 }
 
 const model = modelJson as unknown as ModelArtifact;
+
+function assertModelContract(): void {
+  const expected = {
+    version: 1,
+    calendar_timezone: "UTC",
+    weekday: "ISO-8601 Monday=1 through Sunday=7",
+    route: "seller_state + ' → ' + customer_state",
+    history_granularity: "UTC calendar day",
+    history_cutoff: "event day strictly before prediction day",
+  };
+  for (const [name, value] of Object.entries(expected)) {
+    if (model.feature_contract[name as keyof typeof expected] !== value) {
+      throw new Error(`Unsupported Olist feature contract: ${name}`);
+    }
+  }
+  if (model.history.granularity !== "utc_day") {
+    throw new Error("Unsupported Olist history granularity");
+  }
+  if (model.linear.coefficients.length !== model.feature_count) {
+    throw new Error("Olist coefficient count does not match feature count");
+  }
+}
+
+assertModelContract();
+
 const millisecondsPerDay = model.history.constants.seconds_per_day * 1_000;
+const minimumPurchaseTime = Date.parse(
+  model.prediction_domain.purchase_timestamp_min,
+);
+const maximumPurchaseTime = Date.parse(
+  model.prediction_domain.purchase_timestamp_max,
+);
 
 const referenceInput: OlistPredictionInput = {
   seller_state: model.categorical.seller_state.default,
@@ -118,7 +182,7 @@ const factorGroups: Array<{
     name: "Route and prior route history",
     keys: ["seller_state", "customer_state"],
     explanation:
-      "state-level seller history and earlier orders on this direction",
+      "state-level history and outcomes already observed before this order day",
   },
   {
     name: "Promised delivery window",
@@ -133,12 +197,12 @@ const factorGroups: Array<{
   {
     name: "Order timing",
     keys: ["purchase_timestamp"],
-    explanation: "season, year, month, weekday and purchase hour",
+    explanation: "UTC season, year, month, ISO weekday and purchase hour",
   },
   {
     name: "Category history",
     keys: ["primary_category"],
-    explanation: "late-order rate for this category before the order date",
+    explanation: "category outcomes available before this order day",
   },
   {
     name: "Order size",
@@ -190,9 +254,7 @@ function readText(
   return text;
 }
 
-export function validatePredictionInput(
-  payload: unknown,
-): OlistPredictionInput {
+export function validatePredictionInput(payload: unknown): OlistPredictionInput {
   const body =
     payload && typeof payload === "object"
       ? (payload as Record<string, unknown>)
@@ -223,9 +285,17 @@ export function validatePredictionInput(
     issues,
   ).toLowerCase();
   const purchaseTimestamp = String(body.purchase_timestamp ?? "");
-  const purchaseDate = new Date(purchaseTimestamp);
-  if (!purchaseTimestamp || Number.isNaN(purchaseDate.getTime())) {
-    issues.push("purchase_timestamp must be a valid date and time.");
+  const purchaseTime = Date.parse(purchaseTimestamp);
+  const validTimestamp = purchaseTimestamp.length > 0 && Number.isFinite(purchaseTime);
+  if (!validTimestamp) {
+    issues.push("purchase_timestamp must be a valid ISO-8601 date and time.");
+  } else if (
+    purchaseTime < minimumPurchaseTime ||
+    purchaseTime > maximumPurchaseTime
+  ) {
+    issues.push(
+      `purchase_timestamp must be within the historical model range ${model.prediction_domain.purchase_timestamp_min} to ${model.prediction_domain.purchase_timestamp_max}.`,
+    );
   }
 
   const input: OlistPredictionInput = {
@@ -239,13 +309,7 @@ export function validatePredictionInput(
       issues,
     ),
     primary_category: category,
-    item_count: readFiniteNumber(
-      body.item_count,
-      "item_count",
-      1,
-      50,
-      issues,
-    ),
+    item_count: readFiniteNumber(body.item_count, "item_count", 1, 50, issues),
     total_item_value: readFiniteNumber(
       body.total_item_value,
       "total_item_value",
@@ -289,9 +353,10 @@ export function validatePredictionInput(
       36,
       issues,
     ),
-    purchase_timestamp: purchaseDate.toISOString(),
+    purchase_timestamp: validTimestamp
+      ? new Date(purchaseTime).toISOString()
+      : "",
   };
-
   if (!Number.isInteger(input.item_count)) {
     issues.push("item_count must be a whole number.");
   }
@@ -305,11 +370,11 @@ export function validatePredictionInput(
 }
 
 function orderDay(timestamp: string): number {
-  return Math.floor(new Date(timestamp).getTime() / millisecondsPerDay);
+  return Math.floor(Date.parse(timestamp) / millisecondsPerDay);
 }
 
 function historyTotals(
-  records: DailyRecord[] | undefined,
+  records: Array<CountRecord | OutcomeRecord> | undefined,
   day: number,
   windowDays?: number,
 ): { count: number; late: number; firstDay: number } {
@@ -320,12 +385,13 @@ function historyTotals(
     return { count, late, firstDay };
   }
   const minimumDay = windowDays === undefined ? -Infinity : day - windowDays;
-  for (const [recordDay, recordCount, recordLate] of records) {
+  for (const record of records) {
+    const [recordDay, recordCount] = record;
     if (recordDay >= day) break;
-    if (recordDay < minimumDay) continue;
     if (firstDay === day) firstDay = recordDay;
+    if (recordDay < minimumDay) continue;
     count += recordCount;
-    late += recordLate;
+    late += record.length === 3 ? record[2] : 0;
   }
   return { count, late, firstDay };
 }
@@ -346,37 +412,38 @@ function season(month: number): string {
   return "spring";
 }
 
-function rawFeatures(
+export function prepareRawFeatures(
   input: OlistPredictionInput,
 ): Record<string, number | string> {
   const timestamp = new Date(input.purchase_timestamp);
   const day = orderDay(input.purchase_timestamp);
   const route = `${input.seller_state} → ${input.customer_state}`;
-  const global = historyTotals(model.history.global, day);
+  const global = historyTotals(model.history.global_outcomes, day);
   const globalPrior =
     global.count > 0
       ? global.late / global.count
       : model.history.constants.default_late_prior;
-  const sellerHistory = model.history.seller_state[input.seller_state];
-  const seller = historyTotals(sellerHistory, day);
-  const seller30 = historyTotals(sellerHistory, day, 30);
-  const seller90 = historyTotals(sellerHistory, day, 90);
-  const routeHistory = model.history.route[route];
-  const routeAll = historyTotals(routeHistory, day);
-  const route7 = historyTotals(routeHistory, day, 7);
-  const route30 = historyTotals(routeHistory, day, 30);
-  const route90 = historyTotals(routeHistory, day, 90);
-  const category = historyTotals(
-    model.history.primary_category[input.primary_category],
-    day,
-  );
+  const groups = model.history.groups;
+  const seller = groups.seller_state[input.seller_state];
+  const routeHistory = groups.route[route];
+  const category = groups.primary_category[input.primary_category];
+  const sellerOrders = historyTotals(seller?.orders, day);
+  const sellerOutcomes = historyTotals(seller?.outcomes, day);
+  const seller30 = historyTotals(seller?.outcomes, day, 30);
+  const seller90 = historyTotals(seller?.outcomes, day, 90);
+  const routeOutcomes = historyTotals(routeHistory?.outcomes, day);
+  const route7 = historyTotals(routeHistory?.orders, day, 7);
+  const route30Orders = historyTotals(routeHistory?.orders, day, 30);
+  const route30Outcomes = historyTotals(routeHistory?.outcomes, day, 30);
+  const route90Outcomes = historyTotals(routeHistory?.outcomes, day, 90);
+  const categoryOutcomes = historyTotals(category?.outcomes, day);
   const priorStrength = model.history.constants.prior_strength;
   const windowStrength = model.history.constants.window_prior_strength;
 
   return {
     purchase_year: timestamp.getUTCFullYear(),
     purchase_month: timestamp.getUTCMonth() + 1,
-    purchase_day_of_week: timestamp.getUTCDay() + 1,
+    purchase_day_of_week: ((timestamp.getUTCDay() + 6) % 7) + 1,
     purchase_hour: timestamp.getUTCHours(),
     promised_delivery_days: input.promised_delivery_days,
     same_state: input.seller_state === input.customer_state ? 1 : 0,
@@ -389,12 +456,12 @@ function rawFeatures(
     payment_installments: input.payment_installments,
     prior_global_late_rate: globalPrior,
     seller_state_prior_late_rate: smoothedRate(
-      seller.late,
-      seller.count,
+      sellerOutcomes.late,
+      sellerOutcomes.count,
       globalPrior,
       priorStrength,
     ),
-    seller_state_prior_order_count_log: Math.log1p(seller.count),
+    seller_state_prior_order_count_log: Math.log1p(sellerOrders.count),
     seller_state_late_rate_30d: smoothedRate(
       seller30.late,
       seller30.count,
@@ -408,31 +475,31 @@ function rawFeatures(
       windowStrength,
     ),
     seller_state_experience_days_log: Math.log1p(
-      Math.max(day - seller.firstDay, 0),
+      Math.max(day - sellerOrders.firstDay, 0),
     ),
     route_prior_late_rate: smoothedRate(
-      routeAll.late,
-      routeAll.count,
+      routeOutcomes.late,
+      routeOutcomes.count,
       globalPrior,
       priorStrength,
     ),
     route_order_count_7d_log: Math.log1p(route7.count),
-    route_order_count_30d_log: Math.log1p(route30.count),
+    route_order_count_30d_log: Math.log1p(route30Orders.count),
     route_late_rate_30d: smoothedRate(
-      route30.late,
-      route30.count,
+      route30Outcomes.late,
+      route30Outcomes.count,
       globalPrior,
       windowStrength,
     ),
     route_late_rate_90d: smoothedRate(
-      route90.late,
-      route90.count,
+      route90Outcomes.late,
+      route90Outcomes.count,
       globalPrior,
       windowStrength,
     ),
     category_prior_late_rate: smoothedRate(
-      category.late,
-      category.count,
+      categoryOutcomes.late,
+      categoryOutcomes.count,
       globalPrior,
       priorStrength,
     ),
@@ -441,8 +508,7 @@ function rawFeatures(
       10,
     ),
     promised_days_per_500km:
-      input.promised_delivery_days /
-      Math.max(input.distance_km / 500, 1),
+      input.promised_delivery_days / Math.max(input.distance_km / 500, 1),
     seller_state: input.seller_state,
     customer_state: input.customer_state,
     route,
@@ -452,34 +518,23 @@ function rawFeatures(
   };
 }
 
-export function prepareFeatureVector(
-  input: OlistPredictionInput,
-): number[] {
+export function prepareFeatureVector(input: OlistPredictionInput): number[] {
   const vector = Array<number>(model.feature_count).fill(0);
-  const features = rawFeatures(input);
-
+  const features = prepareRawFeatures(input);
   for (const [name, transform] of Object.entries(model.numeric)) {
     const raw = Number(features[name]);
     const safeValue = Number.isFinite(raw) ? raw : transform.median;
-    vector[transform.index] =
-      (safeValue - transform.mean) / transform.scale;
+    vector[transform.index] = (safeValue - transform.mean) / transform.scale;
   }
-
   for (const [name, transform] of Object.entries(model.categorical)) {
     const raw = String(features[name] ?? transform.default);
     const index = transform.indices[raw];
-    if (index !== undefined) {
-      vector[index] = 1;
-    }
+    if (index !== undefined) vector[index] = 1;
   }
   return vector;
 }
 
-function interpolateIsotonic(
-  value: number,
-  x: number[],
-  y: number[],
-): number {
+function interpolateIsotonic(value: number, x: number[], y: number[]): number {
   if (value <= x[0]) return y[0];
   if (value >= x[x.length - 1]) return y[y.length - 1];
   let upper = 1;
@@ -487,8 +542,7 @@ function interpolateIsotonic(
   const lower = upper - 1;
   const width = x[upper] - x[lower];
   if (width === 0) return y[upper];
-  const fraction = (value - x[lower]) / width;
-  return y[lower] + fraction * (y[upper] - y[lower]);
+  return y[lower] + ((value - x[lower]) / width) * (y[upper] - y[lower]);
 }
 
 function sigmoid(value: number): number {
@@ -500,12 +554,7 @@ function sigmoid(value: number): number {
   return exponential / (1 + exponential);
 }
 
-function modelProbability(input: OlistPredictionInput): number {
-  const vector = prepareFeatureVector(input);
-  const rawScore = model.linear.coefficients.reduce(
-    (sum, coefficient, index) => sum + coefficient * vector[index],
-    model.linear.intercept,
-  );
+function calibratedProbability(rawScore: number): number {
   if (model.calibration.type === "platt") {
     return sigmoid(
       model.calibration.slope * rawScore + model.calibration.intercept,
@@ -526,14 +575,26 @@ function probabilityToRiskScore(probability: number): number {
   if (probability <= quantiles[0]) return 0;
   if (probability >= quantiles[quantiles.length - 1]) return 100;
   let upper = 1;
-  while (upper < quantiles.length && quantiles[upper] < probability) {
-    upper += 1;
-  }
+  while (upper < quantiles.length && quantiles[upper] < probability) upper += 1;
   const lower = upper - 1;
   const width = quantiles[upper] - quantiles[lower];
-  const fraction =
-    width === 0 ? 0 : (probability - quantiles[lower]) / width;
+  const fraction = width === 0 ? 0 : (probability - quantiles[lower]) / width;
   return Math.min(100, Math.max(0, lower + fraction));
+}
+
+export function scoreOlistModel(input: OlistPredictionInput): OlistModelScore {
+  const featureVector = prepareFeatureVector(input);
+  const rawScore = model.linear.coefficients.reduce(
+    (sum, coefficient, index) => sum + coefficient * featureVector[index],
+    model.linear.intercept,
+  );
+  const probability = calibratedProbability(rawScore);
+  return {
+    feature_vector: featureVector,
+    raw_score: rawScore,
+    probability,
+    risk_score: probabilityToRiskScore(probability),
+  };
 }
 
 function factorImpacts(
@@ -546,15 +607,15 @@ function factorImpacts(
       for (const key of group.keys) {
         Object.assign(counterfactual, { [key]: referenceInput[key] });
       }
-      const comparison = probabilityToRiskScore(
-        modelProbability(counterfactual),
-      );
+      const comparison = scoreOlistModel(counterfactual).risk_score;
       const change = riskScore - comparison;
       return {
         name: group.name,
-        effect: (change >= 0 ? "raises risk" : "lowers risk") as
-          | "raises risk"
-          | "lowers risk",
+        effect: (change >= 0
+          ? "higher than reference"
+          : "lower than reference") as
+          | "higher than reference"
+          | "lower than reference",
         risk_score_point_change: Math.abs(change),
         explanation: group.explanation,
       };
@@ -566,32 +627,28 @@ function factorImpacts(
     .slice(0, 3);
 }
 
-export function predictOlistDelay(
-  input: OlistPredictionInput,
-): OlistPrediction {
-  const probability = modelProbability(input);
-  const riskScore = probabilityToRiskScore(probability);
+export function predictOlistDelay(input: OlistPredictionInput): OlistPrediction {
+  const result = scoreOlistModel(input);
   const riskLevel =
-    riskScore >= model.risk_levels.high_score
+    result.risk_score >= model.risk_levels.high_score
       ? "high"
-      : riskScore >= model.risk_levels.medium_score
+      : result.risk_score >= model.risk_levels.medium_score
         ? "medium"
         : "low";
-
   return {
-    risk_score: riskScore,
+    risk_score: result.risk_score,
     risk_level: riskLevel,
     decision:
-      riskScore >= model.risk_levels.high_score
+      result.risk_score >= model.risk_levels.high_score
         ? "top risk group"
         : "below top risk group",
-    factors: factorImpacts(input, riskScore),
+    factors: factorImpacts(input, result.risk_score),
     model_version: model.model_version,
     high_risk_score: model.risk_levels.high_score,
     display_note:
       "Relative score from 0 to 100. It ranks this order against the model calibration period; it is not an exact probability.",
     disclaimer:
-      "Demonstration score from historical Olist orders (2016–2018), not a delivery guarantee.",
+      "Historical Olist demonstration (2016–2018). Sensitivity scenarios are comparisons with a fixed reference order, not causal explanations or delivery guarantees.",
   };
 }
 
@@ -599,5 +656,7 @@ export const olistModelMetadata = {
   version: model.model_version,
   modelType: model.model_type,
   displayMode: model.display_mode,
+  featureContract: model.feature_contract,
+  predictionDomain: model.prediction_domain,
   limitations: model.limitations,
 };

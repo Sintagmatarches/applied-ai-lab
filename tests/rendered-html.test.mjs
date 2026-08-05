@@ -47,8 +47,8 @@ test("renders a minimal home page with direct planned-project links", async () =
     html,
     /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
   );
-  assert.match(html, /favicon\.svg\?v=20260727-10/);
-  assert.match(html, /og-v20260730-5\.png/);
+  assert.match(html, /favicon\.svg\?v=20260805-1/);
+  assert.match(html, /og-v20260730-5\.png\?v=20260805-1/);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {
@@ -65,11 +65,14 @@ test("renders the working Olist model, evidence and honest limitation", async ()
     html,
     /Precision, Delay capture, False \/ found, and the confusion matrix/,
   );
-  assert.match(html, /all 14,280 orders in the final test period/);
+  assert.match(html, /14,471(?:<!-- -->)? orders/);
+  assert.match(html, /complete final test period/);
   assert.match(html, /Logistic regression \(selected\)/);
   assert.match(html, /relative risk score from 0 to 100/);
-  assert.match(html, /11\.9(?:<!-- -->)?%/);
-  assert.match(html, /27\.4(?:<!-- -->)?%/);
+  assert.match(html, /7\.4(?:<!-- -->)?%/);
+  assert.match(html, /17\.3(?:<!-- -->)?%/);
+  assert.match(html, /PR-AUC lift/);
+  assert.match(html, /pending order cannot leak its future label/);
   assert.doesNotMatch(html, /model has not been built or connected yet/i);
 });
 

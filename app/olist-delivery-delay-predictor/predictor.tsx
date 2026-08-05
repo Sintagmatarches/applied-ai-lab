@@ -23,6 +23,11 @@ type ErrorResponse = {
   issues?: string[];
 };
 
+type PredictionDomain = {
+  minimum: string;
+  maximum: string;
+};
+
 const states = [
   "AC",
   "AL",
@@ -98,7 +103,11 @@ const example = {
   purchase_timestamp: "2018-07-16T14:30",
 };
 
-export function OlistPredictor() {
+function utcInputValue(timestamp: string): string {
+  return timestamp.replace("+00:00", "Z").slice(0, 16);
+}
+
+export function OlistPredictor({ domain }: { domain: PredictionDomain }) {
   const [form, setForm] = useState(example);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -124,7 +133,9 @@ export function OlistPredictor() {
       total_weight_g: Number(form.total_weight_g),
       total_volume_cm3: Number(form.total_volume_cm3),
       payment_installments: Number(form.payment_installments),
-      purchase_timestamp: new Date(form.purchase_timestamp).toISOString(),
+      purchase_timestamp: new Date(
+        `${form.purchase_timestamp}:00.000Z`,
+      ).toISOString(),
     };
 
     try {
@@ -325,11 +336,17 @@ export function OlistPredictor() {
             <input
               type="datetime-local"
               required
+              min={utcInputValue(domain.minimum)}
+              max={utcInputValue(domain.maximum)}
               value={form.purchase_timestamp}
               onChange={(event) =>
                 update("purchase_timestamp", event.target.value)
               }
             />
+            <small>
+              UTC, within the historical Olist range{" "}
+              {utcInputValue(domain.minimum)} – {utcInputValue(domain.maximum)}
+            </small>
           </label>
         </div>
 
@@ -378,7 +395,11 @@ export function OlistPredictor() {
             </p>
           </div>
           <div>
-            <h3>Main factors in this result</h3>
+            <h3>Sensitivity scenarios</h3>
+            <p>
+              Each row replaces one feature group with a fixed reference order.
+              These comparisons are not causal attributions.
+            </p>
             <ul className="factor-list">
               {prediction.factors.map((factor) => (
                 <li key={factor.name}>
@@ -386,7 +407,7 @@ export function OlistPredictor() {
                   <span>
                     {factor.effect} by about{" "}
                     {factor.risk_score_point_change.toFixed(1)} risk-score
-                    points compared with a typical training order
+                    points compared with the fixed reference order
                   </span>
                 </li>
               ))}

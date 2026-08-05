@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-
-DATA_FILE = Path("data/bq-results-20260727-111149-1785150786733.csv")
+DATA_FILE = Path("data/olist_orders_model.csv")
+BUILD_MANIFEST_FILE = Path("data/olist-build-manifest.json")
 TARGET = "late_1d"
 TIMESTAMP = "order_purchase_timestamp"
+LABEL_AVAILABLE_TIMESTAMP = "label_available_timestamp"
 
 BASE_NUMERIC_FEATURES = [
     "purchase_year",
@@ -55,12 +57,12 @@ BASE_CATEGORICAL_FEATURES = [
 ]
 
 CATEGORICAL_FEATURES = BASE_CATEGORICAL_FEATURES + ["season"]
-
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
 REQUIRED_COLUMNS = [
     "order_id",
     TIMESTAMP,
+    LABEL_AVAILABLE_TIMESTAMP,
     *BASE_NUMERIC_FEATURES,
     *BASE_CATEGORICAL_FEATURES,
     TARGET,
@@ -86,6 +88,14 @@ class TimeSplit:
         return slice(self.validation_end, self.total)
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def read_orders(path: Path = DATA_FILE) -> pd.DataFrame:
     frame = pd.read_csv(path)
     missing = sorted(set(REQUIRED_COLUMNS) - set(frame.columns))
@@ -93,8 +103,12 @@ def read_orders(path: Path = DATA_FILE) -> pd.DataFrame:
         raise ValueError(f"CSV is missing required columns: {', '.join(missing)}")
 
     frame[TIMESTAMP] = pd.to_datetime(frame[TIMESTAMP], utc=True, errors="raise")
-    frame = frame.sort_values([TIMESTAMP, "order_id"]).reset_index(drop=True)
-    return frame
+    frame[LABEL_AVAILABLE_TIMESTAMP] = pd.to_datetime(
+        frame[LABEL_AVAILABLE_TIMESTAMP], utc=True, errors="raise"
+    )
+    return frame.sort_values([TIMESTAMP, "order_id"], kind="stable").reset_index(
+        drop=True
+    )
 
 
 def chronological_split(frame: pd.DataFrame) -> TimeSplit:
@@ -108,16 +122,18 @@ def chronological_split(frame: pd.DataFrame) -> TimeSplit:
 
 def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
     timestamp = frame[TIMESTAMP]
+    label_timestamp = frame[LABEL_AVAILABLE_TIMESTAMP]
+    expected_route = frame["seller_state"] + " → " + frame["customer_state"]
     return {
         "missing_order_id": int(frame["order_id"].isna().sum()),
         "duplicate_order_id": int(frame["order_id"].duplicated().sum()),
         "duplicate_rows": int(frame.duplicated().sum()),
         "invalid_target": int((~frame[TARGET].isin([0, 1])).sum()),
         "invalid_timestamp": int(timestamp.isna().sum()),
+        "invalid_label_available_timestamp": int(label_timestamp.isna().sum()),
+        "label_available_before_purchase": int((label_timestamp < timestamp).sum()),
         "non_monotonic_timestamp": int(not timestamp.is_monotonic_increasing),
-        "non_positive_promised_days": int(
-            (frame["promised_delivery_days"] <= 0).sum()
-        ),
+        "non_positive_promised_days": int((frame["promised_delivery_days"] <= 0).sum()),
         "negative_distance": int((frame["distance_km"] < 0).sum()),
         "non_positive_item_count": int((frame["item_count"] <= 0).sum()),
         "negative_item_value": int((frame["total_item_value"] < 0).sum()),
@@ -131,11 +147,15 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
             .ne((frame["seller_state"] == frame["customer_state"]).astype(int))
             .sum()
         ),
+        "route_mismatch": int(frame["route"].ne(expected_route).sum()),
         "purchase_year_mismatch": int(
             frame["purchase_year"].ne(timestamp.dt.year).sum()
         ),
         "purchase_month_mismatch": int(
             frame["purchase_month"].ne(timestamp.dt.month).sum()
+        ),
+        "purchase_day_of_week_mismatch": int(
+            frame["purchase_day_of_week"].ne(timestamp.dt.dayofweek + 1).sum()
         ),
         "purchase_hour_mismatch": int(
             frame["purchase_hour"].ne(timestamp.dt.hour).sum()
@@ -162,9 +182,9 @@ def split_summary(frame: pd.DataFrame, split: TimeSplit) -> dict[str, dict]:
 
 
 def json_value(value):
-    if isinstance(value, (np.integer,)):
+    if isinstance(value, np.integer):
         return int(value)
-    if isinstance(value, (np.floating,)):
+    if isinstance(value, np.floating):
         return None if np.isnan(value) else float(value)
     if pd.isna(value):
         return None

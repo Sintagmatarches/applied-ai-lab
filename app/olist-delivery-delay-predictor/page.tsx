@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LabShell } from "../lab-shell";
 import metrics from "../../artifacts/metrics.json";
+import model from "../../artifacts/olist-model.json";
 import { OlistPredictor } from "./predictor";
 
 export const metadata: Metadata = {
@@ -29,25 +30,38 @@ export default function OlistDeliveryDelayPredictor() {
             unreliable probability as precise.
           </p>
           <div className="project-facts" aria-label="Project facts">
-            <span>95,195 historical orders</span>
+            <span>
+              {(
+                metrics.splits.train.rows +
+                metrics.splits.calibration.rows +
+                metrics.splits.test.rows
+              ).toLocaleString("en-US")} historical orders
+            </span>
             <span>4 sequential backtests</span>
             <span>Server-side prediction</span>
           </div>
         </header>
 
-        <OlistPredictor />
+        <OlistPredictor
+          domain={{
+            minimum: model.prediction_domain.purchase_timestamp_min,
+            maximum: model.prediction_domain.purchase_timestamp_max,
+          }}
+        />
 
         <section className="evidence-section" aria-labelledby="results-title">
           <div className="section-heading">
             <p className="eyebrow">Held-out evidence</p>
             <h2 id="results-title">What the final time test showed</h2>
             <p>
-              The newest 14,280 orders were never used to select the model or
-              choose its calibration. They contain 620 one-day-late deliveries.
+              The newest {metrics.final_test.rows.toLocaleString("en-US")} orders
+              were never used to select the model or choose its calibration.
+              They contain {metrics.final_test.late_orders.toLocaleString("en-US")}{" "}
+              one-day-late deliveries.
               Precision, Delay capture, False / found, and the confusion matrix
               are calculated for the 10% of test orders with the highest risk
-              score. PR-AUC and ROC-AUC are calculated across all 14,280 orders
-              in the final test period.
+              score. PR-AUC and ROC-AUC are calculated across the complete final
+              test period.
             </p>
           </div>
 
@@ -69,6 +83,10 @@ export default function OlistDeliveryDelayPredictor() {
             <div>
               <dt>PR-AUC</dt>
               <dd>{(metrics.final_test.pr_auc * 100).toFixed(1)}%</dd>
+            </div>
+            <div>
+              <dt>PR-AUC lift</dt>
+              <dd>{metrics.final_test.pr_auc_lift.toFixed(2)}×</dd>
             </div>
             <div>
               <dt>ROC-AUC</dt>
@@ -105,9 +123,11 @@ export default function OlistDeliveryDelayPredictor() {
               Selection used rolling time validation
             </h2>
             <p>
-              Logistic regression had the best average and stability-adjusted
-              PR-AUC across four earlier sequential backtests. The table below
-              reports every candidate on the untouched final period.
+              Logistic regression had the best stability-adjusted delay capture
+              in a fixed top-10% review queue across four earlier sequential
+              backtests. PR-AUC lift over each period&apos;s prevalence and ROC-AUC
+              broke ties. The table reports every candidate on the untouched
+              final period.
             </p>
           </div>
           <div className="table-wrap">
@@ -120,6 +140,7 @@ export default function OlistDeliveryDelayPredictor() {
                   <th>Precision</th>
                   <th>Recall</th>
                   <th>PR-AUC</th>
+                  <th>PR lift</th>
                   <th>ROC-AUC</th>
                 </tr>
               </thead>
@@ -146,6 +167,7 @@ export default function OlistDeliveryDelayPredictor() {
                       %
                     </td>
                     <td>{(result.pr_auc * 100).toFixed(1)}%</td>
+                    <td>{result.pr_auc_lift.toFixed(2)}×</td>
                     <td>{(result.roc_auc * 100).toFixed(1)}%</td>
                   </tr>
                 ))}
@@ -161,17 +183,21 @@ export default function OlistDeliveryDelayPredictor() {
           </div>
           <div className="method-copy">
             <p>
-              Training: 66,636 older orders. Validation: 14,279 following
-              orders reserved for calibration. Final test: 14,280 newest
-              orders, ending August 2018. Model choice came from four earlier
-              rolling time checks. Imputation, scaling and category encoding
-              were fitted on training data only.
+              Training: {metrics.splits.train.rows.toLocaleString("en-US")} older
+              orders. Calibration:{" "}
+              {metrics.splits.calibration.rows.toLocaleString("en-US")} following
+              orders. Final test: {metrics.splits.test.rows.toLocaleString("en-US")}{" "}
+              newest orders, ending August 2018. Model choice came from four
+              earlier rolling time checks. Imputation, scaling and category
+              encoding were fitted on training data only.
             </p>
             <p>
               The model adds prior state, route and category delay rates,
               recent 7/30/90-day route activity, state experience, freight
-              ratio, delivery-window-to-distance ratio and season. Each
-              historical value excludes the order’s date and every later date.
+              ratio, delivery-window-to-distance ratio and season. Order counts
+              use only earlier purchase days. Historical delay
+              rates are stricter: they include only orders already delivered on
+              an earlier day, so a pending order cannot leak its future label.
             </p>
           </div>
         </section>
@@ -179,11 +205,12 @@ export default function OlistDeliveryDelayPredictor() {
         <aside className="limitation-note">
           <h2>Important limitation</h2>
           <p>
-            The separate calibration period did not transfer reliably: average
-            final-period probability remained too high. The live result
-            therefore uses a relative risk score from 0 to 100, not an exact
-            probability. The export has seller state but no seller ID, so
-            state-level history is the honest available proxy.
+            Calibration did not transfer reliably to the newest period, so the
+            live result uses a relative risk score from 0 to 100 rather than an
+            exact probability. Seller and category describe the deterministic
+            highest-value item in multi-seller orders; the public form uses
+            seller state rather than seller ID. Sensitivity scenarios are
+            comparisons with a fixed reference order, not causal explanations.
           </p>
         </aside>
       </div>

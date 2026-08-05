@@ -32,6 +32,8 @@ def synthetic_orders() -> pd.DataFrame:
         {
             "order_id": [f"synthetic-{index}" for index in range(6)],
             "order_purchase_timestamp": timestamps,
+            "label_available_timestamp": timestamps
+            + pd.to_timedelta([5, 4, 6, 3, 7, 5], unit="D"),
             "purchase_year": timestamps.year,
             "purchase_month": timestamps.month,
             "purchase_day_of_week": timestamps.dayofweek + 1,
@@ -116,13 +118,20 @@ class OlistPipelineTest(unittest.TestCase):
         self.assertEqual(transformed.shape[0], 1)
         self.assertTrue(np.isfinite(probability))
 
-    def test_temporal_history_excludes_same_day_and_future_labels(self):
+    def test_temporal_history_uses_available_outcomes_not_earlier_purchases(self):
         sample = self.frame.iloc[[0, 1, 2]].copy()
         sample.loc[:, "order_purchase_timestamp"] = pd.to_datetime(
             [
                 "2018-01-01T08:00:00Z",
-                "2018-01-01T18:00:00Z",
-                "2018-01-02T08:00:00Z",
+                "2018-01-02T18:00:00Z",
+                "2018-01-04T08:00:00Z",
+            ]
+        )
+        sample.loc[:, "label_available_timestamp"] = pd.to_datetime(
+            [
+                "2018-01-03T08:00:00Z",
+                "2018-01-02T20:00:00Z",
+                "2018-01-05T08:00:00Z",
             ]
         )
         sample.loc[:, TARGET] = [1, 0, 0]
@@ -132,13 +141,18 @@ class OlistPipelineTest(unittest.TestCase):
             enriched.iloc[0]["prior_global_late_rate"],
             0.05,
         )
-        self.assertAlmostEqual(
-            enriched.iloc[1]["prior_global_late_rate"],
-            0.05,
-        )
+        self.assertAlmostEqual(enriched.iloc[1]["prior_global_late_rate"], 0.05)
         self.assertAlmostEqual(
             enriched.iloc[2]["prior_global_late_rate"],
             0.5,
+        )
+        self.assertAlmostEqual(
+            enriched.iloc[1]["seller_state_prior_order_count_log"],
+            np.log1p(1),
+        )
+        self.assertAlmostEqual(
+            enriched.iloc[1]["seller_state_prior_late_rate"],
+            0.05,
         )
 
         changed_future = sample.copy()
@@ -155,6 +169,10 @@ class OlistPipelineTest(unittest.TestCase):
 
     def test_saved_model_accepts_the_training_feature_contract(self):
         self.assertEqual(self.bundle["features"], FEATURES)
+        self.assertEqual(
+            self.bundle["feature_contract"]["weekday"],
+            "ISO-8601 Monday=1 through Sunday=7",
+        )
 
         order = self.enriched.iloc[[5]][FEATURES]
         transformed = self.bundle["preprocessor"].transform(order)

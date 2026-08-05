@@ -1,15 +1,65 @@
 {
-  "source": "data/bq-results-20260727-111149-1785150786733.csv",
-  "rows": 95195,
-  "columns": 28,
-  "unique_order_ids": 95195,
+  "source": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+  "license": "CC BY-NC-SA 4.0",
+  "derived_dataset": "data/olist_orders_model.csv",
+  "derived_dataset_sha256": "3fcef36629655ba4a96acd5cafe4b93acd7512f494828a2f1592e738df4dbc48",
+  "build_manifest": {
+    "source": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+    "license": "CC BY-NC-SA 4.0",
+    "timestamp_policy": "Naive source wall-clock values are parsed as UTC so Python and JavaScript use identical calendar components.",
+    "primary_item_policy": "Highest item price, then freight value, then stable item/seller/product IDs.",
+    "source_orders": 99441,
+    "model_rows": 96470,
+    "late_orders": 6534,
+    "source_files": {
+      "olist_customers_dataset.csv": {
+        "sha256": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2",
+        "bytes": 9033957
+      },
+      "olist_geolocation_dataset.csv": {
+        "sha256": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6",
+        "bytes": 61273883
+      },
+      "olist_orders_dataset.csv": {
+        "sha256": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf",
+        "bytes": 17654914
+      },
+      "olist_order_items_dataset.csv": {
+        "sha256": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279",
+        "bytes": 15438671
+      },
+      "olist_order_payments_dataset.csv": {
+        "sha256": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0",
+        "bytes": 5777138
+      },
+      "olist_products_dataset.csv": {
+        "sha256": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc",
+        "bytes": 2379446
+      },
+      "olist_sellers_dataset.csv": {
+        "sha256": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e",
+        "bytes": 174703
+      },
+      "product_category_name_translation.csv": {
+        "sha256": "a81f0d1f27b27e7293f761bc79e3ce8f348ee39c4b3ed3e49bde38f478586278",
+        "bytes": 2613
+      }
+    },
+    "output": "data/olist_orders_model.csv",
+    "output_sha256": "3fcef36629655ba4a96acd5cafe4b93acd7512f494828a2f1592e738df4dbc48"
+  },
+  "rows": 96470,
+  "columns": 22,
+  "unique_order_ids": 96470,
   "duplicate_order_ids": 0,
   "duplicate_rows": 0,
   "target": {
     "name": "late_1d",
-    "negative": 88674,
-    "positive": 6521,
-    "positive_rate": 0.06850149692735963
+    "definition": "Actual customer delivery more than 24 hours after the estimated delivery timestamp.",
+    "available_at": "order_delivered_customer_date",
+    "negative": 89936,
+    "positive": 6534,
+    "positive_rate": 0.06773090079817559
   },
   "time_range": {
     "starts_at": "2016-09-15T12:16:38+00:00",
@@ -17,28 +67,20 @@
   },
   "missing": {
     "distance_km": {
-      "count": 470,
-      "rate": 0.004937234098429539
+      "count": 477,
+      "rate": 0.004944542344770395
     },
-    "primary_payment_type": {
-      "count": 1,
-      "rate": 1.0504753400913914e-05
+    "total_weight_g": {
+      "count": 16,
+      "rate": 0.00016585466984554785
+    },
+    "total_volume_cm3": {
+      "count": 16,
+      "rate": 0.00016585466984554785
     },
     "payment_installments": {
       "count": 1,
-      "rate": 1.0504753400913914e-05
-    },
-    "payment_count": {
-      "count": 1,
-      "rate": 1.0504753400913914e-05
-    },
-    "payment_type_count": {
-      "count": 1,
-      "rate": 1.0504753400913914e-05
-    },
-    "total_payment_value": {
-      "count": 1,
-      "rate": 1.0504753400913914e-05
+      "rate": 1.036591686534674e-05
     }
   },
   "checks": {
@@ -47,6 +89,8 @@
     "duplicate_rows": 0,
     "invalid_target": 0,
     "invalid_timestamp": 0,
+    "invalid_label_available_timestamp": 0,
+    "label_available_before_purchase": 0,
     "non_monotonic_timestamp": 0,
     "non_positive_promised_days": 0,
     "negative_distance": 0,
@@ -58,41 +102,45 @@
     "negative_installments": 0,
     "invalid_same_state": 0,
     "same_state_mismatch": 0,
+    "route_mismatch": 0,
     "purchase_year_mismatch": 0,
     "purchase_month_mismatch": 0,
+    "purchase_day_of_week_mismatch": 0,
     "purchase_hour_mismatch": 0
   },
   "blocking_errors": {},
   "splits": {
     "train": {
-      "rows": 66636,
-      "late_orders": 5273,
-      "late_rate": 0.07913140044420433,
+      "rows": 67529,
+      "late_orders": 5290,
+      "late_rate": 0.0783367145966918,
       "starts_at": "2016-09-15T12:16:38+00:00",
-      "ends_at": "2018-04-15T11:31:05+00:00"
+      "ends_at": "2018-04-15T20:12:35+00:00"
     },
     "validation": {
-      "rows": 14279,
-      "late_orders": 628,
-      "late_rate": 0.04398067091533021,
-      "starts_at": "2018-04-15T11:31:39+00:00",
-      "ends_at": "2018-06-20T20:25:37+00:00"
+      "rows": 14470,
+      "late_orders": 624,
+      "late_rate": 0.04312370421561852,
+      "starts_at": "2018-04-15T20:17:11+00:00",
+      "ends_at": "2018-06-21T08:29:29+00:00"
     },
     "test": {
-      "rows": 14280,
+      "rows": 14471,
       "late_orders": 620,
-      "late_rate": 0.04341736694677871,
-      "starts_at": "2018-06-20T20:27:50+00:00",
+      "late_rate": 0.04284430930827172,
+      "starts_at": "2018-06-21T08:41:07+00:00",
       "ends_at": "2018-08-29T15:00:37+00:00"
     }
   },
   "notes": [
-    "Zero weight and zero volume are retained as plausible unknown/absent physical measurements.",
+    "One row represents one delivered order.",
+    "For multi-item orders, seller and category come from a deterministic primary-item rule; values, freight, weight and volume are aggregated.",
+    "Distance uses robust ZIP-prefix coordinate medians and the haversine formula.",
     "Numeric missing values are imputed from training medians only.",
     "Categorical missing values are imputed from training modes only.",
     "Unknown future categories are encoded as all-zero one-hot groups.",
-    "order_id and the full timestamp are excluded from model features.",
-    "Historical aggregates exclude the current order date and every later date.",
-    "seller_id is absent, so seller_state history is the available proxy."
+    "Order IDs, delivery timestamps and target values are excluded from model inputs.",
+    "Outcome histories use only labels delivered on UTC days strictly before each order day.",
+    "Order-count histories use only purchases on UTC days strictly before each order day."
   ]
 }
