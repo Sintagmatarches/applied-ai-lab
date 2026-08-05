@@ -1,6 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import {
+  BRAZILIAN_STATE_CODES,
+  OLIST_PAYMENT_TYPES,
+  type OlistPaymentType,
+} from "../../lib/olist-input-contract";
 
 type Prediction = {
   risk_score: number;
@@ -28,35 +33,12 @@ type PredictionDomain = {
   maximum: string;
 };
 
-const states = [
-  "AC",
-  "AL",
-  "AM",
-  "AP",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MG",
-  "MS",
-  "MT",
-  "PA",
-  "PB",
-  "PE",
-  "PI",
-  "PR",
-  "RJ",
-  "RN",
-  "RO",
-  "RR",
-  "RS",
-  "SC",
-  "SE",
-  "SP",
-  "TO",
-];
+const paymentLabels: Record<OlistPaymentType, string> = {
+  credit_card: "Credit card",
+  boleto: "Boleto",
+  voucher: "Voucher",
+  debit_card: "Debit card",
+};
 
 const categories = [
   "bed_bath_table",
@@ -176,7 +158,7 @@ export function OlistPredictor({ domain }: { domain: PredictionDomain }) {
               value={form.seller_state}
               onChange={(event) => update("seller_state", event.target.value)}
             >
-              {states.map((state) => (
+              {BRAZILIAN_STATE_CODES.map((state) => (
                 <option key={state}>{state}</option>
               ))}
             </select>
@@ -187,7 +169,7 @@ export function OlistPredictor({ domain }: { domain: PredictionDomain }) {
               value={form.customer_state}
               onChange={(event) => update("customer_state", event.target.value)}
             >
-              {states.map((state) => (
+              {BRAZILIAN_STATE_CODES.map((state) => (
                 <option key={state}>{state}</option>
               ))}
             </select>
@@ -311,10 +293,11 @@ export function OlistPredictor({ domain }: { domain: PredictionDomain }) {
                 update("primary_payment_type", event.target.value)
               }
             >
-              <option value="credit_card">Credit card</option>
-              <option value="boleto">Boleto</option>
-              <option value="voucher">Voucher</option>
-              <option value="debit_card">Debit card</option>
+              {OLIST_PAYMENT_TYPES.map((paymentType) => (
+                <option key={paymentType} value={paymentType}>
+                  {paymentLabels[paymentType]}
+                </option>
+              ))}
             </select>
           </label>
           <label>

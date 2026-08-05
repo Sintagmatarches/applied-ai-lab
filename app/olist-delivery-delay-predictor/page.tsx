@@ -40,6 +40,33 @@ export default function OlistDeliveryDelayPredictor() {
             <span>4 sequential backtests</span>
             <span>Server-side prediction</span>
           </div>
+          <nav className="project-resources" aria-label="Project resources">
+            <a
+              href="https://github.com/Sintagmatarches/applied-ai-lab"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View source
+            </a>
+            <a
+              href="https://github.com/Sintagmatarches/applied-ai-lab/blob/main/artifacts/model-card.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Model card
+            </a>
+            <a
+              href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Dataset
+            </a>
+          </nav>
+          <p className="dataset-license">
+            Data: Brazilian E-Commerce Public Dataset by Olist, distributed
+            via Kaggle under CC BY-NC-SA 4.0.
+          </p>
         </header>
 
         <OlistPredictor

@@ -101,16 +101,55 @@ function ProjectTabs({ activeProject }: LabShellProps) {
 
 function HomeContent() {
   return (
-    <section className="minimal-page home-page">
-      <h1>Planned projects</h1>
-      <ul className="project-link-list">
-        {projects.slice(1).map((project) => (
-          <li key={project.id}>
-            <Link href={project.href}>{project.title}</Link>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="home-page">
+      <header className="home-intro">
+        <p className="eyebrow">Applied AI portfolio</p>
+        <h1>Machine learning built to be inspected.</h1>
+        <p>
+          Reproducible Python training, time-aware evaluation and deployed
+          tools with the evidence and limitations shown alongside the result.
+        </p>
+      </header>
+
+      <article className="featured-project">
+        <div className="featured-project-copy">
+          <p className="project-status">Completed project</p>
+          <h2>{projects[0].title}</h2>
+          <p>{projects[0].description}</p>
+          <ul className="featured-project-facts" aria-label="Project summary">
+            <li>Python model training</li>
+            <li>96,470 historical orders</li>
+            <li>Live server-side inference</li>
+          </ul>
+        </div>
+        <div className="featured-project-actions">
+          <Link className="primary-link" href={projects[0].href}>
+            Open predictor
+          </Link>
+          <a
+            className="secondary-link"
+            href="https://github.com/Sintagmatarches/applied-ai-lab"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View source
+          </a>
+        </div>
+      </article>
+
+      <section className="planned-projects" aria-labelledby="planned-title">
+        <p className="eyebrow">Next</p>
+        <h2 id="planned-title">Planned projects</h2>
+        <ul className="project-link-list">
+          {projects.slice(1).map((project) => (
+            <li key={project.id}>
+              <Link href={project.href}>{project.title}</Link>
+              <span>Planned</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }
 

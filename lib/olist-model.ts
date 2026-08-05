@@ -1,4 +1,9 @@
 import modelJson from "../artifacts/olist-model.json";
+import {
+  isBrazilianStateCode,
+  isOlistPaymentType,
+  parseIsoTimestampWithTimezone,
+} from "./olist-input-contract";
 
 type NumericTransform = {
   index: number;
@@ -260,35 +265,35 @@ export function validatePredictionInput(payload: unknown): OlistPredictionInput 
       ? (payload as Record<string, unknown>)
       : {};
   const issues: string[] = [];
-  const sellerState = readText(
-    body.seller_state,
-    "seller_state",
-    /^[A-Za-z]{2}$/,
-    issues,
-  ).toUpperCase();
-  const customerState = readText(
-    body.customer_state,
-    "customer_state",
-    /^[A-Za-z]{2}$/,
-    issues,
-  ).toUpperCase();
+  const sellerState = String(body.seller_state ?? "").trim().toUpperCase();
+  if (!isBrazilianStateCode(sellerState)) {
+    issues.push("seller_state must be a valid Brazilian state code.");
+  }
+  const customerState = String(body.customer_state ?? "").trim().toUpperCase();
+  if (!isBrazilianStateCode(customerState)) {
+    issues.push("customer_state must be a valid Brazilian state code.");
+  }
   const category = readText(
     body.primary_category,
     "primary_category",
     /^[A-Za-z0-9_]{1,80}$/,
     issues,
   ).toLowerCase();
-  const paymentType = readText(
-    body.primary_payment_type,
-    "primary_payment_type",
-    /^[A-Za-z0-9_]{1,40}$/,
-    issues,
-  ).toLowerCase();
-  const purchaseTimestamp = String(body.purchase_timestamp ?? "");
-  const purchaseTime = Date.parse(purchaseTimestamp);
-  const validTimestamp = purchaseTimestamp.length > 0 && Number.isFinite(purchaseTime);
-  if (!validTimestamp) {
-    issues.push("purchase_timestamp must be a valid ISO-8601 date and time.");
+  const paymentType = String(body.primary_payment_type ?? "")
+    .trim()
+    .toLowerCase();
+  if (!isOlistPaymentType(paymentType)) {
+    issues.push(
+      "primary_payment_type must be credit_card, boleto, voucher, or debit_card.",
+    );
+  }
+  const purchaseTimestamp = String(body.purchase_timestamp ?? "").trim();
+  const purchaseTime = parseIsoTimestampWithTimezone(purchaseTimestamp);
+  const validTimestamp = purchaseTime !== null;
+  if (purchaseTime === null) {
+    issues.push(
+      "purchase_timestamp must be an ISO-8601 date-time with Z or an explicit timezone offset.",
+    );
   } else if (
     purchaseTime < minimumPurchaseTime ||
     purchaseTime > maximumPurchaseTime

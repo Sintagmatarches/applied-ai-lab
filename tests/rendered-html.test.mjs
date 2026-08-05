@@ -31,7 +31,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders a minimal home page with direct planned-project links", async () => {
+test("renders the completed Olist project before clearly marked planned work", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -40,15 +40,16 @@ test("renders a minimal home page with direct planned-project links", async () =
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
+  assert.match(html, /Completed project/);
+  assert.match(html, /Open predictor/);
   assert.match(html, /Planned projects/);
   assert.match(html, /href="\/housing-value-forecast"/);
   assert.match(html, /href="\/credit-risk-assessment"/);
-  assert.doesNotMatch(
-    html,
-    /hero-card|Project status|Future prediction|Completed analytics|predictor-form/,
-  );
-  assert.match(html, /favicon\.svg\?v=20260805-1/);
-  assert.match(html, /og-v20260730-5\.png\?v=20260805-1/);
+  assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
+  assert.match(html, /View source/);
+  assert.doesNotMatch(html, /predictor-form/);
+  assert.match(html, /favicon\.svg\?v=20260805-2/);
+  assert.match(html, /og-v20260730-5\.png\?v=20260805-2/);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {
@@ -73,6 +74,10 @@ test("renders the working Olist model, evidence and honest limitation", async ()
   assert.match(html, /17\.3(?:<!-- -->)?%/);
   assert.match(html, /PR-AUC lift/);
   assert.match(html, /pending order cannot leak its future label/);
+  assert.match(html, /View source/);
+  assert.match(html, /Model card/);
+  assert.match(html, /Dataset/);
+  assert.match(html, /CC BY-NC-SA 4\.0/);
   assert.doesNotMatch(html, /model has not been built or connected yet/i);
 });
 
@@ -110,5 +115,6 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.minimal-page\s*\{/);
   assert.match(css, /\.predictor-form\s*\{/);
   assert.match(css, /\.prediction-result\s*\{/);
+  assert.match(css, /\.featured-project\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);
 });

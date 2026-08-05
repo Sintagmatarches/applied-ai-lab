@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof PredictionInputError) {
       return Response.json(
         {
-          error: "Please correct the highlighted order details.",
+          error: "Please review the order details listed below.",
           issues: error.issues,
         },
         { status: 422 },
