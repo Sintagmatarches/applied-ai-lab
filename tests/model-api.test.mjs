@@ -59,10 +59,33 @@ test("rejects impossible form values without scoring", async () => {
   assert.equal(response.status, 422);
   const result = await response.json();
   assert.ok(result.issues.length >= 3);
+  assert.equal(result.error, "Please review the order details listed below.");
+  assert.doesNotMatch(result.error, /highlighted/i);
 });
 
-test("rejects malformed and out-of-domain timestamps as validation errors", async () => {
-  for (const purchase_timestamp of ["not-a-date", "2026-08-05T12:00:00Z"]) {
+test("rejects invented states and payment methods", async () => {
+  const response = await postPrediction({
+    ...exampleCase.input,
+    seller_state: "ZZ",
+    customer_state: "XX",
+    primary_payment_type: "cash",
+  });
+  assert.equal(response.status, 422);
+  const result = await response.json();
+  assert.match(result.issues.join(" "), /seller_state.*Brazilian state/i);
+  assert.match(result.issues.join(" "), /customer_state.*Brazilian state/i);
+  assert.match(result.issues.join(" "), /primary_payment_type.*credit_card/i);
+});
+
+test("requires a real ISO timestamp with an explicit timezone", async () => {
+  for (const purchase_timestamp of [
+    "not-a-date",
+    "2018-07-16T14:30:00",
+    "2018-07-16 14:30:00Z",
+    "2018-02-30T14:30:00Z",
+    "2018-07-16T14:30:00+15:00",
+    "2026-08-05T12:00:00Z",
+  ]) {
     const response = await postPrediction({
       ...exampleCase.input,
       purchase_timestamp,

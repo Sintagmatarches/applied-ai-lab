@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260805)
+![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260805-2)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -66,6 +66,12 @@ npm test
 npm run typecheck
 npm run lint
 ```
+
+The separate `npm run test:live` suite uses Playwright against the published
+domain in desktop Chromium and a Pixel 7 viewport. It checks the homepage,
+responsive form, production API scoring, resource links and browser console.
+The scheduled `Live site smoke` GitHub workflow runs the same suite daily and
+can be dispatched immediately after a production deployment.
 
 The important code lives here:
 
