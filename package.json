@@ -10,6 +10,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs tests/model-api.test.mjs && tsx --test tests/model-parity.test.ts",
+    "test:live": "playwright test",
     "test:ml": "python -m unittest discover -s ml/tests && python -m ml.parity --check",
     "ml:download-data": "kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip",
     "ml:build-data": "python -m ml.build_dataset",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.51.0",
     "@cloudflare/workers-types": "5.20260804.1",
+    "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

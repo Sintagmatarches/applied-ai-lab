@@ -1,0 +1,69 @@
+import { expect, test, type Page } from "@playwright/test";
+
+function failOnBrowserErrors(page: Page) {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  return errors;
+}
+
+test("published homepage leads with the completed project", async ({ page }) => {
+  const browserErrors = failOnBrowserErrors(page);
+  const response = await page.goto("/?verify=20260805-2", {
+    waitUntil: "networkidle",
+  });
+
+  expect(response?.status()).toBe(200);
+  await expect(page.getByText("Completed project", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Olist Delivery Delay Predictor" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open predictor" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Planned projects" })).toBeVisible();
+
+  const completedTop = await page
+    .getByText("Completed project", { exact: true })
+    .boundingBox();
+  const plannedTop = await page
+    .getByRole("heading", { name: "Planned projects" })
+    .boundingBox();
+  expect(completedTop).not.toBeNull();
+  expect(plannedTop).not.toBeNull();
+  expect(completedTop!.y).toBeLessThan(plannedTop!.y);
+  expect(browserErrors).toEqual([]);
+});
+
+test("published predictor works and keeps its responsive layout", async ({
+  page,
+}, testInfo) => {
+  const browserErrors = failOnBrowserErrors(page);
+  const response = await page.goto(
+    "/olist-delivery-delay-predictor?verify=20260805-2",
+    { waitUntil: "networkidle" },
+  );
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole("heading", { name: "Olist Delivery Delay Predictor" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "View source" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Model card" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Dataset" })).toBeVisible();
+  await expect(page.getByText(/Olist.*CC BY-NC-SA 4\.0/)).toBeVisible();
+
+  const columnCount = await page.locator(".form-grid").evaluate((element) =>
+    getComputedStyle(element).gridTemplateColumns.split(" ").length,
+  );
+  if (testInfo.project.name === "mobile-chromium") {
+    expect(columnCount).toBe(1);
+  } else {
+    expect(columnCount).toBe(3);
+  }
+
+  await page.getByRole("button", { name: "Estimate delay risk" }).click();
+  await expect(page.locator(".prediction-result")).toBeVisible();
+  await expect(page.getByText("Relative risk score", { exact: true })).toBeVisible();
+  expect(browserErrors).toEqual([]);
+});
