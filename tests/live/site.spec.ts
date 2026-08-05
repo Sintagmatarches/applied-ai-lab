@@ -9,9 +9,14 @@ function failOnBrowserErrors(page: Page) {
   return errors;
 }
 
+function freshPath(pathname: string): string {
+  const separator = pathname.includes("?") ? "&" : "?";
+  return `${pathname}${separator}verify=${Date.now()}`;
+}
+
 test("published homepage leads with the completed project", async ({ page }) => {
   const browserErrors = failOnBrowserErrors(page);
-  const response = await page.goto("/?verify=20260805-2", {
+  const response = await page.goto(freshPath("/"), {
     waitUntil: "networkidle",
   });
 
@@ -40,7 +45,7 @@ test("published predictor works and keeps its responsive layout", async ({
 }, testInfo) => {
   const browserErrors = failOnBrowserErrors(page);
   const response = await page.goto(
-    "/olist-delivery-delay-predictor?verify=20260805-2",
+    freshPath("/olist-delivery-delay-predictor"),
     { waitUntil: "networkidle" },
   );
 
