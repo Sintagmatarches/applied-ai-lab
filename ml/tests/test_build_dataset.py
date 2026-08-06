@@ -1,3 +1,5 @@
+"""Test deterministic joins and feature rules in the dataset builder."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,7 +12,11 @@ from ml.build_dataset import SOURCE_FILES, build_dataset
 
 
 class BuildDatasetTest(unittest.TestCase):
+    """Build a tiny set of linked Olist tables and verify the output row."""
+
     def test_builds_deterministic_order_level_features(self):
+        # The fixture includes two items, two sellers, and two payments so the
+        # primary-record and aggregation rules are visible in one small case.
         with TemporaryDirectory() as directory:
             raw = Path(directory)
             tables = {

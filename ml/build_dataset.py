@@ -1,3 +1,9 @@
+"""Build one clean model row for each delivered Olist order.
+
+This file joins the public CSV tables, creates order-time features, and writes
+the reproducible training dataset used by the machine-learning pipeline.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -26,6 +32,8 @@ SOURCE_FILES = (
     "product_category_name_translation.csv",
 )
 
+# Pinned hashes make an upstream data change visible instead of silently
+# training a different model from files with the same names.
 EXPECTED_SOURCE_SHA256 = {
     "olist_customers_dataset.csv": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2",
     "olist_geolocation_dataset.csv": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6",
@@ -39,6 +47,8 @@ EXPECTED_SOURCE_SHA256 = {
 
 
 def _sha256(path: Path) -> str:
+    """Return a stable fingerprint for one file."""
+
     digest = hashlib.sha256()
     with path.open("rb") as source:
         for block in iter(lambda: source.read(1024 * 1024), b""):
@@ -49,6 +59,8 @@ def _sha256(path: Path) -> str:
 def _read_sources(
     raw_dir: Path, verify_checksums: bool = True
 ) -> dict[str, pd.DataFrame]:
+    """Check the source files and load every required CSV table."""
+
     missing = [name for name in SOURCE_FILES if not (raw_dir / name).is_file()]
     if missing:
         raise FileNotFoundError(
@@ -79,6 +91,8 @@ def _utc_timestamp(values: pd.Series) -> pd.Series:
 
 
 def _robust_zip_coordinates(geolocation: pd.DataFrame) -> pd.DataFrame:
+    """Use the median valid coordinate for each ZIP prefix."""
+
     valid = geolocation[
         geolocation["geolocation_lat"].between(-35, 6)
         & geolocation["geolocation_lng"].between(-75, -30)
@@ -99,6 +113,8 @@ def _haversine_km(
     latitude_b: pd.Series,
     longitude_b: pd.Series,
 ) -> pd.Series:
+    """Estimate straight-line distance between two latitude/longitude pairs."""
+
     radius_km = 6_371.0088
     lat_a = np.radians(latitude_a.astype(float))
     lon_a = np.radians(longitude_a.astype(float))
@@ -117,6 +133,8 @@ def _haversine_km(
 
 
 def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Reduce item, product, and seller tables to one record per order."""
+
     items = tables["olist_order_items_dataset"].copy()
     products = tables["olist_products_dataset"].copy()
     sellers = tables["olist_sellers_dataset"].copy()
@@ -156,6 +174,8 @@ def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         validate="many_to_one",
     )
 
+    # One order can contain several sellers and categories. The highest-value
+    # item is selected with stable tie-breakers so the choice is reproducible.
     primary = (
         item_details.sort_values(
             [
@@ -180,6 +200,8 @@ def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         ]
     )
 
+    # Monetary and physical values describe the whole order, not only the
+    # primary item selected above.
     totals = item_details.groupby("order_id", as_index=False).agg(
         item_count=("order_item_id", "size"),
         total_item_value=("price", "sum"),
@@ -194,6 +216,8 @@ def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 def _aggregate_payments(payments: pd.DataFrame) -> pd.DataFrame:
+    """Select the main payment method and keep order-level payment totals."""
+
     primary = (
         payments.sort_values(
             ["order_id", "payment_value", "payment_sequential", "payment_type"],
@@ -217,6 +241,8 @@ def _aggregate_payments(payments: pd.DataFrame) -> pd.DataFrame:
 def build_dataset(
     raw_dir: Path = RAW_DATA_DIR, verify_checksums: bool = True
 ) -> tuple[pd.DataFrame, dict]:
+    """Create the chronological order-level dataset and its build manifest."""
+
     tables = _read_sources(raw_dir, verify_checksums=verify_checksums)
     orders = tables["olist_orders_dataset"].copy()
     source_order_count = len(orders)
@@ -256,6 +282,8 @@ def build_dataset(
         )
     )
 
+    # ZIP-prefix medians provide a robust approximate location for each side
+    # of the delivery route.
     coordinates = _robust_zip_coordinates(tables["olist_geolocation_dataset"])
     seller_coordinates = coordinates.rename(
         columns={
@@ -289,6 +317,8 @@ def build_dataset(
         frame["customer_longitude"],
     )
 
+    # These features are known when the order is placed. Delivery outcomes are
+    # kept only for the target and for point-in-time history calculations.
     purchase = frame["order_purchase_timestamp"]
     frame["purchase_year"] = purchase.dt.year
     frame["purchase_month"] = purchase.dt.month
@@ -338,6 +368,7 @@ def build_dataset(
         .reset_index(drop=True)
     )
 
+    # The manifest records exactly which data produced this derived table.
     manifest = {
         "source": SOURCE_URL,
         "license": SOURCE_LICENSE,
@@ -363,6 +394,8 @@ def build_dataset(
 
 
 def main() -> None:
+    """Build the dataset from command-line paths and save its manifest."""
+
     parser = argparse.ArgumentParser(
         description="Build the point-in-time Olist order-level training table."
     )

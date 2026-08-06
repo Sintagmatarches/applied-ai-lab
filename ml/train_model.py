@@ -1,3 +1,10 @@
+"""Train, compare, evaluate, and export the Olist delay-risk model.
+
+The pipeline uses rolling time backtests for model choice, a later calibration
+period, and one untouched final test period. Production receives only a portable
+artifact after Python and TypeScript scoring agree exactly.
+"""
+
 from __future__ import annotations
 
 import json
@@ -47,11 +54,14 @@ DEPLOYABLE_MODELS = {"logistic"}
 
 @dataclass(frozen=True)
 class BacktestPeriod:
+    """Name one validation period used in rolling time backtests."""
+
     name: str
     starts_at: str
     ends_at: str
 
 
+# Each fold trains on all older rows and validates on the named future period.
 BACKTEST_PERIODS = [
     BacktestPeriod("2017-09/10", "2017-09-01", "2017-11-01"),
     BacktestPeriod("2017-11/12", "2017-11-01", "2018-01-01"),
@@ -61,6 +71,8 @@ BACKTEST_PERIODS = [
 
 
 def build_preprocessor() -> ColumnTransformer:
+    """Build preprocessing that is fitted on training rows only."""
+
     return ColumnTransformer(
         [
             (
@@ -95,12 +107,16 @@ def build_preprocessor() -> ColumnTransformer:
 
 
 def build_linear_model() -> LogisticRegression:
+    """Create the interpretable logistic-regression candidate."""
+
     return LogisticRegression(
         max_iter=1_500, C=0.5, solver="liblinear", random_state=42
     )
 
 
 def build_xgboost_model() -> XGBClassifier:
+    """Create a boosted-tree benchmark for nonlinear relationships."""
+
     return XGBClassifier(
         n_estimators=350,
         max_depth=4,
@@ -118,6 +134,8 @@ def build_xgboost_model() -> XGBClassifier:
 
 
 def build_catboost_model() -> CatBoostClassifier:
+    """Create a benchmark that handles categorical features directly."""
+
     return CatBoostClassifier(
         iterations=350,
         depth=6,
@@ -133,6 +151,8 @@ def build_catboost_model() -> CatBoostClassifier:
 
 
 def catboost_frame(frame: pd.DataFrame, training_rows: np.ndarray) -> pd.DataFrame:
+    """Fill missing CatBoost inputs using values learned from training rows."""
+
     prepared = frame[FEATURES].copy()
     medians = prepared.loc[training_rows, NUMERIC_FEATURES].median()
     prepared.loc[:, NUMERIC_FEATURES] = prepared[NUMERIC_FEATURES].fillna(medians)
@@ -145,6 +165,8 @@ def catboost_frame(frame: pd.DataFrame, training_rows: np.ndarray) -> pd.DataFra
 def top_group_metrics(
     y_true: np.ndarray, probability: np.ndarray, fraction: float
 ) -> dict:
+    """Measure results when only the highest-risk fraction is reviewed."""
+
     size = max(1, int(math.ceil(len(probability) * fraction)))
     selected = np.argsort(-probability, kind="stable")[:size]
     found = int(y_true[selected].sum())
@@ -171,6 +193,8 @@ def top_group_metrics(
 
 
 def ranking_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict:
+    """Report ranking quality for the full period and fixed review queues."""
+
     prevalence = float(np.mean(y_true))
     pr_auc = float(average_precision_score(y_true, probability))
     return {
@@ -188,6 +212,8 @@ def ranking_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict:
 def bootstrap_confidence_intervals(
     y_true: np.ndarray, probability: np.ndarray, samples: int = 250
 ) -> dict:
+    """Estimate metric uncertainty by repeatedly resampling final-test orders."""
+
     rng = np.random.default_rng(42)
     values = {"pr_auc": [], "roc_auc": [], "top_10_recall": [], "top_10_precision": []}
     for _ in range(samples):
@@ -213,8 +239,12 @@ def bootstrap_confidence_intervals(
 def fit_fold_candidates(
     frame: pd.DataFrame, train_rows: np.ndarray, validation_rows: np.ndarray
 ) -> dict[str, dict]:
+    """Train all candidate models and score one backtest fold."""
+
     x = frame[FEATURES]
     y = frame[TARGET].to_numpy()
+    # Fit preprocessing only on older rows, then reuse it unchanged on the
+    # later validation rows. This prevents validation data from shaping inputs.
     preprocessor = build_preprocessor()
     x_train = preprocessor.fit_transform(x.loc[train_rows])
     x_validation = preprocessor.transform(x.loc[validation_rows])
@@ -242,6 +272,8 @@ def fit_fold_candidates(
 
 
 def backtest_models(frame: pd.DataFrame) -> tuple[dict, dict, str]:
+    """Run rolling time validation and select the most stable candidate."""
+
     timestamps = frame[TIMESTAMP]
     fold_results: dict[str, list[dict]] = {
         "logistic": [],
@@ -280,6 +312,8 @@ def backtest_models(frame: pd.DataFrame) -> tuple[dict, dict, str]:
             "std_top_10_percent_capture": float(capture.std()),
             "operational_stability_score": float(capture.mean() - capture.std()),
         }
+    # The main score rewards delay capture and penalizes unstable performance.
+    # PR-AUC lift and ROC-AUC are used only as tie-breakers.
     selected = max(
         summary,
         key=lambda name: (
@@ -294,6 +328,8 @@ def backtest_models(frame: pd.DataFrame) -> tuple[dict, dict, str]:
 def expected_calibration_error(
     y_true: np.ndarray, probability: np.ndarray
 ) -> tuple[float, list[dict]]:
+    """Compare average predictions with observed rates in ten risk groups."""
+
     table = pd.DataFrame({"actual": y_true, "probability": probability})
     table["bin"] = pd.qcut(table["probability"], q=10, duplicates="drop")
     grouped = table.groupby("bin", observed=True).agg(
@@ -319,6 +355,8 @@ def expected_calibration_error(
 
 
 def choose_calibration(raw_score: np.ndarray, y_true: np.ndarray) -> dict:
+    """Choose and refit the best probability-calibration method."""
+
     cutoff = int(len(raw_score) * 0.60)
     train_score, check_score = raw_score[:cutoff], raw_score[cutoff:]
     train_y, check_y = y_true[:cutoff], y_true[cutoff:]
@@ -340,6 +378,7 @@ def choose_calibration(raw_score: np.ndarray, y_true: np.ndarray) -> dict:
         }
         for name, probability in candidates.items()
     }
+    # Brier score is the main calibration criterion; log loss breaks ties.
     selected = min(
         evaluation,
         key=lambda name: (evaluation[name]["brier"], evaluation[name]["log_loss"]),
@@ -372,6 +411,8 @@ def choose_calibration(raw_score: np.ndarray, y_true: np.ndarray) -> dict:
 
 
 def calibrated_probability(raw_score: np.ndarray, calibration: dict) -> np.ndarray:
+    """Apply the chosen calibrator to an array of raw model scores."""
+
     if calibration["selected"] == "platt":
         return calibration["fitted"].predict_proba(raw_score.reshape(-1, 1))[:, 1]
     if calibration["selected"] == "isotonic":
@@ -382,6 +423,8 @@ def calibrated_probability(raw_score: np.ndarray, calibration: dict) -> np.ndarr
 def category_index_maps(
     preprocessor: ColumnTransformer,
 ) -> tuple[dict[str, dict[str, int]], dict[str, str]]:
+    """Record where every one-hot category appears in the feature vector."""
+
     pipeline = preprocessor.named_transformers_["categorical"]
     imputer: SimpleImputer = pipeline.named_steps["imputer"]
     encoder: OneHotEncoder = pipeline.named_steps["one_hot"]
@@ -416,6 +459,8 @@ def export_linear_model(
     calibration_probability: np.ndarray,
     report: dict,
 ) -> dict:
+    """Convert the fitted Python pipeline into a portable JSON artifact."""
+
     numeric_pipeline = preprocessor.named_transformers_["numeric"]
     imputer: SimpleImputer = numeric_pipeline.named_steps["imputer"]
     scaler: StandardScaler = numeric_pipeline.named_steps["scale"]
@@ -481,6 +526,8 @@ def export_linear_model(
 def final_candidate_evaluation(
     frame: pd.DataFrame, train_end: int, test_start: int
 ) -> tuple[dict, dict]:
+    """Evaluate every candidate once on the untouched newest orders."""
+
     x = frame[FEATURES]
     y = frame[TARGET].to_numpy()
     train_rows = np.arange(len(frame)) < train_end
@@ -512,6 +559,8 @@ def final_candidate_evaluation(
 
 
 def split_report(frame: pd.DataFrame, train_end: int, test_start: int) -> dict:
+    """Describe the chronological train, calibration, and test periods."""
+
     y = frame[TARGET].to_numpy()
     sections = {
         "train": (0, train_end),
@@ -531,6 +580,8 @@ def split_report(frame: pd.DataFrame, train_end: int, test_start: int) -> dict:
 
 
 def write_model_card(report: dict, audit: dict) -> None:
+    """Write a readable summary of the model, evidence, and limitations."""
+
     final = report["final_test"]
     top = final["top_risk_groups"]["10%"]
     ci = final["confidence_intervals_95"]
@@ -584,6 +635,9 @@ The displayed 0–100 value is a percentile-style relative risk score derived fr
 
 
 def main() -> None:
+    """Run the complete validated training and export workflow."""
+
+    # Validate the derived data before spending time on model training.
     audit = build_audit()
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     AUDIT_FILE.write_text(
@@ -594,9 +648,12 @@ def main() -> None:
             "Data validation failed: "
             + json.dumps(audit["blocking_errors"], ensure_ascii=False)
         )
+    # Build leakage-safe history features before the chronological backtests.
     base_frame = read_orders(DATA_FILE)
     frame = add_temporal_features(base_frame)
     fold_results, summary, selected = backtest_models(frame)
+    # A winning model cannot ship until it has a reviewed portable exporter and
+    # parity tests. This avoids silently deploying a different model.
     if selected not in DEPLOYABLE_MODELS:
         raise RuntimeError(
             f"Backtests selected {selected}, but no audited portable exporter exists for it. "
@@ -606,6 +663,7 @@ def main() -> None:
     total = len(frame)
     train_end = int(total * FINAL_TRAIN_FRACTION)
     test_start = int(total * CALIBRATION_END_FRACTION)
+    # The newest 15% stays untouched until this single final comparison.
     final_candidates, fitted_candidates = final_candidate_evaluation(
         frame, train_end, test_start
     )
@@ -616,6 +674,7 @@ def main() -> None:
         preprocessor.transform(x.iloc[train_end:test_start])
     )
     test_raw = model.decision_function(preprocessor.transform(x.iloc[test_start:]))
+    # Calibration uses the middle period, never the final test period.
     calibration = choose_calibration(calibration_raw, y[train_end:test_start])
     calibration_probability = calibrated_probability(calibration_raw, calibration)
     test_probability = calibrated_probability(test_raw, calibration)
@@ -638,6 +697,8 @@ def main() -> None:
     relative_mean_error = (
         abs(probability_quality["test_mean_prediction"] - observed_rate) / observed_rate
     )
+    # Show an exact probability only when calibration transfers well enough.
+    # Otherwise the product displays the safer relative risk rank.
     display_mode = (
         "probability" if ece <= 0.02 and relative_mean_error <= 0.20 else "risk_score"
     )
@@ -680,6 +741,7 @@ def main() -> None:
         "display_mode": display_mode,
         "final_test": final_test,
     }
+    # Save both the full Python bundle and the compact cross-runtime artifact.
     export = export_linear_model(
         base_frame,
         preprocessor,
@@ -706,6 +768,7 @@ def main() -> None:
         ARTIFACTS / "olist-model.joblib",
         compress=3,
     )
+    # Parity fixtures make any Python/TypeScript scoring drift fail in CI.
     fixtures = build_training_fixtures(export, base_frame, frame, preprocessor)
     FIXTURE_FILE.write_text(
         json.dumps(fixtures, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"

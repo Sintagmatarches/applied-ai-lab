@@ -1,3 +1,5 @@
+"""Prove that Python training and production inference calculate the same score."""
+
 from __future__ import annotations
 
 import argparse
@@ -31,6 +33,8 @@ INPUT_FIELDS = (
 
 
 def row_input(row: pd.Series) -> dict:
+    """Convert one training row into the public API input format."""
+
     timestamp = row[TIMESTAMP].isoformat().replace("+00:00", "Z")
     return {
         **{
@@ -58,6 +62,8 @@ def row_input(row: pd.Series) -> dict:
 
 
 def fixture_document(artifact: dict, named_inputs: Iterable[tuple[str, dict]]) -> dict:
+    """Score named examples and store their exact expected Python outputs."""
+
     return {
         "model_version": artifact["model_version"],
         "contract": artifact["feature_contract"],
@@ -70,6 +76,8 @@ def fixture_document(artifact: dict, named_inputs: Iterable[tuple[str, dict]]) -
 
 
 def _choose_rows(frame: pd.DataFrame) -> list[tuple[str, int]]:
+    """Choose final-period examples that cover useful calendar and route cases."""
+
     usable = frame.dropna(subset=list(INPUT_FIELDS))
     test_start = int(len(frame) * 0.85)
     usable = usable.loc[usable.index >= test_start]
@@ -96,6 +104,8 @@ def build_training_fixtures(
     enriched: pd.DataFrame,
     preprocessor,
 ) -> dict:
+    """Compare exported runtime features with the fitted Python preprocessor."""
+
     named_inputs: list[tuple[str, dict]] = []
     for name, index in _choose_rows(frame):
         input_data = row_input(frame.loc[index])
@@ -123,6 +133,8 @@ def build_training_fixtures(
         )
         named_inputs.append((name, input_data))
 
+    # This extra case proves that a category unseen during training is handled
+    # consistently instead of crashing or shifting feature positions.
     unknown = dict(named_inputs[0][1])
     unknown["primary_category"] = "future_category"
     unknown_raw = pd.DataFrame([raw_features(artifact, unknown)])[FEATURES]
@@ -138,6 +150,8 @@ def build_training_fixtures(
 
 
 def check_fixture(artifact_path: Path, fixture_path: Path) -> None:
+    """Fail when committed parity examples no longer match the model artifact."""
+
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     committed = json.loads(fixture_path.read_text(encoding="utf-8"))
     inputs = [(case["name"], case["input"]) for case in committed["cases"]]
@@ -149,6 +163,8 @@ def check_fixture(artifact_path: Path, fixture_path: Path) -> None:
 
 
 def main() -> None:
+    """Run the parity check from the command line."""
+
     parser = argparse.ArgumentParser(
         description="Verify exported Python/TypeScript parity fixtures."
     )

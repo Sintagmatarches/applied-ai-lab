@@ -1,3 +1,5 @@
+"""Shared feature names, data loading, and chronological split helpers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,6 +15,7 @@ TARGET = "late_1d"
 TIMESTAMP = "order_purchase_timestamp"
 LABEL_AVAILABLE_TIMESTAMP = "label_available_timestamp"
 
+# Base features come directly from facts known when an order is placed.
 BASE_NUMERIC_FEATURES = [
     "purchase_year",
     "purchase_month",
@@ -29,6 +32,7 @@ BASE_NUMERIC_FEATURES = [
     "payment_installments",
 ]
 
+# Engineered features summarize only information available before the order.
 ENGINEERED_NUMERIC_FEATURES = [
     "prior_global_late_rate",
     "seller_state_prior_late_rate",
@@ -71,6 +75,8 @@ REQUIRED_COLUMNS = [
 
 @dataclass(frozen=True)
 class TimeSplit:
+    """Store row boundaries for train, validation, and final test periods."""
+
     train_end: int
     validation_end: int
     total: int
@@ -89,6 +95,8 @@ class TimeSplit:
 
 
 def file_sha256(path: Path) -> str:
+    """Return a stable SHA-256 fingerprint for a file."""
+
     digest = hashlib.sha256()
     with path.open("rb") as source:
         for block in iter(lambda: source.read(1024 * 1024), b""):
@@ -97,6 +105,8 @@ def file_sha256(path: Path) -> str:
 
 
 def read_orders(path: Path = DATA_FILE) -> pd.DataFrame:
+    """Load the derived dataset, validate its columns, and sort it by time."""
+
     frame = pd.read_csv(path)
     missing = sorted(set(REQUIRED_COLUMNS) - set(frame.columns))
     if missing:
@@ -112,6 +122,8 @@ def read_orders(path: Path = DATA_FILE) -> pd.DataFrame:
 
 
 def chronological_split(frame: pd.DataFrame) -> TimeSplit:
+    """Keep older orders for training and newer orders for evaluation."""
+
     total = len(frame)
     return TimeSplit(
         train_end=int(total * 0.70),
@@ -121,6 +133,8 @@ def chronological_split(frame: pd.DataFrame) -> TimeSplit:
 
 
 def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
+    """Count data problems that could make training unsafe or misleading."""
+
     timestamp = frame[TIMESTAMP]
     label_timestamp = frame[LABEL_AVAILABLE_TIMESTAMP]
     expected_route = frame["seller_state"] + " → " + frame["customer_state"]
@@ -164,6 +178,8 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
 
 
 def split_summary(frame: pd.DataFrame, split: TimeSplit) -> dict[str, dict]:
+    """Describe the size, date range, and target rate of each time split."""
+
     summaries: dict[str, dict] = {}
     for name, rows in (
         ("train", split.train),
@@ -182,6 +198,8 @@ def split_summary(frame: pd.DataFrame, split: TimeSplit) -> dict[str, dict]:
 
 
 def json_value(value):
+    """Convert NumPy and pandas scalar values into JSON-safe Python values."""
+
     if isinstance(value, np.integer):
         return int(value)
     if isinstance(value, np.floating):
