@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260805-2)
+![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260806-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 

@@ -1,3 +1,5 @@
+"""Audit the derived Olist dataset before any model is trained."""
+
 from __future__ import annotations
 
 import json
@@ -18,9 +20,13 @@ OUTPUT = Path("artifacts/data-audit.json")
 
 
 def build_audit() -> dict:
+    """Create a machine-readable report of data quality and time splits."""
+
     frame = read_orders(DATA_FILE)
     split = chronological_split(frame)
     errors = validation_errors(frame)
+    # Missing physical measurements are allowed because the training pipeline
+    # imputes them. Structural and target errors still stop the build.
     blocking = {
         key: value
         for key, value in errors.items()
@@ -81,6 +87,8 @@ def build_audit() -> dict:
 
 
 def main() -> None:
+    """Write the audit report and stop if a blocking check failed."""
+
     audit = build_audit()
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(

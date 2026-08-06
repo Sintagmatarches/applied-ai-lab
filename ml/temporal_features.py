@@ -1,3 +1,9 @@
+"""Create history features without using information from the future.
+
+Purchase counts become available when an order is placed. Delay outcomes become
+available only after delivery, so the two histories use different event dates.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,12 +21,16 @@ WINDOW_PRIOR_STRENGTH = 10.0
 
 @dataclass(frozen=True)
 class DailyHistory:
+    """Store daily order counts and known late outcomes for one history."""
+
     days: np.ndarray
     counts: np.ndarray
     late: np.ndarray
 
 
 def _days(frame: pd.DataFrame, column: str) -> np.ndarray:
+    """Convert UTC timestamps to integer UTC days for fast comparisons."""
+
     return (
         frame[column].astype("int64").to_numpy() // 1_000_000_000 // SECONDS_PER_DAY
     ).astype(np.int32)
@@ -29,6 +39,8 @@ def _days(frame: pd.DataFrame, column: str) -> np.ndarray:
 def _prefix_lookup(
     history: DailyHistory, query_days: np.ndarray, window: int | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Read totals strictly before each query day, optionally in a time window."""
+
     end = np.searchsorted(history.days, query_days, side="left")
     count_prefix = np.concatenate(([0.0], np.cumsum(history.counts)))
     late_prefix = np.concatenate(([0.0], np.cumsum(history.late)))
@@ -50,6 +62,8 @@ def _daily_histories(
     event_days: np.ndarray,
     include_late: bool,
 ) -> dict[str, DailyHistory]:
+    """Build a daily history for every state, route, or category value."""
+
     source = pd.DataFrame(
         {
             "key": frame[key].fillna("__missing__").astype(str),
@@ -75,6 +89,8 @@ def _daily_histories(
 def _global_outcome_history(
     frame: pd.DataFrame, availability_days: np.ndarray
 ) -> DailyHistory:
+    """Build the market-wide history of outcomes that are already known."""
+
     daily = (
         pd.DataFrame({"day": availability_days, "late": frame[TARGET].to_numpy()})
         .groupby("day", sort=True)["late"]
@@ -94,6 +110,8 @@ def _smoothed_rate(
     prior: np.ndarray,
     strength: float,
 ) -> np.ndarray:
+    """Pull small groups toward a stable prior instead of trusting noisy rates."""
+
     return (late + strength * prior) / (count + strength)
 
 
@@ -107,6 +125,8 @@ def _group_features(
     order_windows: tuple[int, ...],
     outcome_windows: tuple[int, ...],
 ) -> dict[str, np.ndarray]:
+    """Create prior counts, delay rates, and experience for one group field."""
+
     values = frame[key].fillna("__missing__").astype(str).to_numpy()
     order_histories = _daily_histories(frame, key, order_days, include_late=False)
     outcome_histories = _daily_histories(
@@ -126,6 +146,8 @@ def _group_features(
         window: np.zeros(len(frame), dtype=float) for window in outcome_windows
     }
 
+    # Process one group value at a time, then place its history features back
+    # into the matching rows of the full dataset.
     for value in np.unique(values):
         rows = np.flatnonzero(values == value)
         query_days = order_days[rows]
@@ -177,6 +199,8 @@ def _group_features(
 
 
 def season_from_month(month: pd.Series | np.ndarray) -> np.ndarray:
+    """Map Brazilian calendar months to Southern Hemisphere seasons."""
+
     values = np.asarray(month, dtype=int)
     return np.select(
         [
@@ -190,6 +214,8 @@ def season_from_month(month: pd.Series | np.ndarray) -> np.ndarray:
 
 
 def add_temporal_features(frame: pd.DataFrame) -> pd.DataFrame:
+    """Add all point-in-time features used by model training."""
+
     enriched = frame.copy()
     order_days = _days(enriched, TIMESTAMP)
     availability_days = _days(enriched, LABEL_AVAILABLE_TIMESTAMP)
@@ -203,6 +229,8 @@ def add_temporal_features(frame: pd.DataFrame) -> pd.DataFrame:
     )
     enriched["prior_global_late_rate"] = global_prior
 
+    # Seller state, route, and category histories capture different kinds of
+    # operational context while applying the same no-future-information rule.
     seller = _group_features(
         enriched,
         key="seller_state",
@@ -250,6 +278,8 @@ def add_temporal_features(frame: pd.DataFrame) -> pd.DataFrame:
         if name in wanted:
             enriched[name] = values
 
+    # Ratios make shipping cost and promised time comparable across orders of
+    # different values and distances.
     enriched["freight_item_ratio"] = (
         enriched["total_freight_value"] / enriched["total_item_value"].clip(lower=1.0)
     ).clip(upper=10.0)
@@ -262,6 +292,8 @@ def add_temporal_features(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def _records(history: DailyHistory, include_late: bool) -> list[list[int]]:
+    """Convert NumPy history arrays into compact JSON records."""
+
     if include_late:
         return [
             [int(day), int(count), int(late)]
@@ -276,6 +308,8 @@ def _records(history: DailyHistory, include_late: bool) -> list[list[int]]:
 
 
 def export_daily_histories(frame: pd.DataFrame) -> dict:
+    """Export the same histories that the production scorer needs."""
+
     order_days = _days(frame, TIMESTAMP)
     availability_days = _days(frame, LABEL_AVAILABLE_TIMESTAMP)
     output: dict[str, object] = {

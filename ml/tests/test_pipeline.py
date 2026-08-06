@@ -1,3 +1,5 @@
+"""Test the feature contract, leakage controls, and saved Python model."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,6 +15,8 @@ from ml.temporal_features import add_temporal_features
 
 
 def synthetic_orders() -> pd.DataFrame:
+    """Create a small chronological dataset with known delivery outcomes."""
+
     timestamps = pd.to_datetime(
         [
             "2017-09-04T10:00:00Z",
@@ -86,6 +90,8 @@ def synthetic_orders() -> pd.DataFrame:
 
 
 class OlistPipelineTest(unittest.TestCase):
+    """Check the most important guarantees of the ML pipeline."""
+
     @classmethod
     def setUpClass(cls):
         cls.frame = synthetic_orders()
@@ -119,6 +125,8 @@ class OlistPipelineTest(unittest.TestCase):
         self.assertTrue(np.isfinite(probability))
 
     def test_temporal_history_uses_available_outcomes_not_earlier_purchases(self):
+        # The first late result is not known until January 3. An order on
+        # January 2 must not use that future outcome in its history features.
         sample = self.frame.iloc[[0, 1, 2]].copy()
         sample.loc[:, "order_purchase_timestamp"] = pd.to_datetime(
             [
@@ -155,6 +163,7 @@ class OlistPipelineTest(unittest.TestCase):
             0.05,
         )
 
+        # Changing a future label must not alter features for earlier orders.
         changed_future = sample.copy()
         changed_future.loc[2, TARGET] = 1
         changed = add_temporal_features(changed_future)

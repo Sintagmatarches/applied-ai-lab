@@ -1,3 +1,9 @@
+"""Reference Python scorer for the portable production model artifact.
+
+The web application uses TypeScript for inference. This module independently
+rebuilds the same features and score in Python so both runtimes can be compared.
+"""
+
 from __future__ import annotations
 
 from bisect import bisect_left
@@ -7,6 +13,8 @@ from typing import Any
 
 
 def _epoch_day(timestamp: str, seconds_per_day: int) -> int:
+    """Convert a timezone-aware timestamp to its UTC day number."""
+
     value = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     if value.tzinfo is None:
         raise ValueError("purchase timestamp must include a timezone")
@@ -18,6 +26,8 @@ def _history_totals(
     day: int,
     window_days: int | None = None,
 ) -> tuple[float, float, int]:
+    """Sum history records strictly before the order day."""
+
     if not records:
         return 0.0, 0.0, day
     days = [record[0] for record in records]
@@ -31,10 +41,14 @@ def _history_totals(
 
 
 def _smoothed_rate(late: float, count: float, prior: float, strength: float) -> float:
+    """Blend a group delay rate with the wider market rate."""
+
     return (late + strength * prior) / (count + strength)
 
 
 def _season(month: int) -> str:
+    """Return the Southern Hemisphere season for a month."""
+
     if month in (12, 1, 2):
         return "summer"
     if month in (3, 4, 5):
@@ -45,6 +59,8 @@ def _season(month: int) -> str:
 
 
 def raw_features(artifact: dict, input_data: dict) -> dict[str, float | str]:
+    """Recreate every raw model feature for one submitted order."""
+
     timestamp = datetime.fromisoformat(
         input_data["purchase_timestamp"].replace("Z", "+00:00")
     )
@@ -63,6 +79,8 @@ def raw_features(artifact: dict, input_data: dict) -> dict[str, float | str]:
     route_history = groups["route"].get(route, {})
     category = groups["primary_category"].get(input_data["primary_category"], {})
 
+    # Order histories measure activity. Outcome histories contain only orders
+    # whose delivery result was already known on the prediction day.
     seller_orders = seller.get("orders", [])
     seller_outcomes = seller.get("outcomes", [])
     route_orders = route_history.get("orders", [])
@@ -158,6 +176,8 @@ def raw_features(artifact: dict, input_data: dict) -> dict[str, float | str]:
 
 
 def prepare_feature_vector(artifact: dict, input_data: dict) -> list[float]:
+    """Apply training-time imputation, scaling, and one-hot encoding."""
+
     vector = [0.0] * artifact["feature_count"]
     features = raw_features(artifact, input_data)
     for name, transform in artifact["numeric"].items():
@@ -175,6 +195,8 @@ def prepare_feature_vector(artifact: dict, input_data: dict) -> list[float]:
 
 
 def _sigmoid(value: float) -> float:
+    """Convert a linear score to a probability without numeric overflow."""
+
     if value >= 0:
         inverse = math.exp(-value)
         return 1 / (1 + inverse)
@@ -183,6 +205,8 @@ def _sigmoid(value: float) -> float:
 
 
 def _calibrated_probability(artifact: dict, raw_score: float) -> float:
+    """Apply the calibration method selected on the calibration period."""
+
     calibration = artifact["calibration"]
     if calibration["type"] == "platt":
         return _sigmoid(calibration["slope"] * raw_score + calibration["intercept"])
@@ -205,6 +229,8 @@ def _calibrated_probability(artifact: dict, raw_score: float) -> float:
 
 
 def probability_to_risk_score(artifact: dict, probability: float) -> float:
+    """Convert probability to a percentile-style score from 0 to 100."""
+
     quantiles = artifact["risk_score_probability_quantiles"]
     if probability <= quantiles[0]:
         return 0.0
@@ -218,6 +244,8 @@ def probability_to_risk_score(artifact: dict, probability: float) -> float:
 
 
 def score(artifact: dict, input_data: dict) -> dict[str, Any]:
+    """Calculate the feature vector, linear score, probability, and risk rank."""
+
     vector = prepare_feature_vector(artifact, input_data)
     raw_score = artifact["linear"]["intercept"] + sum(
         coefficient * value

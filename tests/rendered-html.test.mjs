@@ -48,8 +48,8 @@ test("renders the completed Olist project before clearly marked planned work", a
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.match(html, /View source/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260805-2/);
-  assert.match(html, /og-v20260730-5\.png\?v=20260805-2/);
+  assert.match(html, /favicon\.svg\?v=20260806-1/);
+  assert.match(html, /og-v20260730-5\.png\?v=20260806-1/);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {
