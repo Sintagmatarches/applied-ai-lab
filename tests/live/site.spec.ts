@@ -21,7 +21,8 @@ test("published homepage leads with the completed projects", async ({ page }) =>
   });
 
   expect(response?.status()).toBe(200);
-  await expect(page.getByText("Completed project", { exact: true })).toBeVisible();
+  const completedProjects = page.getByRole("region", { name: "Completed projects" });
+  await expect(completedProjects).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Olist Delivery Delay Predictor" }),
   ).toBeVisible();
@@ -32,9 +33,7 @@ test("published homepage leads with the completed projects", async ({ page }) =>
   await expect(page.getByRole("link", { name: "Open monitor" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Planned projects" })).toBeVisible();
 
-  const completedTop = await page
-    .getByText("Completed project", { exact: true })
-    .boundingBox();
+  const completedTop = await completedProjects.boundingBox();
   const plannedTop = await page
     .getByRole("heading", { name: "Planned projects" })
     .boundingBox();
