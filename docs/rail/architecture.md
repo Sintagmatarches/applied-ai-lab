@@ -1,0 +1,57 @@
+# Finland Rail Reliability Monitor architecture
+
+The public project and the enterprise analytics design share the same analytical definitions. The repository can be reproduced without Microsoft Fabric; Fabric is the production-oriented extension for persistent history, orchestration, lineage and the Power BI semantic model.
+
+```mermaid
+flowchart LR
+  D["Digitraffic daily train API"] --> B["Bronze: immutable departure-date JSON"]
+  W["FMI hourly observations"] --> BW["Bronze: location/week XML"]
+  B --> S1["Silver: train journey"]
+  B --> S2["Silver: commercial station arrival"]
+  BW --> S3["Silver: weather observation"]
+  S1 --> G1["Gold: fact train journey"]
+  S2 --> G2["Gold: fact station arrival"]
+  S3 --> G3["Gold: Lahti–Helsinki weather match"]
+  G1 --> P["Power BI semantic model"]
+  G2 --> P
+  G3 --> P
+  G1 --> J["Versioned public aggregate JSON"]
+  J --> U["Applied AI Lab monitor"]
+```
+
+## Public/reproducible path
+
+`python -m rail.pipeline` retrieves one Digitraffic departure date at a time and caches the compressed response below the ignored `data/rail/` directory. Existing partitions are reused. FMI requests are split into seven-day windows because the official observation stored query permits at most 168 hours per request.
+
+The transformation emits:
+
+- `artifacts/rail-summary.json`, the versioned, compact source for the public monitor;
+- `artifacts/rail-quality.json`, the run-level quality result and definitions;
+- ignored curated CSVs below `data/rail/curated/` for local review or Fabric bootstrap.
+
+Raw third-party responses are deliberately not committed.
+
+## Fabric target path
+
+The intended Fabric implementation uses a Lakehouse with Bronze/Silver/Gold Delta tables, two parameterized notebooks and a scheduled Data Factory pipeline.
+
+1. The pipeline passes a departure-date watermark to the ingestion notebook.
+2. The notebook requests missing days and re-requests the most recent three completed operating dates, because actual times can be revised.
+3. Raw responses are written to immutable, date-partitioned Bronze paths with retrieval metadata and a content hash.
+4. The transformation notebook flattens trains and commercial timetable rows, applies the declared grains and writes Silver Delta tables.
+5. Quality checks stop publication if train keys are duplicated, scheduled passenger route endpoints disappear, or an unexpected station-code rate exceeds the declared tolerance. Passenger endpoints require official `passengerTraffic=true`; missing actual times and cancellations are measured, not silently repaired.
+6. Gold tables expose stable keys and additive columns to a Direct Lake Power BI semantic model.
+7. Refresh history, notebook runs and Delta lineage remain visible in Fabric.
+
+## Incremental policy
+
+- Partition key: Digitraffic `departureDate`.
+- Normal run: ingest yesterday plus refresh the previous three completed dates.
+- Backfill: explicit inclusive start/end parameters.
+- Idempotency: replace only the requested Silver/Gold date partitions after a successful Bronze acquisition.
+- Source identity: `(departureDate, trainNumber)`; repeated keys fail the quality gate.
+- Time: raw timestamps remain UTC; date, weekday and hour dimensions use `Europe/Helsinki` IANA rules.
+
+## Deployment boundary
+
+No Fabric workspace or Power BI tenant credential is available in the repository environment. The notebooks, star-schema contract, measures and report specification are implemented and reviewable, but workspace creation, Lakehouse binding, scheduled pipeline activation and Power BI publication must be completed in the owner's Microsoft tenant. The website intentionally does not show a fake embedded report.

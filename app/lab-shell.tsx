@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ActiveTabScroller } from "./active-tab-scroller";
 
 export type ProjectId =
   | "home"
   | "olist"
+  | "rail"
   | "housing"
   | "credit"
   | "documents"
@@ -22,6 +24,14 @@ const projects = [
     tabTitle: "Delivery Delay Predictor",
     description:
       "A working model that estimates whether a new Olist order will arrive at least one full day late.",
+  },
+  {
+    id: "rail" as const,
+    href: "/finland-rail-reliability-monitor",
+    title: "Finland Rail Reliability Monitor",
+    tabTitle: "Rail Reliability Monitor",
+    description:
+      "Official Fintraffic data transformed into a reproducible view of passenger-train, route and station reliability.",
   },
   {
     id: "housing" as const,
@@ -65,11 +75,12 @@ function ProjectTabs({ activeProject }: LabShellProps) {
   const currentPlanned = projects.find(
     (project) =>
       project.id === activeProject &&
-      project.id !== "olist",
+      project.id !== "olist" && project.id !== "rail",
   );
 
   return (
     <nav className="project-tabs" aria-label="Project navigation">
+      <ActiveTabScroller />
       <div className="project-tabs-inner">
         <Link
           href="/"
@@ -84,6 +95,13 @@ function ProjectTabs({ activeProject }: LabShellProps) {
           aria-current={activeProject === "olist" ? "page" : undefined}
         >
           {projects[0].tabTitle}
+        </Link>
+        <Link
+          href={projects[1].href}
+          className={activeProject === "rail" ? "is-active" : ""}
+          aria-current={activeProject === "rail" ? "page" : undefined}
+        >
+          {projects[1].tabTitle}
         </Link>
         {currentPlanned && (
           <Link
@@ -103,45 +121,57 @@ function HomeContent() {
   return (
     <div className="home-page">
       <header className="home-intro">
-        <p className="eyebrow">Applied AI portfolio</p>
-        <h1>Machine learning built to be inspected.</h1>
+        <p className="eyebrow">Applied analytics portfolio</p>
+        <h1>Data products built to be inspected.</h1>
         <p>
-          Reproducible Python training, time-aware evaluation and deployed
-          tools with the evidence and limitations shown alongside the result.
+          Reproducible pipelines, analytical models and deployed tools with
+          evidence, definitions and limitations shown alongside the result.
         </p>
       </header>
 
-      <article className="featured-project">
-        <div className="featured-project-copy">
-          <p className="project-status">Completed project</p>
-          <h2>{projects[0].title}</h2>
-          <p>{projects[0].description}</p>
-          <ul className="featured-project-facts" aria-label="Project summary">
-            <li>Python model training</li>
-            <li>96,470 historical orders</li>
-            <li>Live server-side inference</li>
-          </ul>
-        </div>
-        <div className="featured-project-actions">
-          <Link className="primary-link" href={projects[0].href}>
-            Open predictor
-          </Link>
-          <a
-            className="secondary-link"
-            href="https://github.com/Sintagmatarches/applied-ai-lab"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View source
-          </a>
-        </div>
-      </article>
+      <section className="completed-projects" aria-label="Completed projects">
+        <article className="featured-project">
+          <div className="featured-project-copy">
+            <p className="project-status">Completed project · 01</p>
+            <h2>{projects[0].title}</h2>
+            <p>{projects[0].description}</p>
+            <ul className="featured-project-facts" aria-label="Olist project summary">
+              <li>Python model training</li>
+              <li>96,470 historical orders</li>
+              <li>Live server-side inference</li>
+            </ul>
+          </div>
+          <div className="featured-project-actions">
+            <Link className="primary-link" href={projects[0].href}>
+              Open predictor
+            </Link>
+          </div>
+        </article>
+
+        <article className="featured-project featured-project-rail">
+          <div className="featured-project-copy">
+            <p className="project-status">Completed project · 02</p>
+            <h2>{projects[1].title}</h2>
+            <p>{projects[1].description}</p>
+            <ul className="featured-project-facts" aria-label="Rail project summary">
+              <li>Official Finnish railway data</li>
+              <li>12 complete operating months</li>
+              <li>Fabric and Power BI model</li>
+            </ul>
+          </div>
+          <div className="featured-project-actions">
+            <Link className="primary-link" href={projects[1].href}>
+              Open monitor
+            </Link>
+          </div>
+        </article>
+      </section>
 
       <section className="planned-projects" aria-labelledby="planned-title">
         <p className="eyebrow">Next</p>
         <h2 id="planned-title">Planned projects</h2>
         <ul className="project-link-list">
-          {projects.slice(1).map((project) => (
+          {projects.slice(2).map((project) => (
             <li key={project.id}>
               <Link href={project.href}>{project.title}</Link>
               <span>Planned</span>
@@ -174,7 +204,7 @@ export function LabShell({ activeProject, children }: LabShellProps) {
           <BrandMark />
           <span className="brand-text">
             <strong>Applied AI Lab</strong>
-            <small>Practical machine-learning tools</small>
+            <small>Analytics and machine-learning systems</small>
           </span>
         </Link>
       </header>

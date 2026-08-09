@@ -31,7 +31,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders the completed Olist project before clearly marked planned work", async () => {
+test("renders both completed projects before clearly marked planned work", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -40,16 +40,35 @@ test("renders the completed Olist project before clearly marked planned work", a
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
+  assert.match(html, /Rail Reliability Monitor/);
   assert.match(html, /Completed project/);
   assert.match(html, /Open predictor/);
+  assert.match(html, /Open monitor/);
   assert.match(html, /Planned projects/);
   assert.match(html, /href="\/housing-value-forecast"/);
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
-  assert.match(html, /View source/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260806-1/);
-  assert.match(html, /og-v20260730-5\.png\?v=20260806-1/);
+  assert.match(html, /favicon\.svg\?v=20260809-rail-1/);
+  assert.match(html, /og\.png\?v=20260809-rail-1/);
+});
+
+test("renders the evidence-backed Finland rail monitor and methodology", async () => {
+  const response = await render("/finland-rail-reliability-monitor");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Finland Rail Reliability Monitor/);
+  assert.match(html, /Historical network view/);
+  assert.match(html, /Reliability depends on the threshold/);
+  assert.match(html, /Lahti (?:↔|&harr;) Helsinki/);
+  assert.match(html, /Weather association, not causation/);
+  assert.match(html, /Reproducible from source to semantic model/);
+  assert.match(html, /What this monitor does not claim/);
+  assert.match(html, /Fintraffic \/ digitraffic\.fi/);
+  assert.match(html, /CC BY 4\.0/);
+  assert.match(html, /Passenger journeys/);
+  assert.doesNotMatch(html, /placeholder|fake live|coming soon/i);
 });
 
 test("renders the working Olist model, evidence and honest limitation", async () => {
@@ -116,5 +135,8 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.predictor-form\s*\{/);
   assert.match(css, /\.prediction-result\s*\{/);
   assert.match(css, /\.featured-project\s*\{/);
+  assert.match(css, /\.rail-page\s*\{/);
+  assert.match(css, /\.threshold-control\s*\{/);
+  assert.match(css, /\.lahti-profile\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);
 });

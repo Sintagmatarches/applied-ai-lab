@@ -14,7 +14,7 @@ function freshPath(pathname: string): string {
   return `${pathname}${separator}verify=${Date.now()}`;
 }
 
-test("published homepage leads with the completed project", async ({ page }) => {
+test("published homepage leads with the completed projects", async ({ page }) => {
   const browserErrors = failOnBrowserErrors(page);
   const response = await page.goto(freshPath("/"), {
     waitUntil: "networkidle",
@@ -26,6 +26,10 @@ test("published homepage leads with the completed project", async ({ page }) => 
     page.getByRole("heading", { name: "Olist Delivery Delay Predictor" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Open predictor" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Finland Rail Reliability Monitor" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open monitor" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Planned projects" })).toBeVisible();
 
   const completedTop = await page
@@ -37,6 +41,43 @@ test("published homepage leads with the completed project", async ({ page }) => 
   expect(completedTop).not.toBeNull();
   expect(plannedTop).not.toBeNull();
   expect(completedTop!.y).toBeLessThan(plannedTop!.y);
+  expect(browserErrors).toEqual([]);
+});
+
+test("published rail monitor changes thresholds and stays readable", async ({
+  page,
+}, testInfo) => {
+  const browserErrors = failOnBrowserErrors(page);
+  const response = await page.goto(
+    freshPath("/finland-rail-reliability-monitor"),
+    { waitUntil: "networkidle" },
+  );
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole("heading", { name: "Finland Rail Reliability Monitor" }),
+  ).toBeVisible();
+  await expect(page.getByText("Historical network view", { exact: true })).toBeVisible();
+  await expect(page.getByText("Weather association, not causation")).toBeVisible();
+  const fiveMinuteValue = await page
+    .getByText("Arrived within 5 min", { exact: true })
+    .locator("..")
+    .locator("dd")
+    .textContent();
+  await page.getByRole("button", { name: "≤ 15 min" }).click();
+  const fifteenMinuteValue = await page
+    .getByText("Arrived within 15 min", { exact: true })
+    .locator("..")
+    .locator("dd")
+    .textContent();
+  expect(fifteenMinuteValue).not.toEqual(fiveMinuteValue);
+
+  if (testInfo.project.name === "mobile-chromium") {
+    const columns = await page.locator(".rail-kpi-grid").evaluate(
+      (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    );
+    expect(columns).toBe(1);
+  }
   expect(browserErrors).toEqual([]);
 });
 

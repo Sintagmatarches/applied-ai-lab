@@ -1,0 +1,48 @@
+# Analytical data dictionary
+
+## `fact_train_journey`
+
+| Column | Meaning |
+| --- | --- |
+| `journey_key` | Unique `departureDate:trainNumber` source key. |
+| `departure_date` | Digitraffic date of the train's first departure. |
+| `month` | Local Finnish departure month. |
+| `weekday_number` | ISO-style Monday=1 through Sunday=7, in Finland local time. |
+| `departure_hour` | First commercial scheduled departure hour, Finland local time. |
+| `train_type` | Digitraffic train type such as IC, HL or S. |
+| `train_category` | Included passenger category: Long-distance or Commuter. |
+| `commuter_line` | Public commuter line identifier where present. |
+| `route_key` | Canonical undirected origin/destination station-code pair. |
+| `origin_code`, `destination_code` | First commercial departure and final commercial arrival codes. |
+| `cancelled` | Whole-train cancellation indicator. |
+| `partial_cancelled` | At least one commercial row cancelled while the whole train is not. |
+| `final_arrival_cancelled` | Final passenger-arrival row cancelled; distinguished from a missing actual time. |
+| `final_delay_minutes` | Digitraffic final arrival difference; null when unavailable/cancelled. |
+| `departure_delay_minutes` | Delay at first commercial departure where available. |
+
+## `fact_station_arrival`
+
+Recommended Fabric Silver grain: one commercial, stopping arrival row. Keep journey key, station key, scheduled/actual/estimate timestamps, source delay, row cancellation, commercial track and quality flags. The public repository writes a smaller `agg_station_month.csv` because raw and full-grain derived datasets are intentionally excluded from Git.
+
+## `fact_lahti_helsinki_weather`
+
+| Column | Meaning |
+| --- | --- |
+| `journey_key` | Segment key including direction. |
+| `direction` | Lahti → Helsinki or Helsinki → Lahti. |
+| `scheduled_departure_utc` | Segment departure used for temporal matching. |
+| `weather_origin_code` | `LH` or `HKI`; weather is measured at the departure side. |
+| `temperature_c` | FMI hourly air temperature. |
+| `precipitation_mm_h` | FMI hourly precipitation value. |
+| `wind_speed_ms` | FMI 10-minute wind-speed observation exposed in the hourly sample. |
+| `visibility_m` | FMI visibility observation in metres. |
+| `arrival_delay_minutes` | Delay at the segment destination. |
+| `cancelled` | Whole-train or segment-end cancellation. |
+
+## Dimensions
+
+- `dim_date`: one local calendar date with month, weekday, ISO week, quarter and season.
+- `dim_station`: station code, UIC code, source name, passenger-traffic flag, type, latitude and longitude. Public station comparisons use only Finnish rows where `passengerTraffic=true`.
+- `dim_route`: canonical route key, endpoint station keys and display label.
+- `dim_train_service`: train type, category and commuter line.
+- `delay_threshold`: disconnected rows 5, 10, 15 and 30 used by the Power BI measure.

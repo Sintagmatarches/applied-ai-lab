@@ -1,33 +1,103 @@
 # Applied AI Lab
 
-![Olist Delivery Delay Predictor](docs/screenshots/applied-ai-lab-overview-v20260803.png?v=20260806-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260809-rail-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
-Applied machine-learning projects presented as working, evidence-backed web tools.
+Evidence-backed data products built to be inspected: reproducible acquisition and transformation, explicit analytical definitions, honest evaluation and working public interfaces.
 
-[Open the live site](https://applied-ai-lab.smjlw.chatgpt.site/) · [Try the Olist predictor](https://applied-ai-lab.smjlw.chatgpt.site/olist-delivery-delay-predictor)
+[Open Applied AI Lab](https://applied-ai-lab.smjlw.chatgpt.site/) · [Finland Rail Reliability Monitor](https://applied-ai-lab.smjlw.chatgpt.site/finland-rail-reliability-monitor) · [Olist Delivery Delay Predictor](https://applied-ai-lab.smjlw.chatgpt.site/olist-delivery-delay-predictor)
 
-## Olist Delivery Delay Predictor
+## Completed projects
 
-The completed project ranks a historical Olist order’s risk of arriving more than 24 hours after the promised timestamp. The model is trained in **Python** with pandas and scikit-learn. TypeScript does not train or replace the model: it evaluates the versioned coefficients and preprocessing contract inside the production Worker.
+| Project | Primary skills | Public result |
+| --- | --- | --- |
+| Finland Rail Reliability Monitor | Analytics engineering, BI, official APIs, data quality, Microsoft Fabric design, Power BI/DAX | Historical Finnish passenger-rail analysis plus a recent Lahti–Helsinki operational snapshot |
+| Olist Delivery Delay Predictor | Python ML, point-in-time features, chronological evaluation, model parity, server inference | Working relative delay-risk scorer with held-out evidence and limitations |
+
+## Finland Rail Reliability Monitor
+
+The monitor answers: **How reliable are Finnish passenger trains, routes and stations, and when and where are delays most likely to occur?** It uses official [Fintraffic / Digitraffic railway data](https://www.digitraffic.fi/en/railway-traffic/) directly rather than a copied dataset.
+
+The committed analytical snapshot covers **1 August 2025 through 31 July 2026**, twelve fully completed operating months retrieved on 9 August 2026. The population is Digitraffic `Long-distance` and `Commuter` trains. Passenger endpoints and station rankings require official station metadata `passengerTraffic=true`; depot/service locations are excluded at the transformation layer.
+
+### Network results
+
+| Metric | Result |
+| --- | ---: |
+| Modelled passenger journeys | 403,054 |
+| Journeys with a completed final arrival | 400,518 |
+| Final arrivals within 5 minutes | 95.81% |
+| Final arrivals within 15 minutes | 98.91% |
+| Whole-train cancellation rate | 0.49% |
+| Median / 90th-percentile final delay | 0.0 / 3.0 minutes |
+| Direct Lahti–Helsinki services | 24,351 |
+
+“On time” defaults to a completed final commercial arrival no more than five whole minutes late. The site lets the reviewer switch between 5-, 10-, 15- and 30-minute thresholds. Cancelled trains, cancelled commercial rows and missing actual times are measured separately and are never changed to zero delay.
+
+### Findings
+
+- Network reliability was 95.8% within five minutes, but June 2026 was materially lower at about 92.4%; one recent year supports an internal seasonal comparison, not a long-run trend claim.
+- Direct Lahti → Helsinki services reached 91.0% within five minutes versus 93.7% for Helsinki → Lahti. The median delay change on either segment was zero, while the 90th-percentile arrival delay was five and four minutes respectively.
+- Among frequent end-to-end routes with at least 1,000 completed journeys, Helsinki–Rovaniemi had 72.0% within five minutes and a 16-minute 90th percentile; Helsinki–Joensuu, Helsinki–Jyväskylä and Helsinki–Oulu were also persistently below 90% across the observed months.
+- Long-distance IC trains reached 86.8% within five minutes versus 97.6% for the high-volume HL commuter type. The interface always shows volume and cancellation rate so service types are not compared without denominators.
+- In the scoped FMI match, freezing departures on the Lahti–Helsinki segment had about 90.2% within five minutes versus 92.8% when none of the selected adverse conditions were present. This is an unadjusted association, not a causal weather estimate; the strong-wind group has only 32 completed journeys and its rate is withheld in the UI.
+
+### Reproducible pipeline
 
 ```mermaid
 flowchart LR
-  A["Public Olist relational CSVs"] --> B["Python: build_dataset.py"]
-  B --> C["Validated order-level table"]
-  C --> D["Python: point-in-time features"]
-  D --> E["Python: backtests, training, calibration"]
-  E --> F["JSON + joblib + parity fixtures"]
-  F --> G["TypeScript Worker inference"]
-  G --> H["POST /api/olist/predict"]
+  D["Digitraffic daily trains + station metadata"] --> C["Compressed departure-date cache"]
+  F["FMI hourly observations"] --> W["Helsinki / Lahti weekly cache"]
+  C --> T["Passenger journey + commercial arrival transforms"]
+  W --> L["Lahti–Helsinki time/location match"]
+  T --> Q["Quality report"]
+  T --> A["Versioned analytical aggregate"]
+  L --> A
+  A --> U["Interactive public monitor"]
 ```
 
-The source is the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), published under CC BY-NC-SA 4.0. The repository contains the complete build code and pins every source-table SHA-256; a changed upstream file fails the build until it is reviewed intentionally. Raw third-party CSVs are not committed.
+The Python standard-library pipeline downloads only missing source partitions, respects Digitraffic identification/compression guidance, splits FMI requests into the official seven-day maximum, converts UTC using `Europe/Helsinki`, and produces a compact public artifact plus ignored full-grain curated CSVs. Raw third-party responses and the 41 MB journey fact are not committed.
 
-## Evaluation
+```bash
+python -m rail.pipeline
+python -m unittest discover -s rail/tests
+```
 
-The reproducible dataset contains 96,470 delivered orders from September 2016 through August 2018. The untouched final time test contains 14,471 orders, including 620 late deliveries.
+Important references:
+
+- [`rail/pipeline.py`](rail/pipeline.py) — acquisition, transformation, metrics, quality and BI extracts;
+- [`artifacts/rail-summary.json`](artifacts/rail-summary.json) — versioned public analytical snapshot;
+- [`artifacts/rail-quality.json`](artifacts/rail-quality.json) — source counts, checks and definitions;
+- [`docs/rail/methodology.md`](docs/rail/methodology.md) — grains, metrics, weather scope and limitations;
+- [`docs/rail/data-dictionary.md`](docs/rail/data-dictionary.md) — analytical tables and fields;
+- [`docs/rail/architecture.md`](docs/rail/architecture.md) — public and Fabric architecture.
+
+### Microsoft Fabric and Power BI
+
+The repository includes two Fabric notebook sources, an incremental Bronze/Silver/Gold Lakehouse design, quality gates, watermark policy, Power BI star schema, threshold-aware DAX measures and a seven-page report specification.
+
+- [`fabric/`](fabric/) — workspace object plan and runnable ingestion/transformation notebook code;
+- [`power-bi/measures.dax`](power-bi/measures.dax) — production measures for journeys, arrivals, cancellations, missing actuals, percentiles and threshold selection;
+- [`power-bi/README.md`](power-bi/README.md) — semantic relationships, report pages and deployment checklist.
+
+A Fabric capacity/workspace, attached Lakehouse, scheduled pipeline and Power BI tenant permissions are required outside GitHub. They are documented, not presented as already deployed. The website is the defensible public interactive delivery because a Power BI `Publish to web` embed would require explicit tenant/licence configuration and exposes underlying model data publicly.
+
+## Olist Delivery Delay Predictor
+
+The Olist project ranks a historical order's risk of arriving more than 24 hours after the promised timestamp. Python owns relational data assembly, point-in-time feature engineering, chronological backtests, model comparison, fitting, calibration and artifact export. The Cloudflare TypeScript Worker evaluates only the versioned portable model for the public form.
+
+```mermaid
+flowchart LR
+  O["Public Olist relational CSVs"] --> B["Python order-level dataset"]
+  B --> P["Point-in-time features"]
+  P --> E["Rolling backtests + final time test"]
+  E --> J["JSON / joblib / parity fixtures"]
+  J --> R["TypeScript Worker scorer"]
+  R --> API["POST /api/olist/predict"]
+```
+
+The reproducible dataset contains 96,470 delivered orders from September 2016 through August 2018. The untouched newest 14,471-order test period contains 620 late deliveries.
 
 | Metric | Final time test |
 | --- | ---: |
@@ -39,20 +109,9 @@ The reproducible dataset contains 96,470 delivered orders from September 2016 th
 | Top-risk 10% precision | 7.39% |
 | False warnings per detected delay | 12.53 |
 
-The result is modest. Removing label-availability leakage made it weaker than the previous result, but defensible: an order purchased earlier contributes to late-rate history only after its actual delivery outcome has become known. The UI therefore exposes a relative ranking score, not an exact probability or guarantee. Full metrics and 95% bootstrap intervals are in [`artifacts/metrics.json`](artifacts/metrics.json).
+The result is modest and is presented as a relative ranking score, not an exact probability. Logistic regression won the declared stability-adjusted top-10% capture rule across four earlier expanding-window backtests. Historical delay-rate features include only labels whose actual delivery outcome was already available before the prediction date.
 
-## Key decisions
-
-- **Metric:** I chose delay capture in a fixed top-10% review queue as the primary backtest criterion because it maps to bounded operational capacity and remains interpretable when late-order prevalence shifts sharply over time. The rule subtracts the standard deviation across four backtests. PR-AUC lift over each fold’s prevalence and ROC-AUC are tie-breakers; raw PR-AUC, precision and false-warning cost remain visible.
-- **Model:** I compared logistic regression, XGBoost and CatBoost. Logistic regression won the declared backtest rule. It also has an auditable portable representation, but the code no longer assumes it must win: training stops if a selected model lacks a parity-tested exporter.
-- **Time split:** I used four expanding-window backtests, then trained on the oldest 70%, calibrated on the following 15%, and evaluated once on the newest 15%. Random splitting would mix changing marketplace conditions across time.
-- **Point-in-time features:** Purchase counts use purchase days strictly before the prediction day. Late rates use only labels whose actual customer-delivery day is strictly earlier. This distinguishes “an order exists” from “its outcome is already known.”
-- **Architecture:** Python owns data assembly, validation, feature engineering, model comparison, fitting, calibration and artifact generation. A TypeScript Worker reconstructs only inference because the site runs on Cloudflare. Four committed fixtures compare all transformed features, raw scores, calibrated outputs and risk scores between Python and TypeScript at `1e-10` tolerance.
-- **Explanations:** The three displayed factors are sensitivity scenarios against a fixed reference order, not SHAP values or causal attributions. The UI and API now say this explicitly.
-
-## Reproduce the model
-
-Requires Node.js 22.13 or later and Python 3.11 or later. Kaggle’s public dataset download is anonymous with the pinned CLI version.
+Reproduce it with:
 
 ```bash
 python -m pip install -r requirements-ml.txt -r requirements-data.txt
@@ -62,36 +121,29 @@ npm run ml:build-data
 npm run ml:validate
 npm run ml:train
 npm run test:ml
+```
+
+See [`artifacts/model-card.md`](artifacts/model-card.md), [`ml/train_model.py`](ml/train_model.py), [`lib/olist-model.ts`](lib/olist-model.ts) and [`tests/model-parity.test.ts`](tests/model-parity.test.ts).
+
+## Application and validation
+
+The public site uses Next.js/React through Vinext and a Cloudflare Worker-compatible build. Stable public assets and analytical/model artifacts use explicit cache-busting versions.
+
+```bash
+npm ci
 npm test
+npm run test:rail
+npm run test:ml
 npm run typecheck
 npm run lint
 ```
 
-The separate `npm run test:live` suite uses Playwright against the published
-domain in desktop Chromium and a Pixel 7 viewport. It checks the homepage,
-responsive form, production API scoring, resource links and browser console.
-The scheduled `Live site smoke` GitHub workflow runs the same suite daily and
-can be dispatched immediately after a production deployment.
+CI builds the Worker, renders every project route, exercises both APIs, enforces exact Python↔TypeScript Olist parity, runs Python rail and ML tests, type-checks, lints and audits production dependencies. A separate Playwright suite checks the published site on desktop Chromium and a Pixel 7 viewport, including both completed projects, interactive rail thresholds, the Olist prediction form, responsive layout and browser-console errors.
 
-The important code lives here:
+## Licences and attribution
 
-- [`ml/build_dataset.py`](ml/build_dataset.py) — deterministic joins, primary-item policy, order-level aggregation, distance and target;
-- [`ml/temporal_features.py`](ml/temporal_features.py) — purchase histories and outcome-availability histories;
-- [`ml/train_model.py`](ml/train_model.py) — chronological backtests, model comparison, calibration, bootstrap intervals and export;
-- [`ml/runtime_reference.py`](ml/runtime_reference.py) — authoritative portable Python scorer;
-- [`artifacts/model-card.md`](artifacts/model-card.md) — model/data card and limitations;
-- [`artifacts/parity-fixtures.json`](artifacts/parity-fixtures.json) — Python expected vectors and scores;
-- [`lib/olist-model.ts`](lib/olist-model.ts) — production inference and input validation;
-- [`tests/model-parity.test.ts`](tests/model-parity.test.ts) — exact Python↔TypeScript parity test;
-- [`app/api/olist/predict/route.ts`](app/api/olist/predict/route.ts) — server API boundary.
+- Railway source: Fintraffic / digitraffic.fi, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The project transforms the source into journey, station, route and time aggregates.
+- Weather source: Finnish Meteorological Institute open data, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- Olist source: Brazilian E-Commerce Public Dataset by Olist, distributed through Kaggle under CC BY-NC-SA 4.0.
 
-## Leakage and serving controls
-
-- The target, delivery timestamps, reviews, IDs and all other post-purchase facts are excluded from model inputs.
-- ISO weekday is defined once as Monday=1 through Sunday=7; timestamps and calendar components use UTC in both runtimes.
-- Predictions outside the observed 2016–2018 purchase range are rejected rather than silently extrapolated.
-- Unknown categories are accepted and encoded as an all-zero one-hot group.
-- CI rebuilds the Worker, tests the API, checks every parity fixture, runs Python dataset/temporal tests, type-checks and lints the application, and audits production dependencies.
-- Production dependency audit is clean; current remaining audit findings are confined to upstream development tooling.
-
-Stable public assets and the model artifact use explicit cache-busting versions.
+No secrets, raw railway archive, full-grain railway fact extract or large Olist source CSV is committed.

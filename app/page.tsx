@@ -4,7 +4,7 @@ import { LabShell } from "./lab-shell";
 export const metadata: Metadata = {
   title: "Applied AI Lab",
   description:
-    "A growing laboratory for honest, production-minded machine learning tools.",
+    "Evidence-backed machine learning, analytics engineering and BI projects built to be inspected.",
 };
 
 export default function Home() {

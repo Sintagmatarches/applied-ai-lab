@@ -1,0 +1,119 @@
+// Disconnected table created with:
+// Delay Threshold = DATATABLE("Minutes", INTEGER, {{5}, {10}, {15}, {30}})
+
+Scheduled Journeys =
+COUNTROWS('Fact Train Journey')
+
+Completed Journeys =
+CALCULATE(
+    COUNTROWS('Fact Train Journey'),
+    'Fact Train Journey'[Cancelled] = FALSE(),
+    NOT ISBLANK('Fact Train Journey'[Final Delay Minutes])
+)
+
+Cancelled Journeys =
+CALCULATE(
+    COUNTROWS('Fact Train Journey'),
+    'Fact Train Journey'[Cancelled] = TRUE()
+)
+
+Cancellation Rate =
+DIVIDE([Cancelled Journeys], [Scheduled Journeys])
+
+Selected Delay Threshold =
+SELECTEDVALUE('Delay Threshold'[Minutes], 5)
+
+On-time Journeys =
+VAR ThresholdMinutes = [Selected Delay Threshold]
+RETURN
+    CALCULATE(
+        COUNTROWS('Fact Train Journey'),
+        'Fact Train Journey'[Cancelled] = FALSE(),
+        NOT ISBLANK('Fact Train Journey'[Final Delay Minutes]),
+        'Fact Train Journey'[Final Delay Minutes] <= ThresholdMinutes
+    )
+
+On-time Rate =
+DIVIDE([On-time Journeys], [Completed Journeys])
+
+Missing Final Actual =
+CALCULATE(
+    COUNTROWS('Fact Train Journey'),
+    'Fact Train Journey'[Cancelled] = FALSE(),
+    ISBLANK('Fact Train Journey'[Final Delay Minutes])
+)
+
+Missing Final Actual Rate =
+DIVIDE([Missing Final Actual], [Scheduled Journeys])
+
+Median Final Delay =
+MEDIANX(
+    FILTER(
+        'Fact Train Journey',
+        'Fact Train Journey'[Cancelled] = FALSE()
+            && NOT ISBLANK('Fact Train Journey'[Final Delay Minutes])
+    ),
+    'Fact Train Journey'[Final Delay Minutes]
+)
+
+P90 Final Delay =
+PERCENTILEX.INC(
+    FILTER(
+        'Fact Train Journey',
+        'Fact Train Journey'[Cancelled] = FALSE()
+            && NOT ISBLANK('Fact Train Journey'[Final Delay Minutes])
+    ),
+    'Fact Train Journey'[Final Delay Minutes],
+    0.9
+)
+
+Median Delay Accumulation =
+MEDIANX(
+    FILTER(
+        'Fact Train Journey',
+        'Fact Train Journey'[Cancelled] = FALSE()
+            && NOT ISBLANK('Fact Train Journey'[Final Delay Minutes])
+            && NOT ISBLANK('Fact Train Journey'[Departure Delay Minutes])
+    ),
+    'Fact Train Journey'[Final Delay Minutes]
+        - 'Fact Train Journey'[Departure Delay Minutes]
+)
+
+Route Has Sufficient Sample =
+IF([Scheduled Journeys] >= 200, 1, 0)
+
+Station Has Sufficient Sample =
+IF([Scheduled Arrivals] >= 500, 1, 0)
+
+Scheduled Arrivals =
+COUNTROWS('Fact Station Arrival')
+
+Completed Arrivals =
+CALCULATE(
+    COUNTROWS('Fact Station Arrival'),
+    'Fact Station Arrival'[Cancelled] = FALSE(),
+    NOT ISBLANK('Fact Station Arrival'[Delay Minutes])
+)
+
+On-time Arrivals =
+VAR ThresholdMinutes = [Selected Delay Threshold]
+RETURN
+    CALCULATE(
+        COUNTROWS('Fact Station Arrival'),
+        'Fact Station Arrival'[Cancelled] = FALSE(),
+        NOT ISBLANK('Fact Station Arrival'[Delay Minutes]),
+        'Fact Station Arrival'[Delay Minutes] <= ThresholdMinutes
+    )
+
+Station On-time Rate =
+DIVIDE([On-time Arrivals], [Completed Arrivals])
+
+Data Coverage Start =
+MIN('Dim Date'[Date])
+
+Data Coverage End =
+MAX('Dim Date'[Date])
+
+Last Successful Retrieval UTC =
+MAX('Ingestion Audit'[Retrieved At UTC])
+

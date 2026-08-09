@@ -17,22 +17,22 @@ export async function generateMetadata(): Promise<Metadata> {
       template: "%s · Applied AI Lab",
     },
     description:
-      "A growing laboratory for honest, production-minded machine learning tools.",
+      "Evidence-backed machine learning, analytics engineering and BI projects built to be inspected.",
     icons: {
-      icon: "/favicon.svg?v=20260806-1",
-      shortcut: "/favicon.svg?v=20260806-1",
+      icon: "/favicon.svg?v=20260809-rail-1",
+      shortcut: "/favicon.svg?v=20260809-rail-1",
     },
     openGraph: {
       title: "Applied AI Lab",
       description:
-        "Working machine-learning tools with honest held-out evidence.",
+        "Machine learning, analytics engineering and BI projects with reproducible evidence.",
       type: "website",
       images: [
         {
-          url: "/og-v20260730-5.png?v=20260806-1",
-          width: 1732,
+          url: "/og.png?v=20260809-rail-1",
+          width: 1731,
           height: 909,
-          alt: "Applied AI Lab — Olist Delivery Delay Predictor",
+          alt: "Applied AI Lab — Olist Delivery Delay Predictor and Finland Rail Reliability Monitor",
         },
       ],
     },
@@ -40,8 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Applied AI Lab",
       description:
-        "Working machine-learning tools with honest held-out evidence.",
-      images: ["/og-v20260730-5.png?v=20260806-1"],
+        "Machine learning, analytics engineering and BI projects with reproducible evidence.",
+      images: ["/og.png?v=20260809-rail-1"],
     },
   };
 }

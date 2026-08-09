@@ -1,0 +1,24 @@
+{
+  "retrieved_at": "2026-08-09T09:52:22Z",
+  "coverage": {
+    "start": "2025-08-01",
+    "end": "2026-07-31"
+  },
+  "source_train_records": 598409,
+  "passenger_train_records": 403935,
+  "modelled_journeys": 403054,
+  "commercial_station_arrivals": 4980673,
+  "lahti_helsinki_direct_services": 24351,
+  "checks": {
+    "trains_missing_final_actual": 5,
+    "trains_without_route_endpoints": 881
+  },
+  "definitions": {
+    "passenger_scope": "trainCategory is Long-distance or Commuter",
+    "journey_grain": "one unique departureDate + trainNumber, using first commercial departure and last commercial arrival at Finnish passengerTraffic=true stations",
+    "on_time": "final actual arrival is no more than the selected number of whole minutes after schedule; early arrivals count as on time",
+    "cancelled": "Digitraffic whole-train cancelled flag; cancelled commercial rows are also counted separately as partial cancellations",
+    "missing_actuals": "not imputed and excluded from punctuality denominators",
+    "time_zone": "Digitraffic UTC converted with Europe/Helsinki IANA rules for local month, weekday and hour"
+  }
+}
