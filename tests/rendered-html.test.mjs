@@ -49,8 +49,8 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260809-rail-1/);
-  assert.match(html, /og\.png\?v=20260809-rail-1/);
+  assert.match(html, /favicon\.svg\?v=20260810-rail-2/);
+  assert.match(html, /og\.png\?v=20260810-rail-2/);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
@@ -61,13 +61,21 @@ test("renders the evidence-backed Finland rail monitor and methodology", async (
   assert.match(html, /Finland Rail Reliability Monitor/);
   assert.match(html, /Historical network view/);
   assert.match(html, /Reliability depends on the threshold/);
+  assert.match(html, /Key findings/);
+  assert.match(html, /92\.4%/);
+  assert.match(html, /Python/);
+  assert.match(html, /Power BI \/ DAX/);
+  assert.match(html, /Least reliable/);
+  assert.match(html, /Most reliable/);
+  assert.match(html, /Most services/);
   assert.match(html, /Lahti (?:↔|&harr;) Helsinki/);
   assert.match(html, /Weather association, not causation/);
   assert.match(html, /Reproducible from source to semantic model/);
   assert.match(html, /What this monitor does not claim/);
   assert.match(html, /Fintraffic \/ digitraffic\.fi/);
   assert.match(html, /CC BY 4\.0/);
-  assert.match(html, /Passenger journeys/);
+  assert.match(html, /Passenger train journeys/);
+  assert.doesNotMatch(html, /ChatGPT|chatgpt\.site/i);
   assert.doesNotMatch(html, /placeholder|fake live|coming soon/i);
 });
 

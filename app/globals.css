@@ -791,8 +791,27 @@ tbody td {
   line-height: 1.55;
 }
 
+.rail-tech-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail-tech-summary li {
+  padding: 7px 10px;
+  border: 1px solid #344452;
+  background: #18232c;
+  color: #cbd6df;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .rail-hero .project-resources {
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .rail-hero-facts {
@@ -850,6 +869,57 @@ tbody td {
 .rail-definition-note strong {
   color: var(--rail-green);
   text-transform: uppercase;
+}
+
+.rail-key-findings {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.55fr) minmax(0, 2fr);
+  gap: 28px 36px;
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid #344452;
+  background: var(--rail-panel);
+}
+
+.rail-key-findings-heading h2 {
+  margin: 8px 0 0;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.rail-key-findings ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail-key-findings li {
+  display: grid;
+  gap: 7px;
+  padding-left: 14px;
+  border-left: 2px solid var(--rail-green);
+}
+
+.rail-key-findings li strong {
+  color: #f2f7f4;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.rail-key-findings li span,
+.rail-key-findings > p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.rail-key-findings > p {
+  grid-column: 2;
+  margin: -8px 0 0;
 }
 
 .rail-control-panel,
@@ -1477,6 +1547,14 @@ tbody td {
     max-width: 680px;
   }
 
+  .rail-key-findings {
+    grid-template-columns: 1fr;
+  }
+
+  .rail-key-findings > p {
+    grid-column: 1;
+  }
+
   .rail-method-links {
     grid-column: auto;
   }
@@ -1631,6 +1709,15 @@ tbody td {
   .rail-definition-note {
     grid-template-columns: 1fr;
     gap: 7px;
+  }
+
+  .rail-key-findings {
+    gap: 24px;
+    padding: 22px 18px;
+  }
+
+  .rail-key-findings ol {
+    grid-template-columns: 1fr;
   }
 
   .rail-control-panel,

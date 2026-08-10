@@ -73,6 +73,8 @@ type LiveResponse = {
   services: LiveRailService[];
 };
 
+type RouteSort = "least-reliable" | "most-reliable" | "volume";
+
 function percent(value: number | null | undefined, digits = 1) {
   return value == null ? "—" : `${(value * 100).toFixed(digits)}%`;
 }
@@ -230,16 +232,24 @@ function LiveServices() {
 
 export function RailMonitor({ summary }: { summary: RailSummary }) {
   const [threshold, setThreshold] = useState(5);
-  const [routeSort, setRouteSort] = useState<"volume" | "reliability">("reliability");
+  const [routeSort, setRouteSort] = useState<RouteSort>("least-reliable");
   const routes = useMemo(() => {
     const copy = [...summary.routes];
     return copy
-      .sort((left, right) =>
-        routeSort === "volume"
-          ? right.completed - left.completed
-          : (reliabilityRate(right, threshold) ?? -1) -
-            (reliabilityRate(left, threshold) ?? -1),
-      )
+      .sort((left, right) => {
+        if (routeSort === "volume") return right.completed - left.completed;
+
+        const leftRate = reliabilityRate(left, threshold);
+        const rightRate = reliabilityRate(right, threshold);
+        if (leftRate == null && rightRate == null) return right.completed - left.completed;
+        if (leftRate == null) return 1;
+        if (rightRate == null) return -1;
+
+        const difference = routeSort === "least-reliable"
+          ? leftRate - rightRate
+          : rightRate - leftRate;
+        return difference || right.completed - left.completed;
+      })
       .slice(0, 12);
   }, [routeSort, summary.routes, threshold]);
   const stationRows = useMemo(
@@ -287,7 +297,7 @@ export function RailMonitor({ summary }: { summary: RailSummary }) {
           <p className="eyebrow">Historical network view</p>
           <h2 id="network-title">Reliability depends on the threshold</h2>
           <p>
-            There is no universal definition of “on time”. Change the allowed arrival delay and every rate below recalculates from the same completed journeys.
+            There is no universal definition of “on time”. Change the allowed arrival delay and every rate below recalculates from the same completed train journeys.
           </p>
         </div>
         <ThresholdControl
@@ -314,7 +324,7 @@ export function RailMonitor({ summary }: { summary: RailSummary }) {
           <small>90th percentile: {summary.overall.p90_delay_minutes?.toFixed(1)} min</small>
         </div>
         <div>
-          <dt>Measured journeys</dt>
+          <dt>Measured train journeys</dt>
           <dd>{number(summary.overall.completed)}</dd>
           <small>{summary.meta.coverage_days} complete operating days</small>
         </div>
@@ -398,7 +408,7 @@ export function RailMonitor({ summary }: { summary: RailSummary }) {
           <div>
             <p className="eyebrow">Service mix</p>
             <h2 id="service-types-title">Reliability by train type</h2>
-            <p>Digitraffic train types with at least 100 scheduled passenger journeys.</p>
+            <p>Digitraffic train types with at least 100 scheduled passenger train journeys.</p>
           </div>
         </div>
         <div className="train-type-grid">
@@ -427,8 +437,9 @@ export function RailMonitor({ summary }: { summary: RailSummary }) {
           </div>
           <label className="rail-sort-control">
             Order routes
-            <select value={routeSort} onChange={(event) => setRouteSort(event.target.value as "volume" | "reliability")}>
-              <option value="reliability">Most reliable</option>
+            <select value={routeSort} onChange={(event) => setRouteSort(event.target.value as RouteSort)}>
+              <option value="least-reliable">Least reliable</option>
+              <option value="most-reliable">Most reliable</option>
               <option value="volume">Most services</option>
             </select>
           </label>

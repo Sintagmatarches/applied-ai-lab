@@ -1,12 +1,12 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260809-rail-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260810-rail-2)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
 Evidence-backed data products built to be inspected: reproducible acquisition and transformation, explicit analytical definitions, honest evaluation and working public interfaces.
 
-[Open Applied AI Lab](https://applied-ai-lab.smjlw.chatgpt.site/) · [Finland Rail Reliability Monitor](https://applied-ai-lab.smjlw.chatgpt.site/finland-rail-reliability-monitor) · [Olist Delivery Delay Predictor](https://applied-ai-lab.smjlw.chatgpt.site/olist-delivery-delay-predictor)
+The production hostname is deployment configuration rather than a repository constant. Set `PLAYWRIGHT_BASE_URL` to run the browser suite against any deployed domain.
 
 ## Completed projects
 
@@ -25,8 +25,8 @@ The committed analytical snapshot covers **1 August 2025 through 31 July 2026**,
 
 | Metric | Result |
 | --- | ---: |
-| Modelled passenger journeys | 403,054 |
-| Journeys with a completed final arrival | 400,518 |
+| Modelled passenger train journeys | 403,054 |
+| Train journeys with a completed final arrival | 400,518 |
 | Final arrivals within 5 minutes | 95.81% |
 | Final arrivals within 15 minutes | 98.91% |
 | Whole-train cancellation rate | 0.49% |
@@ -49,7 +49,7 @@ The committed analytical snapshot covers **1 August 2025 through 31 July 2026**,
 flowchart LR
   D["Digitraffic daily trains + station metadata"] --> C["Compressed departure-date cache"]
   F["FMI hourly observations"] --> W["Helsinki / Lahti weekly cache"]
-  C --> T["Passenger journey + commercial arrival transforms"]
+  C --> T["Passenger train journey + commercial arrival transforms"]
   W --> L["Lahti–Helsinki time/location match"]
   T --> Q["Quality report"]
   T --> A["Versioned analytical aggregate"]

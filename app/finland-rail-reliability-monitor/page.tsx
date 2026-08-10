@@ -10,7 +10,22 @@ export const metadata: Metadata = {
     "Evidence-backed analysis of Finnish passenger-train, route and station reliability using official Fintraffic data.",
 };
 
+function rate(value: number | null | undefined): string {
+  return value == null ? "—" : `${(value * 100).toFixed(1)}%`;
+}
+
 export default function FinlandRailReliabilityMonitor() {
+  const june2026 = summary.monthly.find((month) => month.month === "2026-06");
+  const lahtiToHelsinki = summary.lahti_helsinki.directions.find(
+    (direction) => direction.direction === "Lahti → Helsinki",
+  );
+  const helsinkiToLahti = summary.lahti_helsinki.directions.find(
+    (direction) => direction.direction === "Helsinki → Lahti",
+  );
+  const helsinkiRovaniemi = summary.routes.find(
+    (route) => route.route_key === "HKI--ROI",
+  );
+
   return (
     <LabShell activeProject="rail">
       <div className="rail-page">
@@ -21,6 +36,14 @@ export default function FinlandRailReliabilityMonitor() {
             <p className="intro-copy">
               How reliably do Finnish passenger trains reach their destination — and which routes, stations and operating periods carry the most delay risk?
             </p>
+            <ul className="rail-tech-summary" aria-label="Technology and engineering stack">
+              <li>Python</li>
+              <li>Fintraffic / Digitraffic API</li>
+              <li>FMI Open Data</li>
+              <li>Analytics engineering</li>
+              <li>Microsoft Fabric architecture</li>
+              <li>Power BI / DAX</li>
+            </ul>
             <nav className="project-resources" aria-label="Rail project resources">
               <a href="https://github.com/Sintagmatarches/applied-ai-lab/tree/main/rail" target="_blank" rel="noreferrer">Pipeline</a>
               <a href="https://github.com/Sintagmatarches/applied-ai-lab/tree/main/docs/rail" target="_blank" rel="noreferrer">Technical documentation</a>
@@ -34,7 +57,7 @@ export default function FinlandRailReliabilityMonitor() {
               <dd>{summary.meta.coverage_start}<br />→ {summary.meta.coverage_end}</dd>
             </div>
             <div>
-              <dt>Passenger journeys</dt>
+              <dt>Passenger train journeys</dt>
               <dd>{summary.overall.scheduled.toLocaleString("en-FI")}</dd>
             </div>
             <div>
@@ -54,6 +77,32 @@ export default function FinlandRailReliabilityMonitor() {
             “On time” means the final commercial arrival was no more than five whole minutes late. Cancelled trains and missing actual times are reported separately and never treated as on-time arrivals.
           </span>
         </aside>
+
+        <section className="rail-key-findings" aria-labelledby="key-findings-title">
+          <div className="rail-key-findings-heading">
+            <p className="eyebrow">Committed analytical snapshot</p>
+            <h2 id="key-findings-title">Key findings</h2>
+          </div>
+          <ol>
+            <li>
+              <strong>{rate(summary.overall.on_time["5"].rate)}</strong>
+              <span>of completed passenger-train journeys arrived within five minutes across the current twelve-month network snapshot.</span>
+            </li>
+            <li>
+              <strong>{rate(june2026?.on_time["5"].rate)}</strong>
+              <span>within five minutes in June 2026, materially below the full-period network rate.</span>
+            </li>
+            <li>
+              <strong>{rate(lahtiToHelsinki?.on_time["5"].rate)} vs {rate(helsinkiToLahti?.on_time["5"].rate)}</strong>
+              <span>for direct Lahti → Helsinki and Helsinki → Lahti services respectively.</span>
+            </li>
+            <li>
+              <strong>{rate(helsinkiRovaniemi?.on_time["5"].rate)}</strong>
+              <span>for Helsinki–Rovaniemi, the lowest five-minute rate among routes with at least 1,000 completed train journeys.</span>
+            </li>
+          </ol>
+          <p>These are descriptive comparisons from the committed snapshot; they do not establish causes for delay.</p>
+        </section>
 
         <RailMonitor summary={summary} />
 
@@ -110,4 +159,3 @@ export default function FinlandRailReliabilityMonitor() {
     </LabShell>
   );
 }
-

@@ -57,27 +57,97 @@ test("published rail monitor changes thresholds and stays readable", async ({
     page.getByRole("heading", { name: "Finland Rail Reliability Monitor" }),
   ).toBeVisible();
   await expect(page.getByText("Historical network view", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Key findings" })).toBeVisible();
   await expect(page.getByText("Weather association, not causation")).toBeVisible();
+  const routeOrder = page.getByLabel("Order routes");
+  const firstRoute = page
+    .getByRole("region", { name: "Frequent end-to-end routes" })
+    .locator("tbody tr")
+    .first()
+    .locator("th");
+
+  await expect(routeOrder).toHaveValue("least-reliable");
+  await expect(firstRoute).toContainText("Käpylä ↔ Lahti");
+  await routeOrder.selectOption("most-reliable");
+  await expect(firstRoute).toContainText("Helsinki ↔ Leppävaara");
+  await routeOrder.selectOption("volume");
+  await expect(firstRoute).toContainText("Helsinki ↔ Kerava");
+
   const fiveMinuteValue = await page
     .getByText("Arrived within 5 min", { exact: true })
     .locator("..")
     .locator("dd")
     .textContent();
+  const fiveMinuteRouteValue = await page
+    .getByRole("row", { name: /Helsinki ↔ Kerava/ })
+    .locator("td")
+    .nth(1)
+    .textContent();
+  const fiveMinuteProfileValue = await page.locator(".route-profile-kpi strong").textContent();
   await page.getByRole("button", { name: "≤ 15 min" }).click();
   const fifteenMinuteValue = await page
     .getByText("Arrived within 15 min", { exact: true })
     .locator("..")
     .locator("dd")
     .textContent();
+  const fifteenMinuteRouteValue = await page
+    .getByRole("row", { name: /Helsinki ↔ Kerava/ })
+    .locator("td")
+    .nth(1)
+    .textContent();
+  const fifteenMinuteProfileValue = await page.locator(".route-profile-kpi strong").textContent();
   expect(fifteenMinuteValue).not.toEqual(fiveMinuteValue);
+  expect(fifteenMinuteRouteValue).not.toEqual(fiveMinuteRouteValue);
+  expect(fifteenMinuteProfileValue).not.toEqual(fiveMinuteProfileValue);
 
-  if (testInfo.project.name === "mobile-chromium") {
-    const columns = await page.locator(".rail-kpi-grid").evaluate(
-      (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
-    );
-    expect(columns).toBe(1);
+  await routeOrder.selectOption("most-reliable");
+  await expect(firstRoute).toContainText("Seinäjoki ↔ Ähtäri");
+
+  if (testInfo.project.name === "desktop-chromium") {
+    await page.setViewportSize({ width: 412, height: 915 });
   }
+  const columns = await page.locator(".rail-kpi-grid").evaluate(
+    (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+  );
+  expect(columns).toBe(1);
+
+  const activeTabIsVisible = await page
+    .locator(".project-tabs [aria-current='page']")
+    .evaluate((element) => {
+      const navigation = element.closest(".project-tabs");
+      if (!navigation) return false;
+      const tabRect = element.getBoundingClientRect();
+      const navRect = navigation.getBoundingClientRect();
+      return tabRect.left >= navRect.left && tabRect.right <= navRect.right;
+    });
+  expect(activeTabIsVisible).toBe(true);
   expect(browserErrors).toEqual([]);
+});
+
+test("published rail monitor preserves history when live data is unavailable", async ({
+  page,
+}) => {
+  const browserErrors = failOnBrowserErrors(page);
+  await page.route("**/api/rail/live", async (route) => {
+    await route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Digitraffic unavailable in test" }),
+    });
+  });
+
+  const response = await page.goto(
+    freshPath("/finland-rail-reliability-monitor"),
+    { waitUntil: "networkidle" },
+  );
+
+  expect(response?.status()).toBe(200);
+  await expect(page.getByText("Historical network view", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Recent service data is temporarily unavailable. Historical analysis remains available below."),
+  ).toBeVisible();
+  expect(browserErrors).toHaveLength(1);
+  expect(browserErrors[0]).toContain("502");
 });
 
 test("published predictor works and keeps its responsive layout", async ({

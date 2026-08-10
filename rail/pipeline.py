@@ -855,7 +855,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
     for name, rows in bi_rows.items():
         write_csv(bi_dir / f"{name}.csv", rows)
     print(
-        f"Wrote {args.output}: {summary['overall']['scheduled']:,} passenger journeys, "
+        f"Wrote {args.output}: {summary['overall']['scheduled']:,} passenger train journeys, "
         f"{summary['lahti_helsinki']['overall']['scheduled']:,} Lahti–Helsinki services",
         flush=True,
     )

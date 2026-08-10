@@ -11,6 +11,8 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ vars.PRODUCTION_URL }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -19,4 +21,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Require configured production URL
+        run: test -n "$PLAYWRIGHT_BASE_URL"
       - run: npm run test:live
