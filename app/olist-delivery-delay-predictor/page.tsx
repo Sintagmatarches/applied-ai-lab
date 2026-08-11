@@ -88,7 +88,7 @@ export default function OlistDeliveryDelayPredictor() {
               Precision, Delay capture, False / found, and the confusion matrix
               are calculated for the 10% of test orders with the highest risk
               score. PR-AUC and ROC-AUC are calculated across the complete final
-              test period.
+              benchmark.
             </p>
           </div>
 
@@ -153,8 +153,8 @@ export default function OlistDeliveryDelayPredictor() {
               Logistic regression had the best stability-adjusted delay capture
               in a fixed top-10% review queue across four earlier sequential
               backtests. PR-AUC lift over each period&apos;s prevalence and ROC-AUC
-              broke ties. The table reports every candidate on the untouched
-              final period.
+              broke ties. The table reports the legacy candidates on the
+              already-observed final benchmark.
             </p>
           </div>
           <div className="table-wrap">

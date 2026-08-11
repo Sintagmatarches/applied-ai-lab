@@ -15,9 +15,9 @@ Every prediction uses facts available when the order is placed. Order-count hist
 
 Source timestamps are naive wall-clock strings. The build preserves their calendar values and marks them UTC; Python and TypeScript both use ISO weekday numbering (Monday=1, Sunday=7). The contract and route separator are embedded in the deployable artifact and verified in CI.
 
-## Selection and held-out evidence
+## Selection and final benchmark evidence
 
-The primary selection rule is mean top-10% delay capture minus its standard deviation across four expanding-window backtests. This represents a fixed investigation capacity and remains interpretable when late-order prevalence changes between periods. PR-AUC lift over prevalence and ROC-AUC are tie-breakers. The newest 15% is untouched until the final evaluation.
+The primary selection rule is mean top-10% delay capture minus its standard deviation across four expanding-window backtests. This represents a fixed investigation capacity and remains interpretable when late-order prevalence changes between periods. PR-AUC lift over prevalence and ROC-AUC are tie-breakers. The newest 15% is the final benchmark and is not used for model selection.
 
 | Candidate | PR-AUC | PR-AUC lift | ROC-AUC | Top-10% capture |
 | --- | ---: | ---: | ---: | ---: |
@@ -27,7 +27,11 @@ The primary selection rule is mean top-10% delay capture minus its standard devi
 
 Selected deployment model: **logistic**.
 
-On 14,471 final-period orders (620 late), the selected calibrated ranking achieved PR-AUC 0.063 (95% bootstrap CI 0.057–0.072), ROC-AUC 0.634, and captured 107/620 late orders in the highest-risk 10%. That queue had precision 7.4% and 12.5 false warnings per detected delay.
+### August 2026 improvement audit
+
+A later development-only search retained seller composition, evaluated point-in-time seller histories and other order-time feature groups, and tuned 18 logistic, 12 XGBoost and 10 CatBoost configurations plus simple blends. The configuration was locked before the existing final benchmark was scored. The frozen blend also captured 107/620 delays, while PR-AUC declined from 0.06320 to 0.06261 and ROC-AUC declined from 0.63439 to 0.59074. Paired bootstrap uncertainty for top-10 capture spanned -16 to +16 delays. It was not a material or stable improvement, so the portable logistic production model was retained unchanged. Full evidence is in `artifacts/olist-improvement-report.md`.
+
+On 14,471 final-benchmark orders (620 late), the selected calibrated ranking achieved PR-AUC 0.063 (95% bootstrap CI 0.057–0.072), ROC-AUC 0.634, and captured 107/620 late orders in the highest-risk 10%. That queue had precision 7.4% and 12.5 false warnings per detected delay.
 
 ## Serving behavior
 

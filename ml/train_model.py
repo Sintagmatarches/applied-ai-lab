@@ -1,8 +1,9 @@
 """Train, compare, evaluate, and export the Olist delay-risk model.
 
-The pipeline uses rolling time backtests for model choice, a later calibration
-period, and one untouched final test period. Production receives only a portable
-artifact after Python and TypeScript scoring agree exactly.
+The production pipeline uses rolling time backtests for model choice, a later
+calibration period, and the existing final benchmark. Production receives only
+a portable artifact after Python and TypeScript scoring agree exactly. Broader
+development search is implemented in ``ml.model_selection``.
 """
 
 from __future__ import annotations
@@ -31,10 +32,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBClassifier
 
 from ml.common import (
-    CATEGORICAL_FEATURES,
+    BASELINE_CATEGORICAL_FEATURES as CATEGORICAL_FEATURES,
+    BASELINE_FEATURES as FEATURES,
+    BASELINE_NUMERIC_FEATURES as NUMERIC_FEATURES,
     DATA_FILE,
-    FEATURES,
-    NUMERIC_FEATURES,
     TARGET,
     TIMESTAMP,
     read_orders,
@@ -70,8 +71,12 @@ BACKTEST_PERIODS = [
 ]
 
 
-def build_preprocessor() -> ColumnTransformer:
+def build_preprocessor(feature_names: list[str] | None = None) -> ColumnTransformer:
     """Build preprocessing that is fitted on training rows only."""
+
+    selected = FEATURES if feature_names is None else feature_names
+    numeric = [name for name in selected if name in NUMERIC_FEATURES]
+    categorical = [name for name in selected if name in CATEGORICAL_FEATURES]
 
     return ColumnTransformer(
         [
@@ -83,7 +88,7 @@ def build_preprocessor() -> ColumnTransformer:
                         ("scale", StandardScaler()),
                     ]
                 ),
-                NUMERIC_FEATURES,
+                numeric,
             ),
             (
                 "categorical",
@@ -100,17 +105,27 @@ def build_preprocessor() -> ColumnTransformer:
                         ),
                     ]
                 ),
-                CATEGORICAL_FEATURES,
+                categorical,
             ),
         ]
     )
 
 
-def build_linear_model() -> LogisticRegression:
+def build_linear_model(
+    *,
+    c: float = 0.5,
+    class_weight: str | dict[int, float] | None = None,
+    penalty: str = "l2",
+) -> LogisticRegression:
     """Create the interpretable logistic-regression candidate."""
 
     return LogisticRegression(
-        max_iter=1_500, C=0.5, solver="liblinear", random_state=42
+        max_iter=1_500,
+        C=c,
+        class_weight=class_weight,
+        penalty=penalty,
+        solver="liblinear",
+        random_state=42,
     )
 
 
@@ -212,7 +227,7 @@ def ranking_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict:
 def bootstrap_confidence_intervals(
     y_true: np.ndarray, probability: np.ndarray, samples: int = 250
 ) -> dict:
-    """Estimate metric uncertainty by repeatedly resampling final-test orders."""
+    """Estimate metric uncertainty by resampling final-benchmark orders."""
 
     rng = np.random.default_rng(42)
     values = {"pr_auc": [], "roc_auc": [], "top_10_recall": [], "top_10_precision": []}
@@ -526,7 +541,7 @@ def export_linear_model(
 def final_candidate_evaluation(
     frame: pd.DataFrame, train_end: int, test_start: int
 ) -> tuple[dict, dict]:
-    """Evaluate every candidate once on the untouched newest orders."""
+    """Evaluate legacy production candidates on the final benchmark."""
 
     x = frame[FEATURES]
     y = frame[TARGET].to_numpy()
@@ -607,9 +622,9 @@ Every prediction uses facts available when the order is placed. Order-count hist
 
 Source timestamps are naive wall-clock strings. The build preserves their calendar values and marks them UTC; Python and TypeScript both use ISO weekday numbering (Monday=1, Sunday=7). The contract and route separator are embedded in the deployable artifact and verified in CI.
 
-## Selection and held-out evidence
+## Selection and final benchmark evidence
 
-The primary selection rule is mean top-10% delay capture minus its standard deviation across four expanding-window backtests. This represents a fixed investigation capacity and remains interpretable when late-order prevalence changes between periods. PR-AUC lift over prevalence and ROC-AUC are tie-breakers. The newest 15% is untouched until the final evaluation.
+The primary selection rule is mean top-10% delay capture minus its standard deviation across four expanding-window backtests. This represents a fixed investigation capacity and remains interpretable when late-order prevalence changes between periods. PR-AUC lift over prevalence and ROC-AUC are tie-breakers. The newest 15% is the final benchmark and is not used for model selection.
 
 | Candidate | PR-AUC | PR-AUC lift | ROC-AUC | Top-10% capture |
 | --- | ---: | ---: | ---: | ---: |
@@ -617,7 +632,11 @@ The primary selection rule is mean top-10% delay capture minus its standard devi
 
 Selected deployment model: **{report['selected_model']}**.
 
-On {final['rows']:,} final-period orders ({final['late_orders']:,} late), the selected calibrated ranking achieved PR-AUC {final['pr_auc']:.3f} (95% bootstrap CI {ci['pr_auc']['lower_95']:.3f}–{ci['pr_auc']['upper_95']:.3f}), ROC-AUC {final['roc_auc']:.3f}, and captured {top['detected_late_orders']:,}/{final['late_orders']:,} late orders in the highest-risk 10%. That queue had precision {top['precision']:.1%} and {top['false_warnings_per_detected_late_order']:.1f} false warnings per detected delay.
+### August 2026 improvement audit
+
+A later development-only search retained seller composition, evaluated point-in-time seller histories and other order-time feature groups, and tuned 18 logistic, 12 XGBoost and 10 CatBoost configurations plus simple blends. The configuration was locked before the existing final benchmark was scored. The frozen blend also captured 107/620 delays, while PR-AUC declined from 0.06320 to 0.06261 and ROC-AUC declined from 0.63439 to 0.59074. Paired bootstrap uncertainty for top-10 capture spanned -16 to +16 delays. It was not a material or stable improvement, so the portable logistic production model was retained unchanged. Full evidence is in `artifacts/olist-improvement-report.md`.
+
+On {final['rows']:,} final-benchmark orders ({final['late_orders']:,} late), the selected calibrated ranking achieved PR-AUC {final['pr_auc']:.3f} (95% bootstrap CI {ci['pr_auc']['lower_95']:.3f}–{ci['pr_auc']['upper_95']:.3f}), ROC-AUC {final['roc_auc']:.3f}, and captured {top['detected_late_orders']:,}/{final['late_orders']:,} late orders in the highest-risk 10%. That queue had precision {top['precision']:.1%} and {top['false_warnings_per_detected_late_order']:.1f} false warnings per detected delay.
 
 ## Serving behavior
 
@@ -663,7 +682,8 @@ def main() -> None:
     total = len(frame)
     train_end = int(total * FINAL_TRAIN_FRACTION)
     test_start = int(total * CALIBRATION_END_FRACTION)
-    # The newest 15% stays untouched until this single final comparison.
+    # The newest 15% is the existing final benchmark. Development choices are
+    # locked separately before this comparison.
     final_candidates, fitted_candidates = final_candidate_evaluation(
         frame, train_end, test_start
     )
@@ -674,7 +694,7 @@ def main() -> None:
         preprocessor.transform(x.iloc[train_end:test_start])
     )
     test_raw = model.decision_function(preprocessor.transform(x.iloc[test_start:]))
-    # Calibration uses the middle period, never the final test period.
+    # Calibration uses the middle period, never the final benchmark.
     calibration = choose_calibration(calibration_raw, y[train_end:test_start])
     calibration_probability = calibrated_probability(calibration_raw, calibration)
     test_probability = calibrated_probability(test_raw, calibration)

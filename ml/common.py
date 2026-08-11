@@ -32,8 +32,9 @@ BASE_NUMERIC_FEATURES = [
     "payment_installments",
 ]
 
-# Engineered features summarize only information available before the order.
-ENGINEERED_NUMERIC_FEATURES = [
+# The deployed baseline feature contract, preserved verbatim for honest
+# comparison in every development backtest.
+BASELINE_NUMERIC_FEATURES = BASE_NUMERIC_FEATURES + [
     "prior_global_late_rate",
     "seller_state_prior_late_rate",
     "seller_state_prior_order_count_log",
@@ -50,6 +51,78 @@ ENGINEERED_NUMERIC_FEATURES = [
     "promised_days_per_500km",
 ]
 
+SELLER_HISTORY_FEATURES = [
+    "primary_seller_prior_late_rate",
+    "primary_seller_prior_known_count_log",
+    "primary_seller_prior_order_count_log",
+    "primary_seller_late_rate_30d",
+    "primary_seller_late_rate_90d",
+    "primary_seller_order_count_7d_log",
+    "primary_seller_order_count_30d_log",
+    "primary_seller_order_count_90d_log",
+    "primary_seller_experience_days_log",
+    "primary_seller_workload_ratio_log",
+]
+
+MULTI_SELLER_FEATURES = [
+    "seller_count",
+    "multi_seller",
+    "category_count",
+    "seller_prior_late_rate_weighted",
+    "seller_prior_late_rate_max",
+    "seller_late_rate_30d_weighted",
+    "seller_late_rate_30d_max",
+    "seller_late_rate_90d_weighted",
+    "seller_late_rate_90d_max",
+    "seller_experience_days_log_min",
+    "seller_experience_days_log_max",
+    "seller_order_count_7d_log_sum",
+    "seller_order_count_30d_log_sum",
+    "seller_workload_ratio_log_weighted",
+    "seller_workload_ratio_log_max",
+]
+
+GEOGRAPHIC_FEATURES = [
+    "distance_km_log",
+    "distance_per_promised_day",
+    "freight_per_km",
+    "freight_per_kg",
+    "freight_per_item_value",
+    "weight_per_volume",
+]
+
+CALENDAR_FEATURES = [
+    "promised_delivery_weekday",
+    "promised_delivery_month",
+    "promised_delivery_near_weekend",
+    "weekends_in_promise_window",
+    "business_days_in_promise_window",
+    "national_holidays_in_promise_window",
+]
+
+WORKLOAD_FEATURES = [
+    "global_order_count_7d_log",
+    "global_order_count_30d_log",
+    "global_order_count_90d_log",
+    "global_workload_ratio_log",
+    "route_order_count_90d_log",
+    "route_workload_ratio_log",
+    "category_order_count_7d_log",
+    "category_order_count_30d_log",
+    "category_order_count_90d_log",
+    "category_workload_ratio_log",
+]
+
+# Engineered features summarize only information available before the order.
+ENGINEERED_NUMERIC_FEATURES = (
+    BASELINE_NUMERIC_FEATURES[len(BASE_NUMERIC_FEATURES) :]
+    + SELLER_HISTORY_FEATURES
+    + MULTI_SELLER_FEATURES
+    + GEOGRAPHIC_FEATURES
+    + CALENDAR_FEATURES
+    + WORKLOAD_FEATURES
+)
+
 NUMERIC_FEATURES = BASE_NUMERIC_FEATURES + ENGINEERED_NUMERIC_FEATURES
 
 BASE_CATEGORICAL_FEATURES = [
@@ -60,22 +133,51 @@ BASE_CATEGORICAL_FEATURES = [
     "primary_payment_type",
 ]
 
-CATEGORICAL_FEATURES = BASE_CATEGORICAL_FEATURES + ["season"]
+GEOGRAPHIC_CATEGORICAL_FEATURES = [
+    "seller_zip_region",
+    "customer_zip_region",
+    "zip_region_route",
+    "distance_bucket",
+]
+
+CATEGORICAL_FEATURES = (
+    BASE_CATEGORICAL_FEATURES + ["season"] + GEOGRAPHIC_CATEGORICAL_FEATURES
+)
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
+
+BASELINE_CATEGORICAL_FEATURES = BASE_CATEGORICAL_FEATURES + ["season"]
+BASELINE_FEATURES = BASELINE_NUMERIC_FEATURES + BASELINE_CATEGORICAL_FEATURES
+
+FEATURE_GROUPS = {
+    "baseline": BASELINE_FEATURES,
+    "seller_history": SELLER_HISTORY_FEATURES,
+    "multi_seller": MULTI_SELLER_FEATURES,
+    "geographic": GEOGRAPHIC_FEATURES + GEOGRAPHIC_CATEGORICAL_FEATURES,
+    "calendar": CALENDAR_FEATURES,
+    "workload": WORKLOAD_FEATURES,
+}
 
 REQUIRED_COLUMNS = [
     "order_id",
     TIMESTAMP,
+    "order_estimated_delivery_date",
     LABEL_AVAILABLE_TIMESTAMP,
     *BASE_NUMERIC_FEATURES,
     *BASE_CATEGORICAL_FEATURES,
+    "primary_seller_id",
+    "seller_ids",
+    "seller_item_values",
+    "seller_count",
+    "category_count",
+    "seller_zip",
+    "customer_zip",
     TARGET,
 ]
 
 
 @dataclass(frozen=True)
 class TimeSplit:
-    """Store row boundaries for train, validation, and final test periods."""
+    """Store row boundaries for train, validation, and final benchmark."""
 
     train_end: int
     validation_end: int
@@ -113,6 +215,9 @@ def read_orders(path: Path = DATA_FILE) -> pd.DataFrame:
         raise ValueError(f"CSV is missing required columns: {', '.join(missing)}")
 
     frame[TIMESTAMP] = pd.to_datetime(frame[TIMESTAMP], utc=True, errors="raise")
+    frame["order_estimated_delivery_date"] = pd.to_datetime(
+        frame["order_estimated_delivery_date"], utc=True, errors="raise"
+    )
     frame[LABEL_AVAILABLE_TIMESTAMP] = pd.to_datetime(
         frame[LABEL_AVAILABLE_TIMESTAMP], utc=True, errors="raise"
     )
@@ -137,6 +242,11 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
 
     timestamp = frame[TIMESTAMP]
     label_timestamp = frame[LABEL_AVAILABLE_TIMESTAMP]
+    estimated_timestamp = frame["order_estimated_delivery_date"]
+    seller_id_lists = frame["seller_ids"].fillna("").astype(str).str.split("|")
+    seller_value_lists = (
+        frame["seller_item_values"].fillna("").astype(str).str.split("|")
+    )
     expected_route = frame["seller_state"] + " → " + frame["customer_state"]
     return {
         "missing_order_id": int(frame["order_id"].isna().sum()),
@@ -145,6 +255,7 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
         "invalid_target": int((~frame[TARGET].isin([0, 1])).sum()),
         "invalid_timestamp": int(timestamp.isna().sum()),
         "invalid_label_available_timestamp": int(label_timestamp.isna().sum()),
+        "invalid_estimated_delivery_timestamp": int(estimated_timestamp.isna().sum()),
         "label_available_before_purchase": int((label_timestamp < timestamp).sum()),
         "non_monotonic_timestamp": int(not timestamp.is_monotonic_increasing),
         "non_positive_promised_days": int((frame["promised_delivery_days"] <= 0).sum()),
@@ -155,6 +266,22 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
         "negative_weight": int((frame["total_weight_g"] < 0).sum()),
         "negative_volume": int((frame["total_volume_cm3"] < 0).sum()),
         "negative_installments": int((frame["payment_installments"] < 0).sum()),
+        "non_positive_seller_count": int((frame["seller_count"] <= 0).sum()),
+        "negative_category_count": int((frame["category_count"] < 0).sum()),
+        "seller_count_mismatch": int(
+            frame["seller_count"].ne(seller_id_lists.str.len()).sum()
+        ),
+        "seller_value_count_mismatch": int(
+            seller_id_lists.str.len().ne(seller_value_lists.str.len()).sum()
+        ),
+        "primary_seller_missing_from_order": int(
+            sum(
+                str(primary) not in sellers
+                for primary, sellers in zip(
+                    frame["primary_seller_id"], seller_id_lists, strict=True
+                )
+            )
+        ),
         "invalid_same_state": int((~frame["same_state"].isin([0, 1])).sum()),
         "same_state_mismatch": int(
             frame["same_state"]
@@ -173,6 +300,15 @@ def validation_errors(frame: pd.DataFrame) -> dict[str, int]:
         ),
         "purchase_hour_mismatch": int(
             frame["purchase_hour"].ne(timestamp.dt.hour).sum()
+        ),
+        "promised_delivery_days_mismatch": int(
+            (
+                ~np.isclose(
+                    frame["promised_delivery_days"],
+                    (estimated_timestamp - timestamp).dt.total_seconds() / 86_400,
+                    equal_nan=False,
+                )
+            ).sum()
         ),
     }
 

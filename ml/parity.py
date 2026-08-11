@@ -10,7 +10,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-from ml.common import CATEGORICAL_FEATURES, FEATURES, NUMERIC_FEATURES, TIMESTAMP
+from ml.common import TIMESTAMP
 from ml.runtime_reference import raw_features, score
 
 ARTIFACT_FILE = Path("artifacts/olist-model.json")
@@ -106,11 +106,14 @@ def build_training_fixtures(
 ) -> dict:
     """Compare exported runtime features with the fitted Python preprocessor."""
 
+    numeric_features = list(artifact["numeric"])
+    categorical_features = list(artifact["categorical"])
+    features = artifact["features"]
     named_inputs: list[tuple[str, dict]] = []
     for name, index in _choose_rows(frame):
         input_data = row_input(frame.loc[index])
         runtime_raw = raw_features(artifact, input_data)
-        for feature in NUMERIC_FEATURES:
+        for feature in numeric_features:
             np.testing.assert_allclose(
                 float(runtime_raw[feature]),
                 float(enriched.loc[index, feature]),
@@ -118,13 +121,13 @@ def build_training_fixtures(
                 atol=1e-10,
                 err_msg=f"Raw numeric parity failed for {name}.{feature}",
             )
-        for feature in CATEGORICAL_FEATURES:
+        for feature in categorical_features:
             if str(runtime_raw[feature]) != str(enriched.loc[index, feature]):
                 raise AssertionError(
                     f"Raw categorical parity failed for {name}.{feature}: "
                     f"{runtime_raw[feature]!r} != {enriched.loc[index, feature]!r}"
                 )
-        expected_vector = preprocessor.transform(enriched.loc[[index], FEATURES])
+        expected_vector = preprocessor.transform(enriched.loc[[index], features])
         if hasattr(expected_vector, "toarray"):
             expected_vector = expected_vector.toarray()
         reference = score(artifact, input_data)
@@ -137,7 +140,7 @@ def build_training_fixtures(
     # consistently instead of crashing or shifting feature positions.
     unknown = dict(named_inputs[0][1])
     unknown["primary_category"] = "future_category"
-    unknown_raw = pd.DataFrame([raw_features(artifact, unknown)])[FEATURES]
+    unknown_raw = pd.DataFrame([raw_features(artifact, unknown)])[features]
     expected_unknown = preprocessor.transform(unknown_raw)
     if hasattr(expected_unknown, "toarray"):
         expected_unknown = expected_unknown.toarray()

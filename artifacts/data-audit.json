@@ -2,12 +2,13 @@
   "source": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
   "license": "CC BY-NC-SA 4.0",
   "derived_dataset": "data/olist_orders_model.csv",
-  "derived_dataset_sha256": "3fcef36629655ba4a96acd5cafe4b93acd7512f494828a2f1592e738df4dbc48",
+  "derived_dataset_sha256": "10a2fab73c2ae5d42906ee13de10194bbc94f2cc9bdf17cf02522428599693be",
   "build_manifest": {
     "source": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
     "license": "CC BY-NC-SA 4.0",
     "timestamp_policy": "Naive source wall-clock values are parsed as UTC so Python and JavaScript use identical calendar components.",
     "primary_item_policy": "Highest item price, then freight value, then stable item/seller/product IDs.",
+    "seller_composition_policy": "All unique order sellers retained in stable seller-id order with purchase-time item-value weights.",
     "source_orders": 99441,
     "model_rows": 96470,
     "late_orders": 6534,
@@ -46,10 +47,10 @@
       }
     },
     "output": "data/olist_orders_model.csv",
-    "output_sha256": "3fcef36629655ba4a96acd5cafe4b93acd7512f494828a2f1592e738df4dbc48"
+    "output_sha256": "10a2fab73c2ae5d42906ee13de10194bbc94f2cc9bdf17cf02522428599693be"
   },
   "rows": 96470,
-  "columns": 22,
+  "columns": 30,
   "unique_order_ids": 96470,
   "duplicate_order_ids": 0,
   "duplicate_rows": 0,
@@ -90,6 +91,7 @@
     "invalid_target": 0,
     "invalid_timestamp": 0,
     "invalid_label_available_timestamp": 0,
+    "invalid_estimated_delivery_timestamp": 0,
     "label_available_before_purchase": 0,
     "non_monotonic_timestamp": 0,
     "non_positive_promised_days": 0,
@@ -100,13 +102,19 @@
     "negative_weight": 0,
     "negative_volume": 0,
     "negative_installments": 0,
+    "non_positive_seller_count": 0,
+    "negative_category_count": 0,
+    "seller_count_mismatch": 0,
+    "seller_value_count_mismatch": 0,
+    "primary_seller_missing_from_order": 0,
     "invalid_same_state": 0,
     "same_state_mismatch": 0,
     "route_mismatch": 0,
     "purchase_year_mismatch": 0,
     "purchase_month_mismatch": 0,
     "purchase_day_of_week_mismatch": 0,
-    "purchase_hour_mismatch": 0
+    "purchase_hour_mismatch": 0,
+    "promised_delivery_days_mismatch": 0
   },
   "blocking_errors": {},
   "splits": {

@@ -1,0 +1,269 @@
+{
+  "protocol": {
+    "development_lock": "artifacts/olist-development-lock.json",
+    "configuration_changed_after_lock": false,
+    "train_fraction": 0.7,
+    "calibration_fraction": 0.15,
+    "final_benchmark_fraction": 0.15,
+    "final_benchmark_rows": 14471,
+    "final_benchmark_late_orders": 620
+  },
+  "frozen_configuration": {
+    "locked_before_final_benchmark": true,
+    "selection_metric": "mean(top_10_recall) - std(top_10_recall)",
+    "feature_stage": "multi_structure_only",
+    "features": [
+      "purchase_year",
+      "purchase_month",
+      "purchase_day_of_week",
+      "purchase_hour",
+      "promised_delivery_days",
+      "same_state",
+      "distance_km",
+      "item_count",
+      "total_item_value",
+      "total_freight_value",
+      "total_weight_g",
+      "total_volume_cm3",
+      "payment_installments",
+      "prior_global_late_rate",
+      "seller_state_prior_late_rate",
+      "seller_state_prior_order_count_log",
+      "seller_state_late_rate_30d",
+      "seller_state_late_rate_90d",
+      "seller_state_experience_days_log",
+      "route_prior_late_rate",
+      "route_order_count_7d_log",
+      "route_order_count_30d_log",
+      "route_late_rate_30d",
+      "route_late_rate_90d",
+      "category_prior_late_rate",
+      "freight_item_ratio",
+      "promised_days_per_500km",
+      "seller_state",
+      "customer_state",
+      "route",
+      "primary_category",
+      "primary_payment_type",
+      "season",
+      "seller_count",
+      "multi_seller",
+      "category_count"
+    ],
+    "selected_candidate_id": "rank-blend-xgb0.25-cat0.75",
+    "selected_family": "rank_blend",
+    "parameters": {
+      "weights": {
+        "logistic": 0.0,
+        "xgboost": 0.25,
+        "catboost": 0.75
+      },
+      "components": {
+        "logistic": "logistic-c0_3-none-l1",
+        "xgboost": "xgb-lambda",
+        "catboost": "cat-regularized-sqrt"
+      }
+    },
+    "development_summary": {
+      "mean_pr_auc": 0.21766814634173265,
+      "std_pr_auc": 0.09685532464914882,
+      "mean_pr_auc_lift": 2.1889130912184163,
+      "std_pr_auc_lift": 0.2547228529383762,
+      "mean_roc_auc": 0.6871236926810262,
+      "std_roc_auc": 0.0222608405668996,
+      "mean_top_5_recall": 0.15504367553067977,
+      "std_top_5_recall": 0.02609066986921434,
+      "mean_top_5_precision": 0.31454822790500414,
+      "std_top_5_precision": 0.15880190486394197,
+      "mean_top_10_recall": 0.26830469128474727,
+      "std_top_10_recall": 0.025771233433631902,
+      "mean_top_10_precision": 0.26306458600807325,
+      "std_top_10_precision": 0.10918522667931223,
+      "mean_top_20_recall": 0.43274481145026084,
+      "std_top_20_recall": 0.03342548635709112,
+      "mean_top_20_precision": 0.21403004185156668,
+      "std_top_20_precision": 0.09122605184456141,
+      "mean_false_warnings_per_detected_late_order": 3.6805120316134925,
+      "std_false_warnings_per_detected_late_order": 2.2926631020023094,
+      "operational_stability_score": 0.24253345785111535
+    }
+  },
+  "fitted_details": {
+    "catboost_best_iteration": 556
+  },
+  "baseline": {
+    "prevalence": 0.04284430930827172,
+    "pr_auc": 0.06319751835293515,
+    "pr_auc_lift": 1.4750504646537492,
+    "roc_auc": 0.6343863608310568,
+    "top_risk_groups": {
+      "5%": {
+        "fraction": 0.05,
+        "orders": 724,
+        "detected_late_orders": 55,
+        "precision": 0.07596685082872928,
+        "recall": 0.08870967741935484,
+        "false_warnings": 669,
+        "false_warnings_per_detected_late_order": 12.163636363636364
+      },
+      "10%": {
+        "fraction": 0.1,
+        "orders": 1448,
+        "detected_late_orders": 107,
+        "precision": 0.0738950276243094,
+        "recall": 0.17258064516129032,
+        "false_warnings": 1341,
+        "false_warnings_per_detected_late_order": 12.532710280373832
+      },
+      "20%": {
+        "fraction": 0.2,
+        "orders": 2895,
+        "detected_late_orders": 184,
+        "precision": 0.06355785837651122,
+        "recall": 0.2967741935483871,
+        "false_warnings": 2711,
+        "false_warnings_per_detected_late_order": 14.733695652173912
+      }
+    }
+  },
+  "selected": {
+    "prevalence": 0.04284430930827172,
+    "pr_auc": 0.06260898285913644,
+    "pr_auc_lift": 1.461313856378328,
+    "roc_auc": 0.5907412065275361,
+    "top_risk_groups": {
+      "5%": {
+        "fraction": 0.05,
+        "orders": 724,
+        "detected_late_orders": 71,
+        "precision": 0.09806629834254144,
+        "recall": 0.11451612903225807,
+        "false_warnings": 653,
+        "false_warnings_per_detected_late_order": 9.19718309859155
+      },
+      "10%": {
+        "fraction": 0.1,
+        "orders": 1448,
+        "detected_late_orders": 107,
+        "precision": 0.0738950276243094,
+        "recall": 0.17258064516129032,
+        "false_warnings": 1341,
+        "false_warnings_per_detected_late_order": 12.532710280373832
+      },
+      "20%": {
+        "fraction": 0.2,
+        "orders": 2895,
+        "detected_late_orders": 155,
+        "precision": 0.0535405872193437,
+        "recall": 0.25,
+        "false_warnings": 2740,
+        "false_warnings_per_detected_late_order": 17.677419354838708
+      }
+    }
+  },
+  "absolute_change": {
+    "top_10_detected_late_orders": 0,
+    "top_10_recall": 0.0,
+    "top_10_precision": 0.0,
+    "pr_auc": -0.0005885354937987114,
+    "roc_auc": -0.04364515430352067
+  },
+  "paired_bootstrap_95": {
+    "top_10_recall": {
+      "mean_difference": 0.00043383854652706804,
+      "lower_95": -0.025890386840384323,
+      "upper_95": 0.025739300580772208,
+      "probability_difference_above_zero": 0.485
+    },
+    "top_10_detected_late_orders": {
+      "mean_difference": 0.276,
+      "lower_95": -16.0,
+      "upper_95": 16.0,
+      "probability_difference_above_zero": 0.485
+    },
+    "pr_auc": {
+      "mean_difference": -0.00019847745917871482,
+      "lower_95": -0.0078004064106763586,
+      "upper_95": 0.00836638779879146,
+      "probability_difference_above_zero": 0.465
+    },
+    "roc_auc": {
+      "mean_difference": -0.044219267059700904,
+      "lower_95": -0.06041877329545435,
+      "upper_95": -0.026975738903982433,
+      "probability_difference_above_zero": 0.0
+    }
+  },
+  "component_final_metrics_for_diagnostics_only": {
+    "xgboost": {
+      "prevalence": 0.04284430930827172,
+      "pr_auc": 0.06203704465053083,
+      "pr_auc_lift": 1.4479646340932768,
+      "roc_auc": 0.6001868969516583,
+      "top_risk_groups": {
+        "5%": {
+          "fraction": 0.05,
+          "orders": 724,
+          "detected_late_orders": 54,
+          "precision": 0.07458563535911603,
+          "recall": 0.08709677419354839,
+          "false_warnings": 670,
+          "false_warnings_per_detected_late_order": 12.407407407407407
+        },
+        "10%": {
+          "fraction": 0.1,
+          "orders": 1448,
+          "detected_late_orders": 98,
+          "precision": 0.06767955801104972,
+          "recall": 0.15806451612903225,
+          "false_warnings": 1350,
+          "false_warnings_per_detected_late_order": 13.775510204081632
+        },
+        "20%": {
+          "fraction": 0.2,
+          "orders": 2895,
+          "detected_late_orders": 160,
+          "precision": 0.055267702936096716,
+          "recall": 0.25806451612903225,
+          "false_warnings": 2735,
+          "false_warnings_per_detected_late_order": 17.09375
+        }
+      }
+    },
+    "catboost": {
+      "prevalence": 0.04284430930827172,
+      "pr_auc": 0.06287292029215852,
+      "pr_auc_lift": 1.4674742412061708,
+      "roc_auc": 0.5861283452225413,
+      "top_risk_groups": {
+        "5%": {
+          "fraction": 0.05,
+          "orders": 724,
+          "detected_late_orders": 71,
+          "precision": 0.09806629834254144,
+          "recall": 0.11451612903225807,
+          "false_warnings": 653,
+          "false_warnings_per_detected_late_order": 9.19718309859155
+        },
+        "10%": {
+          "fraction": 0.1,
+          "orders": 1448,
+          "detected_late_orders": 108,
+          "precision": 0.07458563535911603,
+          "recall": 0.17419354838709677,
+          "false_warnings": 1340,
+          "false_warnings_per_detected_late_order": 12.407407407407407
+        },
+        "20%": {
+          "fraction": 0.2,
+          "orders": 2895,
+          "detected_late_orders": 156,
+          "precision": 0.0538860103626943,
+          "recall": 0.25161290322580643,
+          "false_warnings": 2739,
+          "false_warnings_per_detected_late_order": 17.557692307692307
+        }
+      }
+    }
+  }
+}

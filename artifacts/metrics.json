@@ -1243,7 +1243,7 @@
     "test_brier": 0.04108138168964599,
     "test_log_loss": 0.1775960381521063,
     "test_ece": 0.015364774352126449,
-    "test_mean_prediction": 0.027479534956145267,
+    "test_mean_prediction": 0.02747953495614527,
     "test_observed_rate": 0.04284430930827172,
     "calibration_table": [
       {

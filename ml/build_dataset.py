@@ -190,9 +190,15 @@ def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
             kind="stable",
         )
         .drop_duplicates("order_id")
-        .rename(columns={"seller_zip_code_prefix": "seller_zip"})[
+        .rename(
+            columns={
+                "seller_id": "primary_seller_id",
+                "seller_zip_code_prefix": "seller_zip",
+            }
+        )[
             [
                 "order_id",
+                "primary_seller_id",
                 "seller_state",
                 "seller_zip",
                 "primary_category",
@@ -211,8 +217,31 @@ def _aggregate_items(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "product_volume_cm3",
             lambda values: values.sum(min_count=1),
         ),
+        category_count=("primary_category", "nunique"),
     )
-    return totals.merge(primary, on="order_id", validate="one_to_one")
+
+    # Keep every seller rather than discarding all but the primary-item proxy.
+    # Seller IDs contain no separator characters in the source. Values are
+    # summed per seller and serialized in the same deterministic order, so the
+    # temporal feature layer can reconstruct value-weighted memberships.
+    seller_memberships = (
+        item_details.groupby(["order_id", "seller_id"], as_index=False, sort=True)
+        .agg(seller_item_value=("price", "sum"))
+        .sort_values(["order_id", "seller_id"], kind="stable")
+    )
+    seller_composition = seller_memberships.groupby("order_id", sort=False).agg(
+        seller_ids=("seller_id", lambda values: "|".join(values.astype(str))),
+        seller_item_values=(
+            "seller_item_value",
+            lambda values: "|".join(format(float(value), ".12g") for value in values),
+        ),
+        seller_count=("seller_id", "size"),
+    )
+    seller_composition = seller_composition.reset_index()
+    return (
+        totals.merge(primary, on="order_id", validate="one_to_one")
+        .merge(seller_composition, on="order_id", validate="one_to_one")
+    )
 
 
 def _aggregate_payments(payments: pd.DataFrame) -> pd.DataFrame:
@@ -341,6 +370,7 @@ def build_dataset(
     columns = [
         "order_id",
         "order_purchase_timestamp",
+        "order_estimated_delivery_date",
         "label_available_timestamp",
         "purchase_year",
         "purchase_month",
@@ -355,6 +385,13 @@ def build_dataset(
         "total_weight_g",
         "total_volume_cm3",
         "payment_installments",
+        "primary_seller_id",
+        "seller_ids",
+        "seller_item_values",
+        "seller_count",
+        "category_count",
+        "seller_zip",
+        "customer_zip",
         "seller_state",
         "customer_state",
         "route",
@@ -378,6 +415,10 @@ def build_dataset(
         ),
         "primary_item_policy": (
             "Highest item price, then freight value, then stable item/seller/product IDs."
+        ),
+        "seller_composition_policy": (
+            "All unique order sellers retained in stable seller-id order with "
+            "purchase-time item-value weights."
         ),
         "source_orders": source_order_count,
         "model_rows": int(len(frame)),

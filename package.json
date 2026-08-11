@@ -17,6 +17,8 @@
     "ml:download-data": "kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip",
     "ml:build-data": "python -m ml.build_dataset",
     "ml:validate": "python -m ml.validate_data",
+    "ml:develop": "python -m ml.model_selection",
+    "ml:benchmark": "python -m ml.final_benchmark",
     "ml:train": "python -m ml.train_model",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"

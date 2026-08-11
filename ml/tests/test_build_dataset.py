@@ -196,6 +196,13 @@ class BuildDatasetTest(unittest.TestCase):
         self.assertEqual(len(frame), 1)
         order = frame.iloc[0]
         self.assertEqual(order["seller_state"], "MG")
+        self.assertEqual(order["primary_seller_id"], "s2")
+        self.assertEqual(order["seller_ids"], "s1|s2")
+        self.assertEqual(order["seller_item_values"], "40|90")
+        self.assertEqual(order["seller_count"], 2)
+        self.assertEqual(order["category_count"], 2)
+        self.assertEqual(order["seller_zip"], 30000)
+        self.assertEqual(order["customer_zip"], 20000)
         self.assertEqual(order["primary_category"], "sports_leisure")
         self.assertEqual(order["primary_payment_type"], "credit_card")
         self.assertEqual(order["item_count"], 2)
@@ -209,6 +216,10 @@ class BuildDatasetTest(unittest.TestCase):
         self.assertEqual(
             order["label_available_timestamp"].isoformat(),
             "2018-07-23T10:00:00+00:00",
+        )
+        self.assertEqual(
+            order["order_estimated_delivery_date"].isoformat(),
+            "2018-07-20T10:00:00+00:00",
         )
         self.assertGreater(order["distance_km"], 0)
         self.assertEqual(manifest["model_rows"], 1)

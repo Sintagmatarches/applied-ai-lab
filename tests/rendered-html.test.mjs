@@ -49,8 +49,8 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260810-rail-2/);
-  assert.match(html, /og\.png\?v=20260810-rail-2/);
+  assert.match(html, /favicon\.svg\?v=20260811-olist-audit-1/);
+  assert.match(html, /og\.png\?v=20260811-olist-audit-1/);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
@@ -94,7 +94,7 @@ test("renders the working Olist model, evidence and honest limitation", async ()
     /Precision, Delay capture, False \/ found, and the confusion matrix/,
   );
   assert.match(html, /14,471(?:<!-- -->)? orders/);
-  assert.match(html, /complete final test period/);
+  assert.match(html, /complete final benchmark/);
   assert.match(html, /Logistic regression \(selected\)/);
   assert.match(html, /relative risk score from 0 to 100/);
   assert.match(html, /7\.4(?:<!-- -->)?%/);

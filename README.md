@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260810-rail-2)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260811-olist-audit-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -97,7 +97,7 @@ flowchart LR
   R --> API["POST /api/olist/predict"]
 ```
 
-The reproducible dataset contains 96,470 delivered orders from September 2016 through August 2018. The untouched newest 14,471-order test period contains 620 late deliveries.
+The reproducible dataset contains 96,470 delivered orders from September 2016 through August 2018. The newest 14,471-order final benchmark contains 620 late deliveries. It has already been observed and is not treated as a pristine test set for subsequent iterations.
 
 | Metric | Final time test |
 | --- | ---: |
@@ -111,6 +111,8 @@ The reproducible dataset contains 96,470 delivered orders from September 2016 th
 
 The result is modest and is presented as a relative ranking score, not an exact probability. Logistic regression won the declared stability-adjusted top-10% capture rule across four earlier expanding-window backtests. Historical delay-rate features include only labels whose actual delivery outcome was already available before the prediction date.
 
+An August 2026 improvement iteration retained full seller composition, tested leakage-safe seller histories, multi-seller, geographic, promise-calendar and workload features, and searched 40 model configurations plus simple blends. Its frozen development winner tied the deployed baseline at 107/620 on the final benchmark and slightly reduced PR-AUC, so it was not deployed. See [`artifacts/olist-improvement-report.md`](artifacts/olist-improvement-report.md) for the complete ablation, fold results and paired uncertainty.
+
 Reproduce it with:
 
 ```bash
@@ -119,6 +121,8 @@ npm ci
 npm run ml:download-data
 npm run ml:build-data
 npm run ml:validate
+npm run ml:develop
+npm run ml:benchmark
 npm run ml:train
 npm run test:ml
 ```
