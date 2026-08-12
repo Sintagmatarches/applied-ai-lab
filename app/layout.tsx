@@ -19,8 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Evidence-backed machine learning, analytics engineering and BI projects built to be inspected.",
     icons: {
-      icon: "/favicon.svg?v=20260811-olist-audit-1",
-      shortcut: "/favicon.svg?v=20260811-olist-audit-1",
+      icon: "/favicon.svg?v=20260812-rail-regions-1",
+      shortcut: "/favicon.svg?v=20260812-rail-regions-1",
     },
     openGraph: {
       title: "Applied AI Lab",
@@ -29,10 +29,10 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: "/og.png?v=20260811-olist-audit-1",
+          url: "/og.png?v=20260812-rail-regions-1",
           width: 1731,
           height: 909,
-          alt: "Applied AI Lab — Olist Delivery Delay Predictor and Finland Rail Reliability Monitor",
+          alt: "Applied AI Lab — Olist Delivery Delay Predictor and Finland Rail Monitoring System",
         },
       ],
     },
@@ -41,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Applied AI Lab",
       description:
         "Machine learning, analytics engineering and BI projects with reproducible evidence.",
-      images: ["/og.png?v=20260811-olist-audit-1"],
+      images: ["/og.png?v=20260812-rail-regions-1"],
     },
   };
 }

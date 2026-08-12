@@ -10,6 +10,7 @@ from rail.pipeline import (
     parse_weather_xml,
     reliability_metrics,
 )
+from rail.build_regions import point_in_geometry, simplify_geometry
 
 
 STATIONS = {
@@ -33,6 +34,20 @@ def row(code, event_type, scheduled, actual, delay, *, cancelled=False):
 
 
 class RailPipelineTest(unittest.TestCase):
+    def test_region_geometry_assignment_respects_polygon_holes(self):
+        geometry = {
+            "type": "MultiPolygon",
+            "coordinates": [[
+                [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
+                [[4, 4], [6, 4], [6, 6], [4, 6], [4, 4]],
+            ]],
+        }
+        self.assertTrue(point_in_geometry(2, 2, geometry))
+        self.assertFalse(point_in_geometry(5, 5, geometry))
+        self.assertFalse(point_in_geometry(12, 5, geometry))
+        simplified = simplify_geometry(geometry, 0.01)
+        self.assertEqual(simplified["type"], "MultiPolygon")
+
     def test_extracts_journey_and_local_calendar_without_imputation(self):
         train = {
             "departureDate": "2026-01-15",

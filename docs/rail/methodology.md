@@ -1,4 +1,6 @@
-# Railway reliability methodology
+# Railway monitoring and reliability methodology
+
+The live regional monitoring definitions, spatial join, score formula, time modes and runtime failure policy are documented separately in [`monitoring.md`](monitoring.md). The historical definitions below remain unchanged.
 
 ## Question and coverage
 

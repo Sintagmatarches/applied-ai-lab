@@ -3,11 +3,12 @@ import Link from "next/link";
 import summary from "../../artifacts/rail-summary.json";
 import { LabShell } from "../lab-shell";
 import { RailMonitor } from "./rail-monitor";
+import { RegionalRailMonitor } from "./regional-monitor";
 
 export const metadata: Metadata = {
-  title: "Finland Rail Reliability Monitor",
+  title: "Finland Rail Monitoring System",
   description:
-    "Evidence-backed analysis of Finnish passenger-train, route and station reliability using official Fintraffic data.",
+    "Live regional monitoring and historical reliability analysis for Finland's passenger-rail network using official Fintraffic and Statistics Finland data.",
 };
 
 function rate(value: number | null | undefined): string {
@@ -32,9 +33,9 @@ export default function FinlandRailReliabilityMonitor() {
         <header className="rail-hero">
           <div>
             <p className="eyebrow">Applied AI Lab · Project 02</p>
-            <h1>Finland Rail Reliability Monitor</h1>
+            <h1>Finland Rail Monitoring System</h1>
             <p className="intro-copy">
-              How reliably do Finnish passenger trains reach their destination — and which routes, stations and operating periods carry the most delay risk?
+              See where Finland’s passenger-rail network is operating normally right now — and which regions, stations and routes are under pressure.
             </p>
             <ul className="rail-tech-summary" aria-label="Technology and engineering stack">
               <li>Python</li>
@@ -48,6 +49,7 @@ export default function FinlandRailReliabilityMonitor() {
               <a href="https://github.com/Sintagmatarches/applied-ai-lab/tree/main/rail" target="_blank" rel="noreferrer">Pipeline</a>
               <a href="https://github.com/Sintagmatarches/applied-ai-lab/tree/main/docs/rail" target="_blank" rel="noreferrer">Technical documentation</a>
               <a href="https://www.digitraffic.fi/en/railway-traffic/" target="_blank" rel="noreferrer">Digitraffic source</a>
+              <a href="https://stat.fi/en/services/statistical-data-services/geographic-data/statistical-areas/municipality-based-statistical-units" target="_blank" rel="noreferrer">Regional boundaries</a>
               <a href="https://en.ilmatieteenlaitos.fi/open-data" target="_blank" rel="noreferrer">FMI source</a>
             </nav>
           </div>
@@ -70,6 +72,8 @@ export default function FinlandRailReliabilityMonitor() {
             </div>
           </dl>
         </header>
+
+        <RegionalRailMonitor />
 
         <aside className="rail-definition-note">
           <strong>Default definition</strong>
@@ -153,6 +157,9 @@ export default function FinlandRailReliabilityMonitor() {
           </p>
           <p>
             Weather source: <a href="https://en.ilmatieteenlaitos.fi/open-data" target="_blank" rel="noreferrer">Finnish Meteorological Institute open data</a>, licensed under CC BY 4.0.
+          </p>
+          <p>
+            Regional boundaries: <a href="https://stat.fi/en/services/statistical-data-services/geographic-data/statistical-areas/municipality-based-statistical-units" target="_blank" rel="noreferrer">Statistics Finland municipality-based statistical units</a>, licensed under CC BY 4.0. Station coordinates are spatially joined to official maakunta polygons.
           </p>
         </footer>
       </div>

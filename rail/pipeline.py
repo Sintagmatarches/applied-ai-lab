@@ -593,7 +593,7 @@ def build_summary(
     }
     summary = {
         "meta": {
-            "title": "Finland Rail Reliability Monitor",
+            "title": "Finland Rail Monitoring System — historical reliability snapshot",
             "coverage_start": coverage_start.isoformat(),
             "coverage_end": coverage_end.isoformat(),
             "retrieved_at": retrieved_at,
@@ -862,7 +862,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
-    cli = argparse.ArgumentParser(description="Build the Finland Rail Reliability Monitor analytical snapshot")
+    cli = argparse.ArgumentParser(description="Build the Finland Rail Monitoring System historical analytical snapshot")
     cli.add_argument("--start", default="2025-08-01")
     cli.add_argument("--end", default="2026-07-31")
     cli.add_argument("--cache-dir", default="data/rail")

@@ -28,7 +28,7 @@ test("published homepage leads with the completed projects", async ({ page }) =>
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Open predictor" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Finland Rail Reliability Monitor" }),
+    page.getByRole("heading", { name: "Finland Rail Monitoring System" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Open monitor" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Planned projects" })).toBeVisible();
@@ -54,8 +54,17 @@ test("published rail monitor changes thresholds and stays readable", async ({
 
   expect(response?.status()).toBe(200);
   await expect(
-    page.getByRole("heading", { name: "Finland Rail Reliability Monitor" }),
+    page.getByRole("heading", { name: "Finland Rail Monitoring System" }),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Live rail health by region" })).toBeVisible();
+  await expect(page.getByText("Live Digitraffic", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".region-shape")).toHaveCount(19);
+  await page.getByRole("button", { name: /Åland: No rail service/ }).click();
+  await expect(page.locator(".region-detail").getByText("No rail service", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "24 HOURS" }).click();
+  await expect(page.getByText("Rolling window", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "HISTORICAL" }).click();
+  await expect(page.getByText("2025-08-01 → 2026-07-31", { exact: true })).toBeVisible();
   await expect(page.getByText("Historical network view", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Key findings" })).toBeVisible();
   await expect(page.getByText("Weather association, not causation")).toBeVisible();

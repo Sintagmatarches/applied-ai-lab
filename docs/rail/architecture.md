@@ -1,9 +1,14 @@
-# Finland Rail Reliability Monitor architecture
+# Finland Rail Monitoring System architecture
 
 The public project and the enterprise analytics design share the same analytical definitions. The repository can be reproduced without Microsoft Fabric; Fabric is the production-oriented extension for persistent history, orchestration, lineage and the Power BI semantic model.
 
 ```mermaid
 flowchart LR
+  R["Digitraffic live trains"] --> RM["Edge regional aggregator"]
+  ST["Digitraffic station coordinates"] --> SJ["Point-in-polygon station join"]
+  SF["Statistics Finland maakunta WFS"] --> SJ
+  SJ --> RM
+  RM --> U["Live choropleth + regional detail"]
   D["Digitraffic daily train API"] --> B["Bronze: immutable departure-date JSON"]
   W["FMI hourly observations"] --> BW["Bronze: location/week XML"]
   B --> S1["Silver: train journey"]
@@ -16,7 +21,7 @@ flowchart LR
   G2 --> P
   G3 --> P
   G1 --> J["Versioned public aggregate JSON"]
-  J --> U["Applied AI Lab monitor"]
+  J --> U
 ```
 
 ## Public/reproducible path
@@ -28,6 +33,9 @@ The transformation emits:
 - `artifacts/rail-summary.json`, the versioned, compact source for the public monitor;
 - `artifacts/rail-quality.json`, the run-level quality result and definitions;
 - ignored curated CSVs below `data/rail/curated/` for local review or Fabric bootstrap.
+- `artifacts/rail-station-regions.json`, the official station-to-maakunta lookup;
+- `artifacts/rail-regional-history.json`, a dated regional snapshot rebuilt from the 365 daily partitions;
+- `public/rail/finland-maakunta.geojson`, simplified display geometry retaining all 19 official regions.
 
 Raw third-party responses are deliberately not committed.
 

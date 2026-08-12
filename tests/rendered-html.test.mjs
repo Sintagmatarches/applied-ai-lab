@@ -40,7 +40,7 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /Applied AI Lab/);
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
-  assert.match(html, /Rail Reliability Monitor/);
+  assert.match(html, /Rail Monitoring System/);
   assert.match(html, /Completed project/);
   assert.match(html, /Open predictor/);
   assert.match(html, /Open monitor/);
@@ -49,8 +49,8 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260811-olist-audit-1/);
-  assert.match(html, /og\.png\?v=20260811-olist-audit-1/);
+  assert.match(html, /favicon\.svg\?v=20260812-rail-regions-1/);
+  assert.match(html, /og\.png\?v=20260812-rail-regions-1/);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
@@ -58,7 +58,12 @@ test("renders the evidence-backed Finland rail monitor and methodology", async (
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Finland Rail Reliability Monitor/);
+  assert.match(html, /Finland Rail Monitoring System/);
+  assert.match(html, /National operating picture/);
+  assert.match(html, /Current 3-hour operating window/);
+  assert.match(html, /24 HOURS/);
+  assert.match(html, /HISTORICAL/);
+  assert.match(html, /Statistics Finland/);
   assert.match(html, /Historical network view/);
   assert.match(html, /Reliability depends on the threshold/);
   assert.match(html, /Key findings/);
@@ -144,6 +149,8 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.prediction-result\s*\{/);
   assert.match(css, /\.featured-project\s*\{/);
   assert.match(css, /\.rail-page\s*\{/);
+  assert.match(css, /\.regional-monitor\s*\{/);
+  assert.match(css, /\.finland-region-map\s*\{/);
   assert.match(css, /\.threshold-control\s*\{/);
   assert.match(css, /\.lahti-profile\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);

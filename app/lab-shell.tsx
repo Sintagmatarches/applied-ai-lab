@@ -28,8 +28,8 @@ const projects = [
   {
     id: "rail" as const,
     href: "/finland-rail-reliability-monitor",
-    title: "Finland Rail Reliability Monitor",
-    tabTitle: "Rail Reliability Monitor",
+    title: "Finland Rail Monitoring System",
+    tabTitle: "Rail Monitoring System",
     description:
       "Official Fintraffic data transformed into a reproducible view of passenger-train, route and station reliability.",
   },

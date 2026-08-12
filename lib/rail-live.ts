@@ -16,6 +16,7 @@ export type DigitrafficTrain = {
   trainType?: string;
   commuterLineID?: string;
   trainCategory?: string;
+  runningCurrently?: boolean;
   cancelled?: boolean;
   timeTableRows?: DigitrafficTimeTableRow[];
 };
@@ -76,4 +77,3 @@ export function normalizeLiveService(
     status,
   };
 }
-
