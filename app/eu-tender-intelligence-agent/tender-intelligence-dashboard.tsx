@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import type { TenderDateRange } from "../../lib/tender-date-range";
 import { DEMO_SUPPLIER_PROFILE, type BidAssessment, type ProcurementNotice, type SupplierProfile } from "../../lib/tenders";
 
 type Result = { notice: ProcurementNotice; assessment: BidAssessment };
@@ -12,8 +13,6 @@ type SearchResponse = {
 
 const PROFILE_KEY = "eu-tender-demo-supplier-v1";
 const WATCHLIST_KEY = "eu-tender-watchlist-v1";
-const TODAY = new Date().toISOString().slice(0, 10);
-const SEARCH_START = new Date(new Date().valueOf() - 120 * 86400000).toISOString().slice(0, 10);
 
 function money(value: number | null, currency: string | null) {
   if (value === null) return "Value not stated";
@@ -26,7 +25,7 @@ function date(value: string | null) {
   return Number.isNaN(parsed.valueOf()) ? value : parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export function TenderIntelligenceDashboard() {
+export function TenderIntelligenceDashboard({ defaultDateRange }: { defaultDateRange: TenderDateRange }) {
   const [results, setResults] = useState<Result[]>([]);
   const [profile, setProfile] = useState<SupplierProfile>(DEMO_SUPPLIER_PROFILE);
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -36,8 +35,8 @@ export function TenderIntelligenceDashboard() {
   const [selected, setSelected] = useState<Result | null>(null);
   const [filters, setFilters] = useState({
     keywords: "data analytics", cpv: "", buyerCountry: "FIN", placeCountry: "",
-    publishedFrom: SEARCH_START,
-    publishedTo: TODAY, minValue: "", maxValue: "", deadlineFrom: "", procedureType: "",
+    publishedFrom: defaultDateRange.publishedFrom,
+    publishedTo: defaultDateRange.publishedTo, minValue: "", maxValue: "", deadlineFrom: "", procedureType: "",
   });
 
   useEffect(() => {

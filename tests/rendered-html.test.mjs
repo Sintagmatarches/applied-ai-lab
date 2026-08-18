@@ -51,7 +51,7 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-2/);
+  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-3/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -94,6 +94,19 @@ test("renders the EU Tender Intelligence dashboard without hardcoded opportuniti
   assert.match(html, /Editable demo supplier/);
   assert.match(html, /Local only: Ollama embeddings/);
   assert.doesNotMatch(html, /Arbeitnow|Jobicy|Search public jobs/);
+
+  const publishedFrom = html.match(/Published from<input type="date" value="(\d{4}-\d{2}-\d{2})"/)?.[1];
+  const publishedTo = html.match(/Published to<input type="date" value="(\d{4}-\d{2}-\d{2})"/)?.[1];
+  assert.ok(publishedFrom, "Published from must be rendered in the saved HTML");
+  assert.ok(publishedTo, "Published to must be rendered in the saved HTML");
+  assert.ok(Number(publishedFrom.slice(0, 4)) >= 2020, `Implausible Published from year: ${publishedFrom}`);
+  assert.ok(Number(publishedTo.slice(0, 4)) >= 2020, `Implausible Published to year: ${publishedTo}`);
+  assert.equal(publishedTo, new Date().toISOString().slice(0, 10));
+  assert.equal(
+    (Date.parse(publishedTo) - Date.parse(publishedFrom)) / 86_400_000,
+    90,
+    "The default TED search window must cover the previous 90 UTC calendar days",
+  );
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {

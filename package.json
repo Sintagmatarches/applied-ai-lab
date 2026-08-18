@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/model-api.test.mjs && tsx --test tests/model-parity.test.ts tests/rail-live.test.ts tests/rail-monitoring.test.ts tests/tenders.test.ts && npm run test:tender-ai",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/model-api.test.mjs && tsx --test tests/model-parity.test.ts tests/rail-live.test.ts tests/rail-monitoring.test.ts tests/tender-date-range.test.ts tests/tenders.test.ts && npm run test:tender-ai",
     "test:live": "playwright test",
     "test:ml": "python -m unittest discover -s ml/tests && python -m ml.parity --check",
     "test:rail": "python -m unittest discover -s rail/tests",
