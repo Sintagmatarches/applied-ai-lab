@@ -17,6 +17,7 @@ HEADERS = {
     "Digitraffic-User": "AppliedAILab/RailReliabilityMonitor 1.0",
     "Accept-Encoding": "gzip",
 }
+PASSENGER_CATEGORIES = {"Long-distance", "Commuter"}
 
 # Pipeline parameters. Fabric can overwrite notebook parameters at runtime.
 p_start_date = "2025-08-01"
@@ -43,15 +44,44 @@ def get_bytes(url: str) -> bytes:
     raise RuntimeError(f"Digitraffic request failed after retries: {url}") from last_error
 
 
+def validate_train_partition(day: date, records) -> None:
+    partition = day.isoformat()
+    if not isinstance(records, list):
+        raise ValueError(f"Digitraffic {partition} response is not a train array")
+    if not records:
+        raise ValueError(f"Digitraffic {partition} response is an empty train array")
+    if any(not isinstance(record, dict) for record in records):
+        raise ValueError(f"Digitraffic {partition} response contains non-object records")
+    wrong_dates = sorted({
+        str(record.get("departureDate") or "<missing>")
+        for record in records
+        if record.get("departureDate") != partition
+    })
+    if wrong_dates:
+        raise ValueError(
+            f"Digitraffic {partition} response contains unexpected departureDate values: "
+            f"{', '.join(wrong_dates[:5])}"
+        )
+    if not any(record.get("trainCategory") in PASSENGER_CATEGORIES for record in records):
+        raise ValueError(f"Digitraffic {partition} response contains no passenger trains")
+
+
+def publish_bytes(path: Path, content: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_bytes(content)
+    temporary.replace(path)
+
+
 def ingest_day(day: date) -> Row:
     url = f"{DIGITRAFFIC_ROOT}/trains/{day.isoformat()}"
     content = get_bytes(url)
     records = json.loads(content)
+    validate_train_partition(day, records)
     compressed = gzip.compress(content, compresslevel=9)
     relative_path = f"Files/rail/bronze/digitraffic/departure_date={day.isoformat()}/trains.json.gz"
     path = Path("/lakehouse/default") / relative_path
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(compressed)
+    publish_bytes(path, compressed)
     return Row(
         source="digitraffic_trains",
         partition_date=day.isoformat(),
@@ -68,11 +98,12 @@ def ingest_station_metadata() -> Row:
     url = f"{DIGITRAFFIC_ROOT}/metadata/stations"
     content = get_bytes(url)
     records = json.loads(content)
+    if not isinstance(records, list) or not records:
+        raise ValueError("Digitraffic station metadata response must be a non-empty array")
     compressed = gzip.compress(content, compresslevel=9)
     relative_path = "Files/rail/bronze/digitraffic/metadata/stations.json.gz"
     path = Path("/lakehouse/default") / relative_path
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(compressed)
+    publish_bytes(path, compressed)
     return Row(
         source="digitraffic_stations",
         partition_date="metadata",

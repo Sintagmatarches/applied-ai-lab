@@ -284,6 +284,33 @@ def safe_rate(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 6) if denominator else None
 
 
+def validate_train_partition(day: date, trains: Any) -> list[dict[str, Any]]:
+    """Validate a daily source partition before it can enter the trusted cache."""
+    partition = day.isoformat()
+    if not isinstance(trains, list):
+        raise ValueError(f"Digitraffic {partition} response is not a train array")
+    if not trains:
+        raise ValueError(f"Digitraffic {partition} response is an empty train array")
+    invalid_records = [record for record in trains if not isinstance(record, dict)]
+    if invalid_records:
+        raise ValueError(f"Digitraffic {partition} response contains non-object train records")
+    wrong_dates = sorted(
+        {
+            str(record.get("departureDate") or "<missing>")
+            for record in trains
+            if record.get("departureDate") != partition
+        }
+    )
+    if wrong_dates:
+        raise ValueError(
+            f"Digitraffic {partition} response contains unexpected departureDate values: "
+            f"{', '.join(wrong_dates[:5])}"
+        )
+    if not any(record.get("trainCategory") in PASSENGER_CATEGORIES for record in trains):
+        raise ValueError(f"Digitraffic {partition} response contains no passenger trains")
+    return trains
+
+
 def reliability_metrics(delays: Sequence[int], scheduled: int, cancelled: int) -> dict[str, Any]:
     completed = len(delays)
     return {
@@ -750,8 +777,7 @@ class SourceClient:
             return path
         content = self._request(f"{DIGITRAFFIC_BASE}/trains/{day.isoformat()}")
         parsed = json.loads(content)
-        if not isinstance(parsed, list):
-            raise ValueError(f"Digitraffic {day.isoformat()} response is not a train array")
+        validate_train_partition(day, parsed)
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(path.suffix + ".tmp")
         with gzip.open(temporary, "wb") as handle:
@@ -763,9 +789,7 @@ class SourceClient:
         path = self.cache_dir / f"trains/{day.isoformat()}.json.gz"
         with gzip.open(path, "rt", encoding="utf-8") as handle:
             trains = json.load(handle)
-        if not isinstance(trains, list):
-            raise ValueError(f"Cached Digitraffic {day.isoformat()} response is not a train array")
-        return trains
+        return validate_train_partition(day, trains)
 
     def weather(self, code: str, start: date, end: date) -> list[dict[str, Any]]:
         place = WEATHER_PLACES[code]

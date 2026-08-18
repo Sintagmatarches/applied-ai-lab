@@ -2,6 +2,9 @@ import type { DigitrafficTimeTableRow, DigitrafficTrain } from "./rail-live";
 
 export type RailMonitorMode = "live" | "24h" | "historical";
 export type RailRegionStatus = "normal" | "elevated" | "serious" | "no-data" | "no-service";
+export const RAIL_DELAY_THRESHOLDS = [5, 10, 15, 30] as const;
+export type RailDelayThreshold = (typeof RAIL_DELAY_THRESHOLDS)[number];
+export type RailThresholdValues<T> = Record<RailDelayThreshold, T>;
 
 export type RailStationLookup = Record<
   string,
@@ -42,6 +45,8 @@ export type RailRegionMetric = {
   measuredTrains: number;
   delayedTrains: number;
   delayedShare: number | null;
+  delayedTrainsByThreshold: RailThresholdValues<number>;
+  delayedShareByThreshold: RailThresholdValues<number | null>;
   averageDelayMinutes: number | null;
   severeDelays: number;
   cancellations: number;
@@ -49,8 +54,13 @@ export type RailRegionMetric = {
   disruptionScore: number | null;
   reliabilityScore: number | null;
   status: RailRegionStatus;
+  disruptionScoreByThreshold: RailThresholdValues<number | null>;
+  reliabilityScoreByThreshold: RailThresholdValues<number | null>;
+  statusByThreshold: RailThresholdValues<RailRegionStatus>;
   problemStations: RailProblemItem[];
   problemRoutes: RailProblemItem[];
+  problemStationsByThreshold: RailThresholdValues<RailProblemItem[]>;
+  problemRoutesByThreshold: RailThresholdValues<RailProblemItem[]>;
 };
 
 export type RegionalRailSnapshot = {
@@ -65,10 +75,12 @@ export type RegionalRailSnapshot = {
     severe: string;
     observedTrain: string;
     score: string;
+    thresholds: readonly RailDelayThreshold[];
   };
   network: Omit<
     RailRegionMetric,
-    "code" | "nameFi" | "nameEn" | "passengerStations" | "hasRailService" | "problemStations" | "problemRoutes"
+    "code" | "nameFi" | "nameEn" | "passengerStations" | "hasRailService" |
+    "problemStations" | "problemRoutes" | "problemStationsByThreshold" | "problemRoutesByThreshold"
   >;
   regions: RailRegionMetric[];
 };
@@ -81,7 +93,7 @@ type LookupPayload = {
 type Aggregate = {
   observed: number;
   measured: number;
-  delayed: number;
+  delayedByThreshold: RailThresholdValues<number>;
   severe: number;
   cancelled: number;
   delaySum: number;
@@ -92,7 +104,7 @@ type Aggregate = {
 type ProblemAggregate = {
   label: string;
   observations: number;
-  delayed: number;
+  delayedByThreshold: RailThresholdValues<number>;
   severe: number;
   cancellations: number;
   delaySum: number;
@@ -101,6 +113,12 @@ type ProblemAggregate = {
 
 const PASSENGER_CATEGORIES = new Set(["Long-distance", "Commuter"]);
 const MINUTE = 60_000;
+
+function thresholdValues<T>(factory: (threshold: RailDelayThreshold) => T): RailThresholdValues<T> {
+  return Object.fromEntries(
+    RAIL_DELAY_THRESHOLDS.map((threshold) => [threshold, factory(threshold)]),
+  ) as RailThresholdValues<T>;
+}
 
 function timestamp(value: string | undefined): number | null {
   if (!value) return null;
@@ -147,7 +165,7 @@ function newAggregate(): Aggregate {
   return {
     observed: 0,
     measured: 0,
-    delayed: 0,
+    delayedByThreshold: thresholdValues(() => 0),
     severe: 0,
     cancelled: 0,
     delaySum: 0,
@@ -166,7 +184,7 @@ function addProblem(
   const item = target.get(key) ?? {
     label,
     observations: 0,
-    delayed: 0,
+    delayedByThreshold: thresholdValues(() => 0),
     severe: 0,
     cancellations: 0,
     delaySum: 0,
@@ -177,19 +195,21 @@ function addProblem(
   if (delay != null) {
     item.measured += 1;
     item.delaySum += delay;
-    if (delay > 5) item.delayed += 1;
+    for (const threshold of RAIL_DELAY_THRESHOLDS) {
+      if (delay > threshold) item.delayedByThreshold[threshold] += 1;
+    }
     if (delay > 15) item.severe += 1;
   }
   target.set(key, item);
 }
 
-function topProblems(items: Map<string, ProblemAggregate>): RailProblemItem[] {
+function topProblems(items: Map<string, ProblemAggregate>, threshold: RailDelayThreshold): RailProblemItem[] {
   return [...items.entries()]
     .map(([key, item]) => ({
       key,
       label: item.label,
       observations: item.observations,
-      delayed: item.delayed,
+      delayed: item.delayedByThreshold[threshold],
       severe: item.severe,
       cancellations: item.cancellations,
       averageDelayMinutes: item.measured ? item.delaySum / item.measured : null,
@@ -205,6 +225,30 @@ function topProblems(items: Map<string, ProblemAggregate>): RailProblemItem[] {
     .slice(0, 5);
 }
 
+function disruptionScoreFor(
+  delayedShare: number | null,
+  severeShare: number,
+  cancellationShare: number | null,
+  averageDelayMinutes: number | null,
+  observed: number,
+  measured: number,
+  cancelled: number,
+): number | null {
+  if (!observed || (!measured && !cancelled)) return null;
+  return Math.round(
+    Math.max(
+      0,
+      Math.min(
+        100,
+        45 * (delayedShare ?? 0) +
+          25 * severeShare +
+          20 * (cancellationShare ?? 0) +
+          10 * Math.min(Math.max(averageDelayMinutes ?? 0, 0) / 30, 1),
+      ),
+    ) * 10,
+  ) / 10;
+}
+
 function statusFor(score: number | null, observed: number, hasRailService: boolean): RailRegionStatus {
   if (!hasRailService) return "no-service";
   if (!observed || score == null) return "no-data";
@@ -217,39 +261,55 @@ function finishAggregate(
   aggregate: Aggregate,
   identity: Pick<RailRegionMetric, "code" | "nameFi" | "nameEn" | "passengerStations" | "hasRailService">,
 ): RailRegionMetric {
-  const delayedShare = aggregate.measured ? aggregate.delayed / aggregate.measured : null;
   const averageDelayMinutes = aggregate.measured ? aggregate.delaySum / aggregate.measured : null;
   const cancellationShare = aggregate.observed ? aggregate.cancelled / aggregate.observed : null;
   const severeShare = aggregate.measured ? aggregate.severe / aggregate.measured : 0;
-  const disruptionScore = aggregate.observed && (aggregate.measured || aggregate.cancelled)
-    ? Math.round(
-        Math.max(
-          0,
-          Math.min(
-            100,
-            45 * (delayedShare ?? 0) +
-              25 * severeShare +
-              20 * (cancellationShare ?? 0) +
-              10 * Math.min(Math.max(averageDelayMinutes ?? 0, 0) / 30, 1),
-          ),
-        ) * 10,
-      ) / 10
-    : null;
+  const delayedShareByThreshold = thresholdValues((threshold) =>
+    aggregate.measured ? aggregate.delayedByThreshold[threshold] / aggregate.measured : null,
+  );
+  const disruptionScoreByThreshold = thresholdValues((threshold) =>
+    disruptionScoreFor(
+      delayedShareByThreshold[threshold],
+      severeShare,
+      cancellationShare,
+      averageDelayMinutes,
+      aggregate.observed,
+      aggregate.measured,
+      aggregate.cancelled,
+    ),
+  );
+  const reliabilityScoreByThreshold = thresholdValues((threshold) => {
+    const score = disruptionScoreByThreshold[threshold];
+    return score == null ? null : 100 - score;
+  });
+  const statusByThreshold = thresholdValues((threshold) =>
+    statusFor(disruptionScoreByThreshold[threshold], aggregate.observed, identity.hasRailService),
+  );
+  const problemStationsByThreshold = thresholdValues((threshold) => topProblems(aggregate.stations, threshold));
+  const problemRoutesByThreshold = thresholdValues((threshold) => topProblems(aggregate.routes, threshold));
+  const defaultThreshold: RailDelayThreshold = 5;
   return {
     ...identity,
     observedTrains: aggregate.observed,
     measuredTrains: aggregate.measured,
-    delayedTrains: aggregate.delayed,
-    delayedShare,
+    delayedTrains: aggregate.delayedByThreshold[defaultThreshold],
+    delayedShare: delayedShareByThreshold[defaultThreshold],
+    delayedTrainsByThreshold: { ...aggregate.delayedByThreshold },
+    delayedShareByThreshold,
     averageDelayMinutes,
     severeDelays: aggregate.severe,
     cancellations: aggregate.cancelled,
     cancellationShare,
-    disruptionScore,
-    reliabilityScore: disruptionScore == null ? null : 100 - disruptionScore,
-    status: statusFor(disruptionScore, aggregate.observed, identity.hasRailService),
-    problemStations: topProblems(aggregate.stations),
-    problemRoutes: topProblems(aggregate.routes),
+    disruptionScore: disruptionScoreByThreshold[defaultThreshold],
+    reliabilityScore: reliabilityScoreByThreshold[defaultThreshold],
+    status: statusByThreshold[defaultThreshold],
+    disruptionScoreByThreshold,
+    reliabilityScoreByThreshold,
+    statusByThreshold,
+    problemStations: problemStationsByThreshold[defaultThreshold],
+    problemRoutes: problemRoutesByThreshold[defaultThreshold],
+    problemStationsByThreshold,
+    problemRoutesByThreshold,
   };
 }
 
@@ -307,7 +367,9 @@ export function buildRegionalRailSnapshot(
       if (!cancelled && delay != null) {
         aggregate.measured += 1;
         aggregate.delaySum += delay;
-        if (delay > 5) aggregate.delayed += 1;
+        for (const threshold of RAIL_DELAY_THRESHOLDS) {
+          if (delay > threshold) aggregate.delayedByThreshold[threshold] += 1;
+        }
         if (delay > 15) aggregate.severe += 1;
       }
       addProblem(aggregate.routes, route.key, route.label, cancelled ? null : delay, cancelled);
@@ -350,7 +412,9 @@ export function buildRegionalRailSnapshot(
   for (const aggregate of aggregates.values()) {
     networkAggregate.observed += aggregate.observed;
     networkAggregate.measured += aggregate.measured;
-    networkAggregate.delayed += aggregate.delayed;
+    for (const threshold of RAIL_DELAY_THRESHOLDS) {
+      networkAggregate.delayedByThreshold[threshold] += aggregate.delayedByThreshold[threshold];
+    }
     networkAggregate.severe += aggregate.severe;
     networkAggregate.cancelled += aggregate.cancelled;
     networkAggregate.delaySum += aggregate.delaySum;
@@ -367,6 +431,8 @@ export function buildRegionalRailSnapshot(
     measuredTrains: network.measuredTrains,
     delayedTrains: network.delayedTrains,
     delayedShare: network.delayedShare,
+    delayedTrainsByThreshold: network.delayedTrainsByThreshold,
+    delayedShareByThreshold: network.delayedShareByThreshold,
     averageDelayMinutes: network.averageDelayMinutes,
     severeDelays: network.severeDelays,
     cancellations: network.cancellations,
@@ -374,6 +440,9 @@ export function buildRegionalRailSnapshot(
     disruptionScore: network.disruptionScore,
     reliabilityScore: network.reliabilityScore,
     status: network.status,
+    disruptionScoreByThreshold: network.disruptionScoreByThreshold,
+    reliabilityScoreByThreshold: network.reliabilityScoreByThreshold,
+    statusByThreshold: network.statusByThreshold,
   };
 
   return {
@@ -384,10 +453,11 @@ export function buildRegionalRailSnapshot(
     source: "Fintraffic / Digitraffic",
     sourceUrl: "https://www.digitraffic.fi/en/railway-traffic/",
     definitions: {
-      delayed: "More than 5 whole minutes late at a commercial passenger stop in the region.",
+      delayed: "More whole minutes late than the selected 5, 10, 15 or 30-minute policy threshold at a commercial passenger stop in the region.",
       severe: "More than 15 whole minutes late.",
       observedTrain: "One passenger train per region when a commercial stop falls inside the selected time window; a train crossing regions is counted once in each region.",
-      score: "Disruption score (0 best, 100 worst): 45% delayed share, 25% severe-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes.",
+      score: "Threshold-adjusted disruption score (0 best, 100 worst): 45% selected-threshold delayed share, 25% severe-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes.",
+      thresholds: RAIL_DELAY_THRESHOLDS,
     },
     network: networkMetrics,
     regions,

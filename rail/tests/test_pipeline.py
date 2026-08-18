@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timezone
+import gzip
+import json
+import tempfile
+from datetime import date, datetime, timezone
+from pathlib import Path
 
 from rail.pipeline import (
     extract_journey,
@@ -9,6 +13,8 @@ from rail.pipeline import (
     nearest_weather,
     parse_weather_xml,
     reliability_metrics,
+    SourceClient,
+    validate_train_partition,
 )
 from rail.build_regions import point_in_geometry, simplify_geometry
 
@@ -34,6 +40,39 @@ def row(code, event_type, scheduled, actual, delay, *, cancelled=False):
 
 
 class RailPipelineTest(unittest.TestCase):
+    def test_daily_partition_quality_gate_accepts_matching_passenger_data(self):
+        day = date(2026, 8, 12)
+        trains = [{"departureDate": day.isoformat(), "trainNumber": 1, "trainCategory": "Commuter"}]
+        self.assertIs(validate_train_partition(day, trains), trains)
+
+    def test_daily_partition_quality_gate_rejects_incomplete_payloads(self):
+        day = date(2026, 8, 12)
+        cases = (
+            ({}, "not a train array"),
+            ([], "empty train array"),
+            ([{"departureDate": day.isoformat(), "trainNumber": 1, "trainCategory": "Cargo"}], "no passenger trains"),
+            ([{"departureDate": "2026-08-11", "trainNumber": 1, "trainCategory": "Commuter"}], "unexpected departureDate"),
+        )
+        for payload, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    validate_train_partition(day, payload)
+
+    def test_rejected_refresh_does_not_replace_a_valid_cached_partition(self):
+        day = date(2026, 8, 12)
+        valid = [{"departureDate": day.isoformat(), "trainNumber": 1, "trainCategory": "Commuter"}]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / f"trains/{day.isoformat()}.json.gz"
+            path.parent.mkdir(parents=True)
+            with gzip.open(path, "wt", encoding="utf-8") as handle:
+                json.dump(valid, handle)
+            client = SourceClient(Path(directory), refresh=True)
+            client._request = lambda _url: b"[]"
+            with self.assertRaisesRegex(ValueError, "empty train array"):
+                client.cache_trains(day)
+            with gzip.open(path, "rt", encoding="utf-8") as handle:
+                self.assertEqual(json.load(handle), valid)
+
     def test_region_geometry_assignment_respects_polygon_holes(self):
         geometry = {
             "type": "MultiPolygon",

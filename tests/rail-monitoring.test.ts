@@ -75,6 +75,25 @@ test("counts each train once per region and excludes non-passenger service locat
   assert.equal(paijatHame.delayedShare, 1);
 });
 
+test("publishes policy-threshold metrics while severe delay stays fixed at over 15 minutes", () => {
+  const snapshot = buildRegionalRailSnapshot(
+    [train(10, 12), train(11, 18)],
+    lookup,
+    "live",
+    new Date("2026-08-12T12:00:00Z"),
+  );
+  const region = snapshot.regions.find((item) => item.code === "07")!;
+  assert.deepEqual(region.delayedTrainsByThreshold, { 5: 2, 10: 2, 15: 1, 30: 0 });
+  assert.deepEqual(region.delayedShareByThreshold, { 5: 1, 10: 1, 15: 0.5, 30: 0 });
+  assert.equal(region.severeDelays, 1);
+  assert.ok(region.disruptionScoreByThreshold[5]! > region.disruptionScoreByThreshold[15]!);
+  assert.ok(region.disruptionScoreByThreshold[15]! > region.disruptionScoreByThreshold[30]!);
+  assert.equal(region.problemStationsByThreshold[30][0].delayed, 0);
+  assert.equal(region.problemStationsByThreshold[30][0].severe, 1);
+  assert.equal(region.problemRoutesByThreshold[15][0].delayed, 1);
+  assert.deepEqual(snapshot.definitions.thresholds, [5, 10, 15, 30]);
+});
+
 test("does not turn unobserved scheduled timing into an on-time result", () => {
   const service = train(2, null, { actual: false });
   service.timeTableRows![0].liveEstimateTime = undefined;
@@ -104,6 +123,7 @@ test("keeps Åland outside disruption scoring", () => {
   assert.equal(aland.status, "no-service");
   assert.equal(aland.disruptionScore, null);
   assert.equal(aland.reliabilityScore, null);
+  assert.equal(aland.statusByThreshold[30], "no-service");
 });
 
 test("marks regional cancellations without treating them as measured delays", () => {

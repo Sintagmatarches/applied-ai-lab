@@ -12,13 +12,18 @@ from typing import Any
 
 
 PASSENGER_CATEGORIES = {"Long-distance", "Commuter"}
+DELAY_THRESHOLDS = (5, 10, 15, 30)
+
+
+def empty_threshold_counts() -> dict[str, int]:
+    return {str(threshold): 0 for threshold in DELAY_THRESHOLDS}
 
 
 def fresh_aggregate() -> dict[str, Any]:
     return {
         "observed": 0,
         "measured": 0,
-        "delayed": 0,
+        "delayedByThreshold": empty_threshold_counts(),
         "severe": 0,
         "cancelled": 0,
         "delaySum": 0,
@@ -28,7 +33,15 @@ def fresh_aggregate() -> dict[str, Any]:
 
 
 def fresh_problem() -> dict[str, Any]:
-    return {"label": "", "observations": 0, "measured": 0, "delayed": 0, "severe": 0, "cancellations": 0, "delaySum": 0}
+    return {
+        "label": "",
+        "observations": 0,
+        "measured": 0,
+        "delayedByThreshold": empty_threshold_counts(),
+        "severe": 0,
+        "cancellations": 0,
+        "delaySum": 0,
+    }
 
 
 def is_passenger_row(row: dict[str, Any], stations: dict[str, Any]) -> bool:
@@ -59,16 +72,17 @@ def add_problem(problem: dict[str, Any], label: str, delay: int | None, cancelle
     if delay is not None:
         problem["measured"] += 1
         problem["delaySum"] += delay
-        problem["delayed"] += delay > 5
+        for threshold in DELAY_THRESHOLDS:
+            problem["delayedByThreshold"][str(threshold)] += delay > threshold
         problem["severe"] += delay > 15
 
 
-def finish_problem(key: str, item: dict[str, Any]) -> dict[str, Any]:
+def finish_problem(key: str, item: dict[str, Any], threshold: int) -> dict[str, Any]:
     return {
         "key": key,
         "label": item["label"],
         "observations": item["observations"],
-        "delayed": item["delayed"],
+        "delayed": item["delayedByThreshold"][str(threshold)],
         "severe": item["severe"],
         "cancellations": item["cancellations"],
         "averageDelayMinutes": item["delaySum"] / item["measured"] if item["measured"] else None,
@@ -76,18 +90,24 @@ def finish_problem(key: str, item: dict[str, Any]) -> dict[str, Any]:
 
 
 def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dict[str, Any]:
-    delayed_share = aggregate["delayed"] / aggregate["measured"] if aggregate["measured"] else None
     severe_share = aggregate["severe"] / aggregate["measured"] if aggregate["measured"] else 0
     average = aggregate["delaySum"] / aggregate["measured"] if aggregate["measured"] else None
     cancelled_share = aggregate["cancelled"] / aggregate["observed"] if aggregate["observed"] else None
-    score = None
-    if aggregate["observed"]:
-        score = round(
+    delayed_shares = {
+        str(threshold): aggregate["delayedByThreshold"][str(threshold)] / aggregate["measured"]
+        if aggregate["measured"] else None
+        for threshold in DELAY_THRESHOLDS
+    }
+
+    def calculate_score(threshold: int) -> float | None:
+        if not aggregate["observed"] or not (aggregate["measured"] or aggregate["cancelled"]):
+            return None
+        return round(
             max(
                 0,
                 min(
                     100,
-                    45 * (delayed_share or 0)
+                    45 * (delayed_shares[str(threshold)] or 0)
                     + 25 * severe_share
                     + 20 * (cancelled_share or 0)
                     + 10 * min(max(average or 0, 0) / 30, 1),
@@ -95,19 +115,27 @@ def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dic
             ),
             1,
         )
-    if not identity["hasRailService"]:
-        status = "no-service"
-    elif score is None:
-        status = "no-data"
-    elif score >= 25:
-        status = "serious"
-    elif score >= 10:
-        status = "elevated"
-    else:
-        status = "normal"
 
-    def top(source: dict[str, Any]) -> list[dict[str, Any]]:
-        rows = [finish_problem(key, item) for key, item in source.items()]
+    scores = {str(threshold): calculate_score(threshold) for threshold in DELAY_THRESHOLDS}
+    reliability_scores = {
+        key: 100 - score if score is not None else None for key, score in scores.items()
+    }
+
+    def calculate_status(score: float | None) -> str:
+        if not identity["hasRailService"]:
+            return "no-service"
+        if score is None:
+            return "no-data"
+        if score >= 25:
+            return "serious"
+        if score >= 10:
+            return "elevated"
+        return "normal"
+
+    statuses = {key: calculate_status(score) for key, score in scores.items()}
+
+    def top(source: dict[str, Any], threshold: int) -> list[dict[str, Any]]:
+        rows = [finish_problem(key, item, threshold) for key, item in source.items()]
         rows = [row for row in rows if row["delayed"] or row["severe"] or row["cancellations"]]
         return sorted(
             rows,
@@ -119,21 +147,30 @@ def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dic
             ),
         )[:5]
 
+    problem_stations = {str(threshold): top(aggregate["stations"], threshold) for threshold in DELAY_THRESHOLDS}
+    problem_routes = {str(threshold): top(aggregate["routes"], threshold) for threshold in DELAY_THRESHOLDS}
     return {
         **identity,
         "observedTrains": aggregate["observed"],
         "measuredTrains": aggregate["measured"],
-        "delayedTrains": aggregate["delayed"],
-        "delayedShare": delayed_share,
+        "delayedTrains": aggregate["delayedByThreshold"]["5"],
+        "delayedShare": delayed_shares["5"],
+        "delayedTrainsByThreshold": aggregate["delayedByThreshold"],
+        "delayedShareByThreshold": delayed_shares,
         "averageDelayMinutes": average,
         "severeDelays": aggregate["severe"],
         "cancellations": aggregate["cancelled"],
         "cancellationShare": cancelled_share,
-        "disruptionScore": score,
-        "reliabilityScore": 100 - score if score is not None else None,
-        "status": status,
-        "problemStations": top(aggregate["stations"]),
-        "problemRoutes": top(aggregate["routes"]),
+        "disruptionScore": scores["5"],
+        "reliabilityScore": reliability_scores["5"],
+        "status": statuses["5"],
+        "disruptionScoreByThreshold": scores,
+        "reliabilityScoreByThreshold": reliability_scores,
+        "statusByThreshold": statuses,
+        "problemStations": problem_stations["5"],
+        "problemRoutes": problem_routes["5"],
+        "problemStationsByThreshold": problem_stations,
+        "problemRoutesByThreshold": problem_routes,
     }
 
 
@@ -174,7 +211,8 @@ def build(args: argparse.Namespace) -> None:
                 if not cancelled and delay is not None:
                     aggregate["measured"] += 1
                     aggregate["delaySum"] += delay
-                    aggregate["delayed"] += delay > 5
+                    for threshold in DELAY_THRESHOLDS:
+                        aggregate["delayedByThreshold"][str(threshold)] += delay > threshold
                     aggregate["severe"] += delay > 15
                 add_problem(aggregate["routes"][route_key], route_label, None if cancelled else delay, cancelled)
                 station_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -212,13 +250,18 @@ def build(args: argparse.Namespace) -> None:
 
     network = fresh_aggregate()
     for aggregate in aggregates.values():
-        for field in ("observed", "measured", "delayed", "severe", "cancelled", "delaySum"):
+        for field in ("observed", "measured", "severe", "cancelled", "delaySum"):
             network[field] += aggregate[field]
+        for threshold in DELAY_THRESHOLDS:
+            network["delayedByThreshold"][str(threshold)] += aggregate["delayedByThreshold"][str(threshold)]
     network_finished = finish_aggregate(
         network,
         {"code": "FI", "nameFi": "Suomi", "nameEn": "Finland", "passengerStations": 0, "hasRailService": True},
     )
-    for field in ("code", "nameFi", "nameEn", "passengerStations", "hasRailService", "problemStations", "problemRoutes"):
+    for field in (
+        "code", "nameFi", "nameEn", "passengerStations", "hasRailService",
+        "problemStations", "problemRoutes", "problemStationsByThreshold", "problemRoutesByThreshold",
+    ):
         network_finished.pop(field)
 
     payload = {
@@ -229,10 +272,11 @@ def build(args: argparse.Namespace) -> None:
         "source": "Fintraffic / Digitraffic",
         "sourceUrl": "https://www.digitraffic.fi/en/railway-traffic/",
         "definitions": {
-            "delayed": "More than 5 whole minutes late at a commercial passenger stop in the region.",
+            "delayed": "More whole minutes late than the selected 5, 10, 15 or 30-minute policy threshold at a commercial passenger stop in the region.",
             "severe": "More than 15 whole minutes late.",
             "observedTrain": "One passenger train per region with at least one commercial stop; a train crossing regions is counted once in each region.",
-            "score": "Disruption score (0 best, 100 worst): 45% delayed share, 25% severe-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes.",
+            "score": "Threshold-adjusted disruption score (0 best, 100 worst): 45% selected-threshold delayed share, 25% severe-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes.",
+            "thresholds": DELAY_THRESHOLDS,
         },
         "network": network_finished,
         "regions": regions,

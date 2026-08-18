@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type {
+  RailDelayThreshold,
   RailMonitorMode,
+  RailProblemItem,
   RailRegionMetric,
   RegionalRailSnapshot,
 } from "../../lib/rail-monitoring";
+import { RAIL_DELAY_THRESHOLDS } from "../../lib/rail-monitoring";
 
 type Coordinate = [number, number];
 type RegionFeature = {
@@ -15,7 +18,7 @@ type RegionFeature = {
 };
 type RegionGeoJson = { type: "FeatureCollection"; features: RegionFeature[] };
 
-const CACHE_VERSION = "20260812-rail-regions-1";
+const CACHE_VERSION = "20260818-portfolio-process-1";
 const MODES: Array<{ value: RailMonitorMode; label: string; description: string }> = [
   { value: "live", label: "LIVE", description: "Current 3-hour operating window" },
   { value: "24h", label: "24 HOURS", description: "Rolling previous 24 hours" },
@@ -80,15 +83,51 @@ function featurePath(
     .join(" ");
 }
 
-function statusLabel(region: RailRegionMetric): string {
-  if (region.status === "no-service") return "No rail service";
-  if (region.status === "no-data") return "No current observations";
-  if (region.status === "serious") return "Serious disruption";
-  if (region.status === "elevated") return "Elevated disruption";
+function statusLabel(status: RailRegionMetric["status"]): string {
+  if (status === "no-service") return "No rail service";
+  if (status === "no-data") return "No current observations";
+  if (status === "serious") return "Serious disruption";
+  if (status === "elevated") return "Elevated disruption";
   return "Normal operation";
 }
 
-function RegionDetail({ region }: { region: RailRegionMetric }) {
+function thresholdValue<T>(
+  values: Partial<Record<RailDelayThreshold, T>> | undefined,
+  threshold: RailDelayThreshold,
+  fiveMinuteFallback: T,
+): T {
+  return values?.[threshold] ?? fiveMinuteFallback;
+}
+
+function regionalView(region: RailRegionMetric, threshold: RailDelayThreshold) {
+  const problemStations = thresholdValue(region.problemStationsByThreshold, threshold, region.problemStations);
+  const problemRoutes = thresholdValue(region.problemRoutesByThreshold, threshold, region.problemRoutes);
+  return {
+    delayedTrains: thresholdValue(region.delayedTrainsByThreshold, threshold, region.delayedTrains),
+    delayedShare: thresholdValue(region.delayedShareByThreshold, threshold, region.delayedShare),
+    disruptionScore: thresholdValue(region.disruptionScoreByThreshold, threshold, region.disruptionScore),
+    reliabilityScore: thresholdValue(region.reliabilityScoreByThreshold, threshold, region.reliabilityScore),
+    status: thresholdValue(region.statusByThreshold, threshold, region.status),
+    problemStations,
+    problemRoutes,
+  };
+}
+
+function ProblemList({ items, threshold }: { items: RailProblemItem[]; threshold: RailDelayThreshold }) {
+  if (!items.length) return <p>No observations exceeded {threshold} minutes in this window.</p>;
+  return (
+    <ol>
+      {items.slice(0, 3).map((item) => (
+        <li key={item.key}>
+          <span>{item.label}</span>
+          <strong>{item.severe} serious · {item.delayed} delayed · {item.cancellations} cancelled</strong>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function RegionDetail({ region, threshold }: { region: RailRegionMetric; threshold: RailDelayThreshold }) {
   if (!region.hasRailService) {
     return (
       <aside className="region-detail region-no-service" aria-live="polite">
@@ -99,6 +138,7 @@ function RegionDetail({ region }: { region: RailRegionMetric }) {
       </aside>
     );
   }
+  const view = regionalView(region, threshold);
   return (
     <aside className="region-detail" aria-live="polite">
       <div className="region-detail-heading">
@@ -106,42 +146,24 @@ function RegionDetail({ region }: { region: RailRegionMetric }) {
           <p className="eyebrow">Selected region · {region.nameFi}</p>
           <h3>{region.nameEn}</h3>
         </div>
-        <span className={`region-status region-status-${region.status}`}>{statusLabel(region)}</span>
+        <span className={`region-status region-status-${view.status}`}>{statusLabel(view.status)}</span>
       </div>
       <dl className="region-metrics">
         <div><dt>Observed trains</dt><dd>{region.observedTrains.toLocaleString("en-FI")}</dd></div>
-        <div><dt>Delayed &gt;5 min</dt><dd>{region.delayedTrains.toLocaleString("en-FI")} <small>{percentage(region.delayedShare)}</small></dd></div>
+        <div><dt>Delayed &gt;{threshold} min</dt><dd>{view.delayedTrains.toLocaleString("en-FI")} <small>{percentage(view.delayedShare)}</small></dd></div>
         <div><dt>Average delay</dt><dd>{delay(region.averageDelayMinutes)}</dd></div>
         <div><dt>Serious &gt;15 min</dt><dd>{region.severeDelays.toLocaleString("en-FI")}</dd></div>
         <div><dt>Cancellations</dt><dd>{region.cancellations.toLocaleString("en-FI")} <small>{percentage(region.cancellationShare)}</small></dd></div>
-        <div><dt>Reliability score</dt><dd>{region.reliabilityScore?.toFixed(1) ?? "—"}<small> / 100</small></dd></div>
+        <div><dt>Reliability score</dt><dd>{view.reliabilityScore?.toFixed(1) ?? "—"}<small> / 100</small></dd></div>
       </dl>
       <div className="region-problems">
         <div>
           <h4>Problem stations</h4>
-          {region.problemStations.length ? (
-            <ol>
-              {region.problemStations.slice(0, 3).map((station) => (
-                <li key={station.key}>
-                  <span>{station.label}</span>
-                  <strong>{station.severe} serious · {station.delayed} delayed · {station.cancellations} cancelled</strong>
-                </li>
-              ))}
-            </ol>
-          ) : <p>No delayed station observations in this window.</p>}
+          <ProblemList items={view.problemStations} threshold={threshold} />
         </div>
         <div>
           <h4>Problem routes</h4>
-          {region.problemRoutes.length ? (
-            <ol>
-              {region.problemRoutes.slice(0, 3).map((route) => (
-                <li key={route.key}>
-                  <span>{route.label}</span>
-                  <strong>{route.severe} serious · {route.delayed} delayed · {route.cancellations} cancelled</strong>
-                </li>
-              ))}
-            </ol>
-          ) : <p>No delayed route observations in this window.</p>}
+          <ProblemList items={view.problemRoutes} threshold={threshold} />
         </div>
       </div>
     </aside>
@@ -150,6 +172,7 @@ function RegionDetail({ region }: { region: RailRegionMetric }) {
 
 export function RegionalRailMonitor() {
   const [mode, setMode] = useState<RailMonitorMode>("live");
+  const [threshold, setThreshold] = useState<RailDelayThreshold>(5);
   const [snapshots, setSnapshots] = useState<Partial<Record<RailMonitorMode, RegionalRailSnapshot>>>({});
   const [geoJson, setGeoJson] = useState<RegionGeoJson | null>(null);
   const [selectedCode, setSelectedCode] = useState("01");
@@ -247,6 +270,27 @@ export function RegionalRailMonitor() {
         </div>
       </div>
 
+      <div className="monitor-threshold-row">
+        <div>
+          <span className="eyebrow">Delay policy</span>
+          <strong>Flag when more than</strong>
+        </div>
+        <div className="monitor-mode-control" aria-label="Delay threshold in minutes">
+          {RAIL_DELAY_THRESHOLDS.map((minutes) => (
+            <button
+              type="button"
+              key={minutes}
+              className={threshold === minutes ? "is-selected" : ""}
+              aria-pressed={threshold === minutes}
+              onClick={() => setThreshold(minutes)}
+            >
+              {minutes} MIN
+            </button>
+          ))}
+        </div>
+        <small>Serious disruption remains fixed at more than 15 minutes.</small>
+      </div>
+
       {snapshot ? (
         <>
           <div className="monitor-freshness" role="status">
@@ -257,7 +301,7 @@ export function RegionalRailMonitor() {
           </div>
           <dl className="monitor-network-kpis" aria-label="National regional observations">
             <div><dt>Regional train observations</dt><dd>{snapshot.network.observedTrains.toLocaleString("en-FI")}</dd></div>
-            <div><dt>Delayed &gt;5 min</dt><dd>{percentage(snapshot.network.delayedShare)}</dd></div>
+            <div><dt>Delayed &gt;{threshold} min</dt><dd>{percentage(thresholdValue(snapshot.network.delayedShareByThreshold, threshold, snapshot.network.delayedShare))}</dd></div>
             <div><dt>Average delay</dt><dd>{delay(snapshot.network.averageDelayMinutes)}</dd></div>
             <div><dt>Serious delays</dt><dd>{snapshot.network.severeDelays.toLocaleString("en-FI")}</dd></div>
             <div><dt>Cancellations</dt><dd>{snapshot.network.cancellations.toLocaleString("en-FI")}</dd></div>
@@ -275,9 +319,10 @@ export function RegionalRailMonitor() {
             <desc id="map-description">Interactive choropleth of Finland’s 19 maakunta regions. Darker warm colours indicate more disruption.</desc>
             {paths.map(({ feature, path }) => {
               const region = regionByCode.get(feature.properties.code);
-              const status = region?.status ?? "no-data";
+              const view = region ? regionalView(region, threshold) : null;
+              const status = view?.status ?? "no-data";
               const label = region
-                ? `${region.nameEn}: ${statusLabel(region)}${region.disruptionScore == null ? "" : `, disruption score ${region.disruptionScore}`}`
+                ? `${region.nameEn}: ${statusLabel(status)} at the ${threshold}-minute threshold${view?.disruptionScore == null ? "" : `, disruption score ${view.disruptionScore}`}`
                 : feature.properties.nameEn;
               return (
                 <path
@@ -310,7 +355,7 @@ export function RegionalRailMonitor() {
           </div>
           <p className="map-source">Boundaries: Statistics Finland, maakunta 1:1M ({geoJson?.features.length ?? 19} regions), CC BY 4.0.</p>
         </div>
-        {selected ? <RegionDetail region={selected} /> : <div className="region-detail region-detail-empty">Select a region on the map.</div>}
+        {selected ? <RegionDetail region={selected} threshold={threshold} /> : <div className="region-detail region-detail-empty">Select a region on the map.</div>}
       </div>
 
       {snapshot ? (

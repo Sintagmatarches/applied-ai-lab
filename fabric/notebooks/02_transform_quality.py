@@ -1,6 +1,8 @@
 # Fabric notebook source
 # Attach Lakehouse: lh_finland_rail
 
+from datetime import date
+
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
@@ -8,20 +10,34 @@ from pyspark.sql.window import Window
 p_start_date = "2025-08-01"
 p_end_date = "2025-08-01"
 
-train_paths = [
-    row.bronze_path
-    for row in (
-        spark.table("rail_control_ingestion")
-        .where(F.col("source") == "digitraffic_trains")
-        .where((F.col("partition_date") >= p_start_date) & (F.col("partition_date") <= p_end_date))
-        .where(F.col("status") == "complete")
-        .select("partition_date", "bronze_path")
-        .dropDuplicates(["partition_date"])
-        .collect()
+start_date = date.fromisoformat(p_start_date)
+end_date = date.fromisoformat(p_end_date)
+if start_date > end_date:
+    raise ValueError("p_start_date must be on or before p_end_date")
+expected_partition_count = (end_date - start_date).days + 1
+
+latest_ingestion = (
+    spark.table("rail_control_ingestion")
+    .where(F.col("source") == "digitraffic_trains")
+    .where((F.col("partition_date") >= p_start_date) & (F.col("partition_date") <= p_end_date))
+    .withColumn(
+        "audit_rank",
+        F.row_number().over(Window.partitionBy("partition_date").orderBy(F.col("retrieved_at").desc())),
     )
-]
-if not train_paths:
-    raise RuntimeError("No completed Bronze partitions found for the requested dates")
+    .where(F.col("audit_rank") == 1)
+)
+invalid_audit_rows = latest_ingestion.where(
+    (F.col("status") != "complete") | (F.col("record_count") <= 0) | F.col("bronze_path").isNull()
+).count()
+available_partition_count = latest_ingestion.count()
+if invalid_audit_rows or available_partition_count != expected_partition_count:
+    raise RuntimeError(
+        "Bronze completeness gate failed: "
+        f"expected {expected_partition_count} validated daily partitions, "
+        f"found {available_partition_count} with {invalid_audit_rows} invalid audit rows"
+    )
+
+train_paths = [row.bronze_path for row in latest_ingestion.select("bronze_path").collect()]
 
 train_paths = [f"/lakehouse/default/{path}" for path in train_paths]
 trains = spark.read.option("multiline", True).json(train_paths)

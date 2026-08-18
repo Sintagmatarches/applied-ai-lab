@@ -828,6 +828,34 @@ tbody td {
   color: #07130f;
 }
 
+.monitor-threshold-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 14px;
+  border: 1px solid #30424f;
+  background: #152029;
+}
+
+.monitor-threshold-row > div:first-child {
+  display: grid;
+  gap: 2px;
+  margin-right: auto;
+}
+
+.monitor-threshold-row > div:first-child strong {
+  color: #e7f0f6;
+  font-size: 13px;
+}
+
+.monitor-threshold-row > small {
+  flex: 1 1 100%;
+  color: #91a4b2;
+  font-size: 11px;
+}
+
 .monitor-freshness {
   display: flex;
   flex-wrap: wrap;
@@ -2241,6 +2269,14 @@ tbody td {
 
   .monitor-mode-control button {
     padding: 0 8px;
+  }
+
+  .monitor-threshold-row {
+    align-items: stretch;
+  }
+
+  .monitor-threshold-row .monitor-mode-control {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .monitor-freshness {
