@@ -12,69 +12,38 @@ The production hostname is deployment configuration rather than a repository con
 
 | Project | Primary skills | Public result |
 | --- | --- | --- |
-| Job Search AI Agent | Public acquisition, normalization, explainable ranking, local embeddings/RAG, validated LLM tools, grounding | Working account-free search plus an optional evaluated local Qwen agent; no paid API |
+| EU Tender Intelligence Agent | TED ingestion, procurement data model, deterministic qualification, change intelligence, local RAG/agent | Live official TED discovery and auditable bid-decision dashboard |
 | Finland Rail Monitoring System | Live monitoring, PySpark/Delta Lakehouse, incremental Bronze/Silver/Gold, geospatial analytics, Power BI/DAX | Live choropleth plus an executable and evidenced data-platform case |
 | Olist Delivery Delay Predictor | Python ML, point-in-time features, chronological evaluation, model parity, server inference | Working relative delay-risk scorer with held-out evidence and limitations |
 
-## Job Search AI Agent
+## EU Tender Intelligence Agent
 
-The job agent answers: **Which public vacancies fit a structured profile, why, and what evidence supports that conclusion?** It deliberately does not connect a personal LinkedIn or other job-board account, reuse cookies, solve CAPTCHA, cross a paywall or call a paid AI/search API.
+The agent solves a procurement workflow rather than generic “chat with tenders”: **discover → qualify → monitor changes → reassess**. The public dashboard queries the current official anonymous TED Search API v3, normalizes notices and lots, preserves TED/XML evidence links and compares an editable fictional supplier profile with structured mandatory conditions. Mandatory eligibility and strategic opportunity fit are shown separately; a failed certification or turnover threshold overrides any attractive fit score.
 
-The deployed page searches the documented keyless [Arbeitnow API](https://www.arbeitnow.com/blog/job-board-api) and [Jobicy API](https://jobicy.com/jobs-rss-feed). Arbeitnow normalizes vacancies sourced mostly from public European applicant-tracking systems; Jobicy supplies public remote listings. Provider-specific payloads stop at thin adapters. The domain model, filters, URL validation, HTML-to-inert-text conversion, skill/seniority extraction and duplicate fingerprint are shared code.
+The local runtime adds official eForms XML enrichment, SQLite/FTS5 persistence, immutable notice versions, material field diffs, automatic reassessment, Nomic embeddings, hybrid retrieval, Qwen tool calling and a deterministic claim/evidence gate. It has 14 schema-validated procurement tools. Source documents are untrusted data: prompt-like text cannot select tools, change eligibility or forge citations.
 
 ```mermaid
 flowchart LR
-  A["Arbeitnow public API"] --> N["Provider adapters"]
-  J["Jobicy public API"] --> N
-  N --> V["Validated job model"]
-  V --> D["Company + title + location deduplication"]
-  D --> F["Query / location / remote filters"]
-  P["Browser-local structured profile"] --> M["Explainable match engine"]
-  F --> M
-  M --> U["Ranked UI + save / compare"]
-  M --> T["Deterministic fallback tools"]
-  F --> S["SQLite + FTS5 knowledge base"]
-  S --> E["Nomic embeddings + cosine/lexical retrieval"]
-  E --> Q["Local Qwen tool planner"]
-  Q --> G["Schema + claim/citation grounding gate"]
-  G --> C["Cited answer with original vacancy links"]
+  T["TED Search API v3 + linked XML"] --> K["Procurement knowledge base"]
+  K --> Q["Deterministic qualification"]
+  K --> R["Hybrid RAG"]
+  R --> A["Validated local agent tools"]
+  A --> G["Claim-level evidence gate"]
+  K --> V["Version diff"]
+  V --> Q
 ```
 
-### Matching, retrieval and agent tools
-
-The score is intentionally not an LLM opinion. It is capped at 100 and decomposes into target-role token overlap (35 points), explicit profile-skill coverage (45 points), and declared location/remote preferences (20 points). Every card shows the component totals, matched profile skills and extracted advertised skills missing from the profile.
-
-The hosted browser agent routes questions to deterministic tools over the current result set:
-
-- `filter_results` selects the current or user-selected vacancies;
-- `aggregate_requirements` counts repeated extracted requirements and gaps;
-- `rank_matches` orders the declared scoring features;
-- the answer cites the original vacancy URL for every record in scope.
-
-No vacancy HTML is rendered or treated as an instruction. Script/style blocks are removed, remaining markup becomes inert text, descriptions are size-bounded and only `http`/`https` URLs survive normalization. Provider timeouts and `Promise.allSettled` keep one source failure from becoming an invented result or a full outage. Responses expose per-source status and use an hour-long shared cache to limit polling.
-
-The optional local path is now implemented end to end. SQLite persists normalized jobs and FTS5 text; `nomic-embed-text:latest` creates real 768-dimensional embeddings through Ollama; retrieval combines cosine similarity (75%) with lexical rank (25%) and applies source, location and remote metadata filters. `qwen2.5:3b-instruct` receives eight model-independent tool schemas: search, retrieve, filter, rank, compare, aggregate requirements, analyze a job and analyze a profile gap. Arguments are validated before execution, invalid calls get one constrained repair attempt, numeric match scores remain deterministic, and final JSON passes a claim/citation grounding gate before publication.
+Reproduce the complete local path:
 
 ```bash
 python -m pip install -r requirements-ai.txt
-ollama pull qwen2.5:3b-instruct
-ollama pull nomic-embed-text
-npm run ai:serve
-# in a second terminal
-npm run dev
+python -m unittest discover -s tender_ai/tests
+python -m tender_ai.evals.run
+python -m tender_ai.live_verify
+python -m uvicorn tender_ai.server:app --host 127.0.0.1 --port 8099
 ```
 
-The local Next.js proxy permits only loopback HTTP addresses and is disabled in production unless explicitly enabled. If Ollama or either model is unavailable, the page says so and preserves public search, deterministic matching, save, compare and the no-LLM evidence agent.
-
-### Evaluation, boundary and limitations
-
-The hosted Cloudflare worker does not pretend to run a local LLM. Ranking, extraction and fallback answers are deterministic and fully operational without one. The local adapter was exercised against a real Ollama runtime on this development machine; it is not exposed from production because a Cloudflare worker cannot access a visitor&apos;s loopback process.
-
-The committed evaluation uses 8 manually checked fixtures, 5 retrieval queries, 6 agent-routing cases, 2 unanswerable questions and 4 prompt-injection cases. The latest measured run is in [`docs/job-ai-evaluation.md`](docs/job-ai-evaluation.md) with complete machine-readable cases in [`artifacts/job-ai-evaluation.json`](artifacts/job-ai-evaluation.json). A separate [`live verification`](docs/job-ai-live-verification.md) records the same end-to-end path over current Arbeitnow/Jobicy results. Metrics report generated failures separately from what the grounding gate actually publishes. Qwen 3B is compact and free but not perfectly consistent at selecting the preferred tool, so deterministic code remains authoritative for acquisition, validation, filtering, deduplication and numeric scores.
-
-Saved vacancies and the example profile use device-local browser storage, not a personal account. The local SQLite knowledge base stays ignored under `data/job-ai/`; only privacy-minimized traces with a query hash/length, tool names, record IDs, timings and token counts are committed as evaluation evidence. There is no cross-device history or JavaScript-rendered crawler. LinkedIn and other login-gated sources remain deliberately excluded.
-
-Job-specific tests cover provider normalization, unsafe URL/HTML handling, deterministic filters and duplicate collapse, source resilience, SQLite round trips, actual vector scoring, metadata filters, tool-schema rejection, prompt isolation, grounding and citation guards, Ollama failure fallback, the production loopback boundary and rendered UI status. See [`docs/job-ai-architecture.md`](docs/job-ai-architecture.md) for components, data flow, recovery and security controls.
+The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, normalization and deterministic assessment are public; embeddings, history, agent execution and XML-enriched RAG are local. See [`docs/tender-ai-architecture.md`](docs/tender-ai-architecture.md), [`docs/tender-ai-evaluation.md`](docs/tender-ai-evaluation.md) and [`docs/tender-ai-live-verification.md`](docs/tender-ai-live-verification.md).
 
 ## Finland Rail Monitoring System
 
@@ -230,6 +199,8 @@ npm ci
 npm test
 npm run test:rail
 npm run test:ml
+npm run test:tender-ai
+npm run eval:tender-ai
 npm run typecheck
 npm run lint
 ```

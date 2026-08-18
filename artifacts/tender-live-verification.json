@@ -1,0 +1,1138 @@
+{
+  "verified_at": "2026-08-18T18:12:54.273178+00:00",
+  "source": "Official TED Search API v3",
+  "endpoint": "https://api.ted.europa.eu/v3/notices/search",
+  "period": {
+    "published_from": "2026-02-19",
+    "published_to": "2026-08-18"
+  },
+  "scenarios": [
+    {
+      "name": "Finland + data",
+      "query": "FT ~ \"data\" AND buyer-country = FIN AND PD = (20260219 <> 20260818)",
+      "returned": 8,
+      "total_notice_count": 178,
+      "latency_ms": 706.329,
+      "publication_ids": [
+        "119469-2026",
+        "131555-2026",
+        "138224-2026",
+        "139307-2026",
+        "142722-2026",
+        "150648-2026",
+        "150866-2026",
+        "152349-2026"
+      ]
+    },
+    {
+      "name": "Finland + software",
+      "query": "FT ~ \"software\" AND buyer-country = FIN AND PD = (20260219 <> 20260818)",
+      "returned": 8,
+      "total_notice_count": 644,
+      "latency_ms": 367.409,
+      "publication_ids": [
+        "117842-2026",
+        "118245-2026",
+        "119147-2026",
+        "120679-2026",
+        "121223-2026",
+        "121552-2026",
+        "122689-2026",
+        "123066-2026"
+      ]
+    },
+    {
+      "name": "Finland + artificial intelligence",
+      "query": "FT ~ \"artificial intelligence\" AND buyer-country = FIN AND PD = (20260219 <> 20260818)",
+      "returned": 5,
+      "total_notice_count": 5,
+      "latency_ms": 377.993,
+      "publication_ids": [
+        "131555-2026",
+        "271520-2026",
+        "419249-2026",
+        "537409-2026",
+        "568800-2026"
+      ]
+    },
+    {
+      "name": "Finland + analytics",
+      "query": "FT ~ \"analytics\" AND buyer-country = FIN AND PD = (20260219 <> 20260818)",
+      "returned": 8,
+      "total_notice_count": 19,
+      "latency_ms": 316.492,
+      "publication_ids": [
+        "152349-2026",
+        "212000-2026",
+        "250810-2026",
+        "286885-2026",
+        "321408-2026",
+        "332358-2026",
+        "351561-2026",
+        "354593-2026"
+      ]
+    },
+    {
+      "name": "EU + machine learning",
+      "query": "FT ~ \"machine learning\" AND PD = (20260219 <> 20260818)",
+      "returned": 8,
+      "total_notice_count": 42,
+      "latency_ms": 287.122,
+      "publication_ids": [
+        "131555-2026",
+        "133710-2026",
+        "193568-2026",
+        "207902-2026",
+        "258521-2026",
+        "275528-2026",
+        "333052-2026",
+        "333260-2026"
+      ]
+    },
+    {
+      "name": "ICT/Data CPV 72*",
+      "query": "classification-cpv = 72* AND buyer-country = FIN AND PD = (20260219 <> 20260818)",
+      "returned": 8,
+      "total_notice_count": 542,
+      "latency_ms": 344.479,
+      "publication_ids": [
+        "117842-2026",
+        "118245-2026",
+        "119147-2026",
+        "119469-2026",
+        "120679-2026",
+        "121223-2026",
+        "121552-2026",
+        "122689-2026"
+      ]
+    }
+  ],
+  "unique_notices": 34,
+  "persistence": {
+    "fetched": 34,
+    "new": 34,
+    "updated": 0,
+    "unchanged": 0,
+    "changes": 0,
+    "reassessments": 34,
+    "failures": 0
+  },
+  "knowledge_base": {
+    "notices": 34,
+    "lots": 67,
+    "requirements": 64,
+    "award_criteria": 54,
+    "evidence": 163,
+    "notice_versions": 34,
+    "change_events": 0,
+    "supplier_profiles": 1,
+    "assessments": 34,
+    "embeddings": 163
+  },
+  "xml_documents": {
+    "attempted": 12,
+    "failures": [
+      {
+        "publication_id": "119147-2026",
+        "error": "HTTPError: HTTP Error 429: Too Many Requests"
+      }
+    ]
+  },
+  "embedding_index": {
+    "indexed": 163,
+    "latency_ms": 13379.476,
+    "model": "nomic-embed-text:latest"
+  },
+  "retrieval": {
+    "metrics": {
+      "retrieval_latency_ms": 116.838,
+      "embedding_latency_ms": 53.021,
+      "candidate_count": 139
+    },
+    "hits": [
+      {
+        "evidence_id": "ted:a37d3b3e-548d-491b-9666-f5c2de06eefc:notice:summary",
+        "notice_id": "a37d3b3e-548d-491b-9666-f5c2de06eefc",
+        "kind": "notice_summary",
+        "text": "Bank of Finland (also ”Contracting Entity”, “BoF” or ”Customer”) is inviting candidates to leave a request to participate for a procurement of Time series data analytics service. The object of the procurement is the renewal or partial replacement of the Bank of Finland's internally developed data and analytics service, the time series system. Please see in more detail in the Preliminary Call for Tenders and its appendices. AT THE MOMENT No tender nor preliminary tender is expected from the candidates. The purpose of the procurement is to select one (1) supplier with an overall responsibility, with whom the Contracting Entity will enter into an agreement valid until further notice. The selected supplier may also be a consortium formed by the candidates. Please note! The mandatory requirements for the object of the procurement described in the documents or the criteria set out for most economically advantageous tender are NOT negotiated during the procurement process and their content is",
+        "title": "Finland – Software package and information systems – INVITATION TO PARTICIPATE - Time series data analytics service",
+        "buyer": "Bank of Finland",
+        "notice_url": "https://ted.europa.eu/en/notice/-/detail/286885-2026",
+        "buyer_country": "FIN",
+        "cpv_codes": [
+          "48000000",
+          "72000000"
+        ],
+        "estimated_value": null,
+        "submission_deadline": "2026-05-04Z",
+        "vector_score": 0.654458,
+        "lexical_score": 0.333333,
+        "hybrid_score": 0.564543
+      },
+      {
+        "evidence_id": "ted:cae17fc5-792f-44fb-9088-3e19cea11cc5:notice:award-2",
+        "notice_id": "cae17fc5-792f-44fb-9088-3e19cea11cc5",
+        "kind": "award_criterion",
+        "text": "Quality: Quality 60",
+        "title": "Finland – Survey services – RAISE - Monitoring Hub for Mapping and Surveying Responsible Artificial Intelligence and Societal Engagement in the Nordic Region",
+        "buyer": "Lappeenrannan-Lahden teknillinen yliopisto LUT",
+        "notice_url": "https://ted.europa.eu/en/notice/-/detail/419249-2026",
+        "buyer_country": "FIN",
+        "cpv_codes": [
+          "79311000"
+        ],
+        "estimated_value": null,
+        "submission_deadline": "2026-07-22Z",
+        "vector_score": 0.365693,
+        "lexical_score": 1.0,
+        "hybrid_score": 0.543299
+      },
+      {
+        "evidence_id": "ted:cae17fc5-792f-44fb-9088-3e19cea11cc5:notice:summary",
+        "notice_id": "cae17fc5-792f-44fb-9088-3e19cea11cc5",
+        "kind": "notice_summary",
+        "text": "The call for tender concerns the implementation of a two-wave online panel survey on public perceptions, experiences, trust, and concerns regarding the use of AI in public services across the Nordic region. The survey will support the creation of a Nordic AI Monitoring Hub, conceived as a long-term regional infrastructure for tracking, comparing, and making visible the societal impacts of AI systems used in public administration through public-facing and regularly updated outputs. The selected provider will conduct the survey in Finland, Sweden, Norway, Denmark, and Iceland among residents aged 18 years and older, using established online panels and, where necessary, partner panels to achieve nationally representative samples by gender, age, and geography according to best practice in each market. A more detailed description of the subject of the procurement is provided in Appendix 1 and in the procurement criteria.",
+        "title": "Finland – Survey services – RAISE - Monitoring Hub for Mapping and Surveying Responsible Artificial Intelligence and Societal Engagement in the Nordic Region",
+        "buyer": "Lappeenrannan-Lahden teknillinen yliopisto LUT",
+        "notice_url": "https://ted.europa.eu/en/notice/-/detail/419249-2026",
+        "buyer_country": "FIN",
+        "cpv_codes": [
+          "79311000"
+        ],
+        "estimated_value": null,
+        "submission_deadline": "2026-07-22Z",
+        "vector_score": 0.695548,
+        "lexical_score": 0.142857,
+        "hybrid_score": 0.540794
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "kind": "notice_summary",
+        "text": "Veikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the a",
+        "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
+        "buyer": "Veikkaus Oy",
+        "notice_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "buyer_country": "FIN",
+        "cpv_codes": [
+          "72000000",
+          "48000000"
+        ],
+        "estimated_value": null,
+        "submission_deadline": "2026-03-16Z",
+        "vector_score": 0.669274,
+        "lexical_score": 0.2,
+        "hybrid_score": 0.537878
+      },
+      {
+        "evidence_id": "ted:f7b5c08e-d15f-4b8b-af89-5905dff4cd5e:notice:summary",
+        "notice_id": "f7b5c08e-d15f-4b8b-af89-5905dff4cd5e",
+        "kind": "notice_summary",
+        "text": "HAUS Finnish Institute of Public Management Ltd (HAUS) is establishing a Dynamic Purchasing System (DPS) for the period 2026–2030 for the procurement of expert services related to digital transformation, innovation, governance, institutional development and public sector development. The estimated total value of procurements conducted under the DPS during its validity period is approximately EUR 40 million (excluding VAT). The DPS will be used to procure expertise for international development cooperation projects, technical assistance assignments, advisory services, capacity building initiatives, studies, evaluations and other expert services implemented globally. Assignments may be funded by, among others, the European Union, the Ministry for Foreign Affairs of Finland, development finance institutions and other international cooperation partners. The DPS is divided into the following categories: 1. Digital Transformation, Data, Artificial Intelligence & Cybersecurity 2. Governance, ",
+        "title": "Finland – Training and entertainment software development services – HAUS DPS 2026–2030 for Digital Transformation, Innovation and Public Sector Development",
+        "buyer": "HAUS kehittämiskeskus Oy",
+        "notice_url": "https://ted.europa.eu/en/notice/-/detail/568800-2026",
+        "buyer_country": "FIN",
+        "cpv_codes": [
+          "72212930",
+          "72000000",
+          "72200000",
+          "72220000",
+          "72224000",
+          "75112000",
+          "75112100",
+          "79000000",
+          "79400000",
+          "80000000",
+          "80500000"
+        ],
+        "estimated_value": 40000000.0,
+        "submission_deadline": "2030-08-07Z",
+        "vector_score": 0.66438,
+        "lexical_score": 0.166667,
+        "hybrid_score": 0.52502
+      }
+    ]
+  },
+  "sample_normalized_notice": {
+    "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+    "publication_id": "131555-2026",
+    "notice_type": "cn-standard",
+    "form_type": "competition",
+    "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
+    "description": "Veikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the agreement.\nexg-crim-corrpt The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-fraud The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for fraud, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for fraud, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-laund The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for money laundering or terrorist financing, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for money laundering or terrorist financing, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-part The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for participation in a criminal organisation, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for participation in a criminal organisation, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-terror The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for terrorist offences or offences linked to terrorist activities, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for terrorist offences or offences linked to terrorist activities, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-traffick The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for child labour and other forms of trafficking in human beings, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for child labour and other forms of trafficking in human beings, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-mis-bre-env-law The economic operator has breached its obligations in the field of environmental law.\nThe economic operator has breached its obligations in the field of environmental law.\nexg-mis-bre-lab-law The economic operator has breached its obligations in the field of labour law.\nThe economic operator has breached its obligations in the field of labour law.\nexg-mis-bre-soc-law The economic operator has breached its obligations in the field of social law.\nThe economic operator has breached its obligations in the field of social law.\nexg-mis-distortion The economic operator has entered into agreements with other economic operators aimed at distorting competition.\nThe economic operator has entered into agreements with other economic operators aimed at distorting competition.\nexg-mis-misconduct The economic operator is guilty of grave professional misconduct.\nThe economic operator is guilty of grave professional misconduct.\nexg-mis-misrepresent The economic operator can confirm that: a) It has been guilty of serious misrepresentation in supplying the information required for the verification of the absence of grounds for exclusion or the fulfilment of the selection criteria, b) It has withheld such information, c) It has not been able, without delay, to submit the supporting documents required by a contracting authority or contracting entity, and d) It has undertaken to unduly influence the decision making process of the contracting authority or contracting entity, to obtain confidential information that may confer upon it undue advantages in the procurement procedure or to negligently provide misleading information that may have a material influence on decisions concerning exclusion, selection or award.\nThe economic operator can confirm that: a) It has been guilty of serious misrepresentation in supplying the information required for the verification of the absence of grounds for exclusion or the fulfilment of the selection criteria, b) It has withheld such information, c) It has not been able, without delay, to submit the supporting documents required by a contracting authority or contracting entity, and d) It has undertaken to unduly influence the decision making process of the contracting authority or contracting entity, to obtain confidential information that may confer upon it undue advantages in the procurement procedure or to negligently provide misleading information that may have a material influence on decisions concerning exclusion, selection or award.\nexg-mis-partic-confl The economic operator is aware of any conflict of interest, as indicated in national law, the relevant notice or the procurement documents due to its participation in the procurement procedure.\nThe economic operator is aware of any conflict of interest, as indicated in national law, the relevant notice or the procurement documents due to its participation in the procurement procedure.\nexg-mis-prep-confl The economic operator or an undertaking related to it has advised the contracting authority or contracting entity or otherwise been involved in the preparation of the procurement procedure.\nThe economic operator or an undertaking related to it has advised the contracting authority or contracting entity or otherwise been involved in the preparation of the procurement procedure.\nexg-mis-sanction The economic operator has experienced that a prior public contract, a prior contract with a contracting entity or a prior concession contract was terminated early, or that damages or other comparable sanctions were imposed in connection with that prior contract.\nThe economic operator has experienced that a prior public contract, a prior contract with a contracting entity or a prior concession contract was terminated early, or that damages or other comparable sanctions were imposed in connection with that prior contract.\nexg-natl-bre-nat-law Any person who is a member of the economic operator’s administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for work safety offence, working hours offence, work discrimination, extortionate work discrimination, violation of the right to organise or unauthorised use of foreign labour.\nAny person who is a member of the economic operator’s administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for work safety offence, working hours offence, work discrimination, extortionate work discrimination, violation of the right to organise or unauthorised use of foreign labour.\nexg-pmt-bre-ssc The economic operator has breached its obligations relating to the payment social security contributions, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nThe economic operator has breached its obligations relating to the payment social security contributions, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nexg-pmt-bre-tax The economic operator has breached its obligations relating to the payment of taxes, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nThe economic operator has breached its obligations relating to the payment of taxes, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nexg-sitn-as-susp The business activities of the economic operator are suspended.\nThe business activities of the economic operator are suspended.\nexg-sitn-bankr The economic operator is bankrupt.\nThe economic operator is bankrupt.\nexg-sitn-cred-arran The economic operator is in arrangement with creditors.\nThe economic operator is in arrangement with creditors.\nexg-sitn-insolvency The economic operator is the subject of insolvency or winding-up.\nThe economic operator is the subject of insolvency or winding-up.\nexg-sitn-liq-admin The assets of the economic operator are being administered by a liquidator or by the court.\nThe assets of the economic operator are being administered by a liquidator or by the court.\nexg-sitn-other The economic operator is in any analogous situation like bankruptcy arising from a similar procedure under national laws and regulations.\nThe economic operator is in any analogous situation like bankruptcy arising from a similar procedure under national laws and regulations.\nepo-procurement-document\n1. GENERAL The legislation concerning the public procurement is applied to the procurement. Type of procedure is open procedure. 2. CONTRACT NOTICE A contract notice has been published on the website www.hankintailmoitukset.fi and http://ted.europa.eu. The contract award notice shall be published after the award decision. 3. SUBMITTING THE TENDER AS A GROUP OF ECONOMIC OPERATORS AND SUBCONTRACTING The tenderer may submit the tender as a group of economic operators. In this case, however, it is required that the enterprises that belong to the group undertake with joint liability to fulfill the obligations and responsibilities of the contract. If the group is awarded with the contract, all group members shall sign the contract. The members of the group may not be changed during the procurement procedure or contract period. The group and the supplier with subcontractors is required to have the technical, economic and financial and other capacities to provide the goods and services in accordance with the contract for the whole contract period. During the tender competition and during the contract period, the supplier may be requested to provide proof on commitments and contracts that they have made with the notified subcontractors and which may affect the supplier’s capacity to meet the obligations of the contract. The group may be requested to provide corresponding proof on how the relationships between the members of the group have been arranged. If the tenderer uses subcontractors, it shall be responsible for the work of its subcontractors as of their own work. If the tenderer participates in the procurement process independently, using the services of its subcontractors as a part of its tender and being responsible for their work, the tenderer must state in the Subcontractors form how the subcontractor participates in producing the service. During the contract period, replacing subcontractors is possible only if it does not result to significant or material changes of the contract, and only with the consent of the contracting authority. 4. USING RESOURCES OF OTHER ENTITIES The tenderer or a group of economic operators may use the resources of other entities to fulfill the requirements of the invitation to tender without taking into account the legal nature of their relationship. The resources of other entities must be de facto at the disposal of the tenderer or the group of economic operators during the procurement process and the contract period. Such resources may include, for example: 1) Relying professional experience of other economic entity, which for example belong to the same group of companies, provided that this entity is named in the tender as a subcontractor for the tenderer or the group of economic operators, and it de facto participates in supplying the service; 2) the use of other company's personnel to fulfill the requirements concerning professional qualifications, provided that these persons de facto participate in supplying the service; 3) resources concerning economic and financial standing; 4) resources concerning technical capabilities, provided that such resources are de facto utilized to fulfill the requirements of the procurement. 5. PROCESSING OF TENDERS 5.1 SUITABILITY OF TENDERS Before the tenders are processed it shall be assessed whether the tenderers meet the technical, professional and economic and financial requirements presented in clause/form \"Exclusion and suitability (ESPD)\". The tenderer’s suitability shall be examined using the information provided in the tender, other financial statements (if separately requested) and the information available from risk rating reports. Tenderers who do not meet the minimum requirements set in the Call for Tenders shall be excluded from the tender competition. A tenderer who has been convicted of or in which any person with powers of representation, decision making or control has been convicted of an offence as referred in EU Public Procurement Directive 57 article, section 1 or to extortionate work discrimination as stated in the Criminal Code of Finland, chapter 47 section 3(a) shall also be excluded from the tender competition. A tenderer to whom a criterion for exclusion as referred to in Public Procurement Act may also be excluded from the tender competition. 5.2 COMPLIANCE OF TENDERS WITH THE CALL FOR TENDERS The solution and services tendered shall comply with the content of the Call for Tenders and its annexes. All the requested information and required annexes must be annexed to the tender. In examining the compliance of the tender the tender is assessed based on the entire content of the tender. Tenders that are not in compliance with the Call for Tenders or in accordance with the conditions of the tendering procedure shall be excluded from the tender competition. 5.3 EVALUATION OF TENDERS The evaluation of the tenders shall be made according to chapter \"Grounds for decision\". 5.4 AWARD DECISION AND ITS NOTIFICATION The award decision shall be sent for the information of all the tenderers via email. The contract does not come into force as a result of the notification of the decision, but requires a separate written contract.\nVeikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the agreement.\nThe tenderer is registered in the relevant trade registers kept by the Member State of establishment.\nVeikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources).\nPrice: 282 total points The cheapest offer gets full points according to the weight value, and the points of others are proportional to the offer of the lowest tenderer using the formula: (minimum given value / offered value) * maximum points\nQuality: 188 total points, divided into sections: Service Requirements total 30 points Technology Requirements total 20 points Integrations total 6 points Preliminary Project Plan total 60 points Key Personel Interview total 72 points Quality points will not be scaled or normalised. Each Tenderer will receive exactly the number of quality points earned on the basis of its responses, in accordance with the scoring rules described in the procurement documents.\nThe exact time limits for the appeal procedure will be specified in the procurement decision.",
+    "buyer": "Veikkaus Oy",
+    "buyer_country": "FIN",
+    "procedure_type": "open",
+    "publication_date": "2026-02-25+01:00",
+    "submission_deadline": "2026-03-16Z",
+    "estimated_value": null,
+    "currency": null,
+    "cpv_codes": [
+      "72000000",
+      "48000000"
+    ],
+    "place_of_performance": [],
+    "notice_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+    "xml_url": "https://ted.europa.eu/en/notice/131555-2026/xml",
+    "source": "TED Search API v3",
+    "discovered_at": "2026-08-18T18:12:27.737417+00:00",
+    "updated_at": "2026-08-18T18:12:27.737417+00:00",
+    "version": 1,
+    "lots": [
+      {
+        "lot_id": "LOT-0000",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "title": "Detection and response technology and services",
+        "description": "Veikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the agreement.\nexg-crim-corrpt The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-fraud The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for fraud, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for fraud, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-laund The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for money laundering or terrorist financing, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for money laundering or terrorist financing, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-part The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for participation in a criminal organisation, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for participation in a criminal organisation, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-terror The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for terrorist offences or offences linked to terrorist activities, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for terrorist offences or offences linked to terrorist activities, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-traffick The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for child labour and other forms of trafficking in human beings, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for child labour and other forms of trafficking in human beings, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-mis-bre-env-law The economic operator has breached its obligations in the field of environmental law.\nThe economic operator has breached its obligations in the field of environmental law.\nexg-mis-bre-lab-law The economic operator has breached its obligations in the field of labour law.\nThe economic operator has breached its obligations in the field of labour law.\nexg-mis-bre-soc-law The economic operator has breached its obligations in the field of social law.\nThe economic operator has breached its obligations in the field of social law.\nexg-mis-distortion The economic operator has entered into agreements with other economic operators aimed at distorting competition.\nThe economic operator has entered into agreements with other economic operators aimed at distorting competition.\nexg-mis-misconduct The economic operator is guilty of grave professional misconduct.\nThe economic operator is guilty of grave professional misconduct.\nexg-mis-misrepresent The economic operator can confirm that: a) It has been guilty of serious misrepresentation in supplying the information required for the verification of the absence of grounds for exclusion or the fulfilment of the selection criteria, b) It has withheld such information, c) It has not been able, without delay, to submit the supporting documents required by a contracting authority or contracting entity, and d) It has undertaken to unduly influence the decision making process of the contracting authority or contracting entity, to obtain confidential information that may confer upon it undue advantages in the procurement procedure or to negligently provide misleading information that may have a material influence on decisions concerning exclusion, selection or award.\nThe economic operator can confirm that: a) It has been guilty of serious misrepresentation in supplying the information required for the verification of the absence of grounds for exclusion or the fulfilment of the selection criteria, b) It has withheld such information, c) It has not been able, without delay, to submit the supporting documents required by a contracting authority or contracting entity, and d) It has undertaken to unduly influence the decision making process of the contracting authority or contracting entity, to obtain confidential information that may confer upon it undue advantages in the procurement procedure or to negligently provide misleading information that may have a material influence on decisions concerning exclusion, selection or award.\nexg-mis-partic-confl The economic operator is aware of any conflict of interest, as indicated in national law, the relevant notice or the procurement documents due to its participation in the procurement procedure.\nThe economic operator is aware of any conflict of interest, as indicated in national law, the relevant notice or the procurement documents due to its participation in the procurement procedure.\nexg-mis-prep-confl The economic operator or an undertaking related to it has advised the contracting authority or contracting entity or otherwise been involved in the preparation of the procurement procedure.\nThe economic operator or an undertaking related to it has advised the contracting authority or contracting entity or otherwise been involved in the preparation of the procurement procedure.\nexg-mis-sanction The economic operator has experienced that a prior public contract, a prior contract with a contracting entity or a prior concession contract was terminated early, or that damages or other comparable sanctions were imposed in connection with that prior contract.\nThe economic operator has experienced that a prior public contract, a prior contract with a contracting entity or a prior concession contract was terminated early, or that damages or other comparable sanctions were imposed in connection with that prior contract.\nexg-natl-bre-nat-law Any person who is a member of the economic operator’s administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for work safety offence, working hours offence, work discrimination, extortionate work discrimination, violation of the right to organise or unauthorised use of foreign labour.\nAny person who is a member of the economic operator’s administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for work safety offence, working hours offence, work discrimination, extortionate work discrimination, violation of the right to organise or unauthorised use of foreign labour.\nexg-pmt-bre-ssc The economic operator has breached its obligations relating to the payment social security contributions, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nThe economic operator has breached its obligations relating to the payment social security contributions, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nexg-pmt-bre-tax The economic operator has breached its obligations relating to the payment of taxes, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nThe economic operator has breached its obligations relating to the payment of taxes, both in the country in which it is established and in Member State of the contracting authority or contracting entity if other than the country of establishment.\nexg-sitn-as-susp The business activities of the economic operator are suspended.\nThe business activities of the economic operator are suspended.\nexg-sitn-bankr The economic operator is bankrupt.\nThe economic operator is bankrupt.\nexg-sitn-cred-arran The economic operator is in arrangement with creditors.\nThe economic operator is in arrangement with creditors.\nexg-sitn-insolvency The economic operator is the subject of insolvency or winding-up.\nThe economic operator is the subject of insolvency or winding-up.\nexg-sitn-liq-admin The assets of the economic operator are being administered by a liquidator or by the court.\nThe assets of the economic operator are being administered by a liquidator or by the court.\nexg-sitn-other The economic operator is in any analogous situation like bankruptcy arising from a similar procedure under national laws and regulations.\nThe economic operator is in any analogous situation like bankruptcy arising from a similar procedure under national laws and regulations.\nepo-procurement-document\n1. GENERAL The legislation concerning the public procurement is applied to the procurement. Type of procedure is open procedure. 2. CONTRACT NOTICE A contract notice has been published on the website www.hankintailmoitukset.fi and http://ted.europa.eu. The contract award notice shall be published after the award decision. 3. SUBMITTING THE TENDER AS A GROUP OF ECONOMIC OPERATORS AND SUBCONTRACTING The tenderer may submit the tender as a group of economic operators. In this case, however, it is required that the enterprises that belong to the group undertake with joint liability to fulfill the obligations and responsibilities of the contract. If the group is awarded with the contract, all group members shall sign the contract. The members of the group may not be changed during the procurement procedure or contract period. The group and the supplier with subcontractors is required to have the technical, economic and financial and other capacities to provide the goods and services in accordance with the contract for the whole contract period. During the tender competition and during the contract period, the supplier may be requested to provide proof on commitments and contracts that they have made with the notified subcontractors and which may affect the supplier’s capacity to meet the obligations of the contract. The group may be requested to provide corresponding proof on how the relationships between the members of the group have been arranged. If the tenderer uses subcontractors, it shall be responsible for the work of its subcontractors as of their own work. If the tenderer participates in the procurement process independently, using the services of its subcontractors as a part of its tender and being responsible for their work, the tenderer must state in the Subcontractors form how the subcontractor participates in producing the service. During the contract period, replacing subcontractors is possible only if it does not result to significant or material changes of the contract, and only with the consent of the contracting authority. 4. USING RESOURCES OF OTHER ENTITIES The tenderer or a group of economic operators may use the resources of other entities to fulfill the requirements of the invitation to tender without taking into account the legal nature of their relationship. The resources of other entities must be de facto at the disposal of the tenderer or the group of economic operators during the procurement process and the contract period. Such resources may include, for example: 1) Relying professional experience of other economic entity, which for example belong to the same group of companies, provided that this entity is named in the tender as a subcontractor for the tenderer or the group of economic operators, and it de facto participates in supplying the service; 2) the use of other company's personnel to fulfill the requirements concerning professional qualifications, provided that these persons de facto participate in supplying the service; 3) resources concerning economic and financial standing; 4) resources concerning technical capabilities, provided that such resources are de facto utilized to fulfill the requirements of the procurement. 5. PROCESSING OF TENDERS 5.1 SUITABILITY OF TENDERS Before the tenders are processed it shall be assessed whether the tenderers meet the technical, professional and economic and financial requirements presented in clause/form \"Exclusion and suitability (ESPD)\". The tenderer’s suitability shall be examined using the information provided in the tender, other financial statements (if separately requested) and the information available from risk rating reports. Tenderers who do not meet the minimum requirements set in the Call for Tenders shall be excluded from the tender competition. A tenderer who has been convicted of or in which any person with powers of representation, decision making or control has been convicted of an offence as referred in EU Public Procurement Directive 57 article, section 1 or to extortionate work discrimination as stated in the Criminal Code of Finland, chapter 47 section 3(a) shall also be excluded from the tender competition. A tenderer to whom a criterion for exclusion as referred to in Public Procurement Act may also be excluded from the tender competition. 5.2 COMPLIANCE OF TENDERS WITH THE CALL FOR TENDERS The solution and services tendered shall comply with the content of the Call for Tenders and its annexes. All the requested information and required annexes must be annexed to the tender. In examining the compliance of the tender the tender is assessed based on the entire content of the tender. Tenders that are not in compliance with the Call for Tenders or in accordance with the conditions of the tendering procedure shall be excluded from the tender competition. 5.3 EVALUATION OF TENDERS The evaluation of the tenders shall be made according to chapter \"Grounds for decision\". 5.4 AWARD DECISION AND ITS NOTIFICATION The award decision shall be sent for the information of all the tenderers via email. The contract does not come into force as a result of the notification of the decision, but requires a separate written contract.\nVeikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the agreement.\nThe tenderer is registered in the relevant trade registers kept by the Member State of establishment.\nVeikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources).\nPrice: 282 total points The cheapest offer gets full points according to the weight value, and the points of others are proportional to the offer of the lowest tenderer using the formula: (minimum given value / offered value) * maximum points\nQuality: 188 total points, divided into sections: Service Requirements total 30 points Technology Requirements total 20 points Integrations total 6 points Preliminary Project Plan total 60 points Key Personel Interview total 72 points Quality points will not be scaled or normalised. Each Tenderer will receive exactly the number of quality points earned on the basis of its responses, in accordance with the scoring rules described in the procurement documents.\nThe exact time limits for the appeal procedure will be specified in the procurement decision.",
+        "cpv_codes": [
+          "72000000",
+          "48000000"
+        ],
+        "value": null,
+        "currency": null,
+        "place_of_performance": [],
+        "deadline": "2026-03-16Z",
+        "duration": null,
+        "status": "UNKNOWN"
+      }
+    ],
+    "requirements": [
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:1",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources).",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:2",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi .",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:3",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "The contract award notice shall be published after the award decision.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:4",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "In this case, however, it is required that the enterprises that belong to the group undertake with joint liability to fulfill the obligations and responsibilities of the contract.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:5",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "If the group is awarded with the contract, all group members shall sign the contract.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:6",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "consortium",
+        "text": "The group and the supplier with subcontractors is required to have the technical, economic and financial and other capacities to provide the goods and services in accordance with the contract for the whole contract period.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:7",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "consortium",
+        "text": "If the tenderer uses subcontractors, it shall be responsible for the work of its subcontractors as of their own work.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:8",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "consortium",
+        "text": "If the tenderer participates in the procurement process independently, using the services of its subcontractors as a part of its tender and being responsible for their work, the tenderer must state in the Subcontractors form how the subcontractor participates in producing the service.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:9",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "consortium",
+        "text": "The resources of other entities must be de facto at the disposal of the tenderer or the group of economic operators during the procurement process and the contract period.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:10",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "PROCESSING OF TENDERS 5.1 SUITABILITY OF TENDERS Before the tenders are processed it shall be assessed whether the tenderers meet the technical, professional and economic and financial requirements presented in clause/form \"Exclusion and suitability (ESPD)\".",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:11",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "The tenderer’s suitability shall be examined using the information provided in the tender, other financial statements (if separately requested) and the information available from risk rating reports.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:12",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "Tenderers who do not meet the minimum requirements set in the Call for Tenders shall be excluded from the tender competition.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:13",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "A tenderer who has been convicted of or in which any person with powers of representation, decision making or control has been convicted of an offence as referred in EU Public Procurement Directive 57 article, section 1 or to extortionate work discrimination as stated in the Criminal Code of Finland, chapter 47 section 3(a) shall also be excluded from the tender competition.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:14",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "5.2 COMPLIANCE OF TENDERS WITH THE CALL FOR TENDERS The solution and services tendered shall comply with the content of the Call for Tenders and its annexes.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:15",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "All the requested information and required annexes must be annexed to the tender.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:16",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "Tenders that are not in compliance with the Call for Tenders or in accordance with the conditions of the tendering procedure shall be excluded from the tender competition.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:17",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "5.3 EVALUATION OF TENDERS The evaluation of the tenders shall be made according to chapter \"Grounds for decision\".",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:18",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "5.4 AWARD DECISION AND ITS NOTIFICATION The award decision shall be sent for the information of all the tenderers via email.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      },
+      {
+        "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:19",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "category": "technical",
+        "text": "The contract does not come into force as a result of the notification of the decision, but requires a separate written contract.",
+        "requirement_type": "eligibility",
+        "mandatory": true,
+        "operator": null,
+        "structured_value": null,
+        "unit": null,
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19",
+        "confidence": 0.7,
+        "extraction_status": "UNSTRUCTURED"
+      }
+    ],
+    "award_criteria": [
+      {
+        "criterion_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:award:1",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "name": "Price",
+        "type": "price",
+        "weight": null,
+        "description": "Price: 282 total points The cheapest offer gets full points according to the weight value, and the points of others are proportional to the offer of the lowest tenderer using the formula: (minimum given value / offered value) * maximum points",
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:award-1"
+      },
+      {
+        "criterion_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:award:2",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": null,
+        "name": "Quality",
+        "type": "quality",
+        "weight": null,
+        "description": "Quality: 188 total points, divided into sections: Service Requirements total 30 points Technology Requirements total 20 points Integrations total 6 points Preliminary Project Plan total 60 points Key Personel Interview total 72 points Quality points will not be scaled or normalised. Each Tenderer will receive exactly the number of quality points earned on the basis of its responses, in accordance with the scoring rules described in the procurement documents.",
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:award-2"
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": null,
+        "field": "notice_summary",
+        "excerpt": "Veikkaus is initiating a tendering process for modern security services and related technology components to strengthen and evolve its security operations capabilities. Veikkaus seeks managed Detection and Response services on top of cloud-native, scalable, and automation-driven solutions that utilize Artificial Intelligence (AI) and Machine Learning (ML) to enable continuous advancement of security operations. The goal is to achieve proactive, data-driven protection and improved operational efficiency across all business environments – both on-premises and in our multicloud-cloud setup. Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources). Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi . After submission, Veikkaus will provide the confidential materials to the tenderer who has signed the a",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:award-1",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": null,
+        "field": "award_criterion",
+        "excerpt": "Price: Price: 282 total points The cheapest offer gets full points according to the weight value, and the points of others are proportional to the offer of the lowest tenderer using the formula: (minimum given value / offered value) * maximum points",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:award-2",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": null,
+        "field": "award_criterion",
+        "excerpt": "Quality: Quality: 188 total points, divided into sections: Service Requirements total 30 points Technology Requirements total 20 points Integrations total 6 points Preliminary Project Plan total 60 points Key Personel Interview total 72 points Quality points will not be scaled or normalised. Each Tenderer will receive exactly the number of quality points earned on the basis of its responses, in accordance with the scoring rules described in the procurement documents.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:document:xml",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": null,
+        "field": "procurement_document",
+        "excerpt": "exg-crim-corrpt The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nThe economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been the subject of a conviction by final judgment for corruption, by a conviction rendered at the most five years ago or in which an exclusion period set out directly in the conviction continues to be applicable.\nexg-crim-fraud The economic operator itself or any person who is a member of its administrative, management or supervisory body or has powers of representation, decision or control therein has been th",
+        "source_url": "https://ted.europa.eu/en/notice/131555-2026/xml",
+        "source": "TED XML"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "Veikkaus requires the signing of a non-disclosure agreement in order for the tenderers to gain full access to the documents attached to the request for tenders (Annex 8 Integrations & Annex 12 Log Sources).",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "Tenderers must send the signed non-disclosure agreement (Annex 13) to: hankinnat@veikkaus.fi .",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "The contract award notice shall be published after the award decision.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "In this case, however, it is required that the enterprises that belong to the group undertake with joint liability to fulfill the obligations and responsibilities of the contract.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "If the group is awarded with the contract, all group members shall sign the contract.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "The group and the supplier with subcontractors is required to have the technical, economic and financial and other capacities to provide the goods and services in accordance with the contract for the whole contract period.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "If the tenderer uses subcontractors, it shall be responsible for the work of its subcontractors as of their own work.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "If the tenderer participates in the procurement process independently, using the services of its subcontractors as a part of its tender and being responsible for their work, the tenderer must state in the Subcontractors form how the subcontractor participates in producing the service.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "The resources of other entities must be de facto at the disposal of the tenderer or the group of economic operators during the procurement process and the contract period.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "PROCESSING OF TENDERS 5.1 SUITABILITY OF TENDERS Before the tenders are processed it shall be assessed whether the tenderers meet the technical, professional and economic and financial requirements presented in clause/form \"Exclusion and suitability (ESPD)\".",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "The tenderer’s suitability shall be examined using the information provided in the tender, other financial statements (if separately requested) and the information available from risk rating reports.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "Tenderers who do not meet the minimum requirements set in the Call for Tenders shall be excluded from the tender competition.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "A tenderer who has been convicted of or in which any person with powers of representation, decision making or control has been convicted of an offence as referred in EU Public Procurement Directive 57 article, section 1 or to extortionate work discrimination as stated in the Criminal Code of Finland, chapter 47 section 3(a) shall also be excluded from the tender competition.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "5.2 COMPLIANCE OF TENDERS WITH THE CALL FOR TENDERS The solution and services tendered shall comply with the content of the Call for Tenders and its annexes.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "All the requested information and required annexes must be annexed to the tender.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "Tenders that are not in compliance with the Call for Tenders or in accordance with the conditions of the tendering procedure shall be excluded from the tender competition.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "5.3 EVALUATION OF TENDERS The evaluation of the tenders shall be made according to chapter \"Grounds for decision\".",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "5.4 AWARD DECISION AND ITS NOTIFICATION The award decision shall be sent for the information of all the tenderers via email.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      },
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "lot_id": "LOT-0000",
+        "field": "requirement",
+        "excerpt": "The contract does not come into force as a result of the notification of the decision, but requires a separate written contract.",
+        "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+        "source": "TED"
+      }
+    ]
+  },
+  "sample_assessment": {
+    "assessment_id": 2,
+    "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+    "notice_version": 1,
+    "profile_id": "demo-eu-data-ai",
+    "profile_version": 1,
+    "status": "REVIEW",
+    "strategic_fit": 61,
+    "assessment_json": "{\"status\": \"REVIEW\", \"strategic_fit\": 61, \"checks\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:3\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:4\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:5\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:6\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:7\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:8\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:9\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:10\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:11\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:12\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:13\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:14\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:15\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:16\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:17\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:18\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:19\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19\"}], \"blocking_requirements\": [], \"satisfied_requirements\": [], \"uncertain_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:3\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:4\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:5\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:6\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:7\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:8\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:9\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:10\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:11\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:12\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:13\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:14\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:15\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:16\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:17\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:18\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:19\", \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19\"}], \"assessed_at\": \"2026-08-18T18:12:33.996202+00:00\", \"supplier_profile_id\": \"demo-eu-data-ai\", \"supplier_profile_version\": 1}",
+    "assessed_at": "2026-08-18T18:12:33.996202+00:00",
+    "trigger": "INITIAL",
+    "assessment": {
+      "status": "REVIEW",
+      "strategic_fit": 61,
+      "checks": [
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:1",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:2",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:3",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:4",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:5",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:6",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:7",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:8",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:9",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:10",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:11",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:12",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:13",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:14",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:15",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:16",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:17",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:18",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:19",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19"
+        }
+      ],
+      "blocking_requirements": [],
+      "satisfied_requirements": [],
+      "uncertain_requirements": [
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:1",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:2",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:3",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-3"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:4",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-4"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:5",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-5"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:6",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-6"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:7",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-7"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:8",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-8"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:9",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-9"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:10",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-10"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:11",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-11"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:12",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-12"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:13",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-13"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:14",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-14"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:15",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-15"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:16",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-16"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:17",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-17"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:18",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-18"
+        },
+        {
+          "requirement_id": "2aedcdcc-1912-4080-8776-3e6f8827771e:req:19",
+          "outcome": "UNKNOWN",
+          "reason": "The requirement is not structured enough for deterministic comparison.",
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-19"
+        }
+      ],
+      "assessed_at": "2026-08-18T18:12:33.996202+00:00",
+      "supplier_profile_id": "demo-eu-data-ai",
+      "supplier_profile_version": 1
+    }
+  },
+  "agent_execution": {
+    "answer": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy. [ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary]",
+    "citations": [
+      {
+        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
+        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
+        "url": "https://ted.europa.eu/en/notice/-/detail/131555-2026"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy.",
+        "evidence_ids": [
+          "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary"
+        ]
+      }
+    ],
+    "unknown": false,
+    "model": "qwen2.5:3b-instruct",
+    "tool_calls": [
+      {
+        "name": "get_notice",
+        "arguments": {
+          "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e"
+        },
+        "success": true
+      }
+    ],
+    "grounding": {
+      "answer": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy. [ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary]",
+      "claims": [
+        {
+          "text": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy.",
+          "evidence_ids": [
+            "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary"
+          ]
+        }
+      ],
+      "citations": [
+        {
+          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
+          "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+          "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
+          "url": "https://ted.europa.eu/en/notice/-/detail/131555-2026"
+        }
+      ],
+      "unknown": false,
+      "schema_valid": true,
+      "raw_supported_claims": 1,
+      "raw_unsupported_claims": 0,
+      "post_gate_unsupported_claims": 0,
+      "evidence_correctness": 1.0
+    },
+    "metrics": {
+      "llm_latency_ms": 5204.512,
+      "total_latency_ms": 5209.518,
+      "prompt_tokens": 999,
+      "completion_tokens": 114,
+      "tool_failures": [],
+      "retrieved_evidence": 23,
+      "deterministic_grounding_fallback": true
+    }
+  },
+  "elapsed_ms": 26538.127,
+  "version_demo": "No live amendment is claimed here; deterministic version regression is documented separately."
+}

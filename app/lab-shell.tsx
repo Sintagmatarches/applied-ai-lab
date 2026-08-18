@@ -6,7 +6,7 @@ export type ProjectId =
   | "home"
   | "olist"
   | "rail"
-  | "jobs"
+  | "tenders"
   | "housing"
   | "credit"
   | "documents"
@@ -35,12 +35,12 @@ const projects = [
       "Official Fintraffic data transformed into a reproducible view of passenger-train, route and station reliability.",
   },
   {
-    id: "jobs" as const,
-    href: "/job-search-ai-agent",
-    title: "Job Search AI Agent",
-    tabTitle: "Job Search Agent",
+    id: "tenders" as const,
+    href: "/eu-tender-intelligence-agent",
+    title: "EU Tender Intelligence Agent",
+    tabTitle: "Tender Intelligence",
     description:
-      "Public job discovery and explainable matching with an optional evaluated local Ollama RAG agent—no personal accounts or paid APIs.",
+      "Official TED notices transformed into evidence-backed supplier qualification, bid decisions and change intelligence.",
   },
   {
     id: "housing" as const,
@@ -84,7 +84,7 @@ function ProjectTabs({ activeProject }: LabShellProps) {
   const currentPlanned = projects.find(
     (project) =>
       project.id === activeProject &&
-      project.id !== "olist" && project.id !== "rail" && project.id !== "jobs",
+      project.id !== "olist" && project.id !== "rail" && project.id !== "tenders",
   );
 
   return (
@@ -114,8 +114,8 @@ function ProjectTabs({ activeProject }: LabShellProps) {
         </Link>
         <Link
           href={projects[2].href}
-          className={activeProject === "jobs" ? "is-active" : ""}
-          aria-current={activeProject === "jobs" ? "page" : undefined}
+          className={activeProject === "tenders" ? "is-active" : ""}
+          aria-current={activeProject === "tenders" ? "page" : undefined}
         >
           {projects[2].tabTitle}
         </Link>
@@ -182,23 +182,22 @@ function HomeContent() {
           </div>
         </article>
 
-        <article className="featured-project featured-project-jobs">
+        <article className="featured-project featured-project-tenders">
           <div className="featured-project-copy">
             <p className="project-status">Completed project · 03</p>
             <h2>{projects[2].title}</h2>
             <p>{projects[2].description}</p>
-            <ul className="featured-project-facts" aria-label="Job search project summary">
-              <li>Two documented public feeds</li>
-              <li>No personal account or paid API</li>
-              <li>Explainable 35 / 45 / 20 scoring</li>
+            <ul className="featured-project-facts" aria-label="Tender intelligence project summary">
+              <li>Official TED Search API v3</li>
+              <li>Deterministic bid / no-bid</li>
+              <li>Version diff and grounded local RAG</li>
             </ul>
           </div>
           <div className="featured-project-actions">
-            <Link className="primary-link" href={projects[2].href}>
-              Open job agent
-            </Link>
+            <Link className="primary-link" href={projects[2].href}>Open tender agent</Link>
           </div>
         </article>
+
       </section>
 
       <section className="planned-projects" aria-labelledby="planned-title">

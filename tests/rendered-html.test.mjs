@@ -41,38 +41,18 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /Rail Monitoring System/);
-  assert.match(html, /Job Search Agent/);
+  assert.match(html, /EU Tender Intelligence Agent/);
   assert.match(html, /Completed project/);
   assert.match(html, /Open predictor/);
   assert.match(html, /Open monitor/);
-  assert.match(html, /Open job agent/);
+  assert.match(html, /Open tender agent/);
   assert.match(html, /Planned projects/);
   assert.match(html, /href="\/housing-value-forecast"/);
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-local-rag-1/);
+  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
-});
-
-test("renders the account-free public Job Search AI Agent", async () => {
-  const response = await render("/job-search-ai-agent");
-  assert.equal(response.status, 200);
-
-  const html = await response.text();
-  assert.match(html, /Job Search AI Agent/);
-  assert.match(html, /Search public jobs/);
-  assert.match(html, /No personal job-board account/);
-  assert.match(html, /No CAPTCHA, paywall or login bypass/);
-  assert.match(html, /No paid LLM or search API/);
-  assert.match(html, /Local AI \/ RAG/);
-  assert.match(html, /Checking local runtime/);
-  assert.match(html, /deterministic matching, save, compare/);
-  assert.match(html, /Explainable matching/);
-  assert.match(html, /Arbeitnow API documentation/);
-  assert.match(html, /Jobicy API documentation/);
-  assert.match(html, /aria-current="page"[^>]*>Job Search Agent/);
-  assert.doesNotMatch(html, /linkedin\.com\/(?:login|uas\/login)|session[_ -]?token|password=/i);
 });
 
 test("keeps local Ollama unreachable from the public Worker", async () => {
@@ -80,18 +60,40 @@ test("keeps local Ollama unreachable from the public Worker", async () => {
   workerUrl.searchParams.set("local-ai-boundary", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
   const response = await worker.fetch(
-    new Request("https://lab.example/api/jobs/ai/status"),
+    new Request("https://lab.example/api/tenders/ai/status"),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
-  assert.deepEqual(body, {
-    connected: false,
-    boundary: "public-deterministic",
-    error: "Local Ollama is not exposed by the public Cloudflare deployment.",
-  });
+  assert.equal(body.connected, false);
+  assert.equal(body.boundary, "public-deterministic");
+  assert.equal(body.error, "Local Ollama is not exposed by the public Cloudflare deployment.");
+  assert.match(body.localRuntime, /tender_ai\.server/);
+});
+
+test("redirects the migrated legacy route to tender intelligence", async () => {
+  const response = await render("/job-search-ai-agent");
+  assert.ok([301, 302, 303, 307, 308].includes(response.status));
+  assert.equal(response.headers.get("location"), "/eu-tender-intelligence-agent");
+});
+
+test("renders the EU Tender Intelligence dashboard without hardcoded opportunities", async () => {
+  const response = await render("/eu-tender-intelligence-agent");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /EU Tender/);
+  assert.match(html, /Intelligence Agent/);
+  assert.match(html, /Official TED data/);
+  assert.match(html, /DISCOVER/);
+  assert.match(html, /QUALIFY/);
+  assert.match(html, /MONITOR CHANGES/);
+  assert.match(html, /REASSESS/);
+  assert.match(html, /Search live TED/);
+  assert.match(html, /Editable demo supplier/);
+  assert.match(html, /Local only: Ollama embeddings/);
+  assert.doesNotMatch(html, /Arbeitnow|Jobicy|Search public jobs/);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
@@ -194,6 +196,7 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.finland-region-map\s*\{/);
   assert.match(css, /\.threshold-control\s*\{/);
   assert.match(css, /\.lahti-profile\s*\{/);
-  assert.match(css, /\.local-ai-console\s*\{/);
+  assert.match(css, /\.tender-page\s*\{/);
+  assert.match(css, /\.evidence-panel\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);
 });

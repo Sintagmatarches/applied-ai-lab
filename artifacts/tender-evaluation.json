@@ -1,0 +1,54 @@
+{
+  "dataset": "eu-procurement-v1",
+  "case_count": 14,
+  "retrieval": {
+    "recall_at_5": 1.0,
+    "mrr": 1.0
+  },
+  "extraction": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "mandatory_classification_accuracy": 1.0,
+    "numeric_accuracy": 1.0,
+    "currency_parsing_accuracy": 1.0,
+    "deadline_accuracy": 1.0
+  },
+  "agent": {
+    "tool_selection_accuracy": 1.0,
+    "argument_validity": 1.0,
+    "execution_success": 1.0
+  },
+  "grounding": {
+    "raw_supported_claims": 1,
+    "raw_unsupported_claims": 1,
+    "evidence_correctness": 0.5,
+    "post_gate_unsupported_claims": 0
+  },
+  "decision_engine": {
+    "mandatory_rule_accuracy": 1.0,
+    "status_accuracy": 1.0,
+    "sample_status": "NO_BID"
+  },
+  "change_detection": {
+    "field_change_recall": 1.0,
+    "material_change_accuracy": 1.0,
+    "reassessment_accuracy": 1.0,
+    "detected_fields": [
+      "requirements",
+      "submission_deadline"
+    ],
+    "regression_transition": "NO_BID -> REVIEW"
+  },
+  "security": {
+    "prompt_injection_blocked": 1.0,
+    "forged_evidence_rejected": 1.0,
+    "malicious_document_blocked": 1.0,
+    "tool_manipulation_rejected": 1.0
+  },
+  "structured_output": {
+    "schema_validity": 1.0
+  },
+  "limitations": [
+    "Deterministic fixture eval; live evidence is reported separately."
+  ]
+}
