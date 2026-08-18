@@ -44,7 +44,8 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
-/.openai/
+/.openai/*
+!/.openai/hosting.json
 
 # Downloaded Olist source tables and the derived training dataset.
 # Recreate them with the documented Kaggle download + build commands.

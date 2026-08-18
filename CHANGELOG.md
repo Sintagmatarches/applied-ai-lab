@@ -23,7 +23,8 @@ This changelog records real repository releases. Business roles labelled as simu
 
 ### Changed
 
-- Navigation, metadata and documentation now position EU Tender Intelligence as completed project 03; the favicon cache key advances to `20260818-tender-intelligence-1`.
+- Navigation, metadata and documentation now position EU Tender Intelligence as completed project 03; the favicon cache key advances to `20260818-tender-intelligence-2`.
+- The Sites project identity is now tracked and its production build contract is tested, preventing source builds from silently omitting `dist/.openai/hosting.json`.
 - Regional Disruption Score now uses the actively selected policy threshold for its delayed-share component; serious delay remains fixed above 15 minutes.
 - Historical regional artifact rebuilt from the same 365 source partitions with no coverage/population change.
 - Public assets and monitoring requests cache-busted for the release.

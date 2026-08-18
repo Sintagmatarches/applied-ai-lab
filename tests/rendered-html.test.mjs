@@ -51,7 +51,7 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-1/);
+  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-2/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -199,4 +199,11 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.tender-page\s*\{/);
   assert.match(css, /\.evidence-panel\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);
+});
+
+test("packages the tracked Sites hosting contract into the production build", async () => {
+  const source = JSON.parse(await readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
+  const packaged = JSON.parse(await readFile(new URL("../dist/.openai/hosting.json", import.meta.url), "utf8"));
+  assert.equal(source.project_id, "appgprj_6a6627e396388191b7aa5d08cc2dba27");
+  assert.deepEqual(packaged, source);
 });
