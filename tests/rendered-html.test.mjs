@@ -51,7 +51,7 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-job-agent-1/);
+  assert.match(html, /favicon\.svg\?v=20260818-local-rag-1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -65,11 +65,33 @@ test("renders the account-free public Job Search AI Agent", async () => {
   assert.match(html, /No personal job-board account/);
   assert.match(html, /No CAPTCHA, paywall or login bypass/);
   assert.match(html, /No paid LLM or search API/);
+  assert.match(html, /Local AI \/ RAG/);
+  assert.match(html, /Checking local runtime/);
+  assert.match(html, /deterministic matching, save, compare/);
   assert.match(html, /Explainable matching/);
   assert.match(html, /Arbeitnow API documentation/);
   assert.match(html, /Jobicy API documentation/);
   assert.match(html, /aria-current="page"[^>]*>Job Search Agent/);
   assert.doesNotMatch(html, /linkedin\.com\/(?:login|uas\/login)|session[_ -]?token|password=/i);
+});
+
+test("keeps local Ollama unreachable from the public Worker", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("local-ai-boundary", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("https://lab.example/api/jobs/ai/status"),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(body, {
+    connected: false,
+    boundary: "public-deterministic",
+    error: "Local Ollama is not exposed by the public Cloudflare deployment.",
+  });
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
@@ -172,5 +194,6 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.finland-region-map\s*\{/);
   assert.match(css, /\.threshold-control\s*\{/);
   assert.match(css, /\.lahti-profile\s*\{/);
+  assert.match(css, /\.local-ai-console\s*\{/);
   assert.doesNotMatch(css, /gradient|backdrop-filter/i);
 });

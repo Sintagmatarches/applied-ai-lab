@@ -6,6 +6,8 @@ This changelog records real repository releases. Business roles labelled as simu
 
 ### Added
 
+- Local Ollama adapter with Qwen tool calling, Nomic embeddings, SQLite/FTS5 persistence, hybrid vector retrieval, validated job-agent tools, claim/citation grounding, privacy-minimized traces and an executable evaluation suite.
+- Local AI status, knowledge-base counts, grounded answers, citations, tool audit and latency/token telemetry on the existing Job Search AI Agent page, with an explicit production fallback boundary.
 - Job Search AI Agent page with account-free Arbeitnow and Jobicy acquisition, shared normalization, URL/HTML guards, deduplication, explainable profile matching, browser-local saves, comparison and cited evidence tools.
 - Job-source unit, resilience and adversarial normalization tests plus rendered-route coverage for the no-account/no-paid-API boundary.
 - Regional delay-policy selector for 5, 10, 15 and 30 minutes, with threshold-specific delay shares, scores, statuses and problem rankings.
@@ -17,6 +19,7 @@ This changelog records real repository releases. Business roles labelled as simu
 
 ### Changed
 
+- Job Search documentation and limitations now distinguish measured local AI/RAG evidence from the deterministic public Cloudflare runtime; cache-bust metadata advances to `20260818-local-rag-1`.
 - Applied AI Lab navigation and home page now treat Job Search AI Agent as completed project 03; favicon metadata was cache-busted for the release.
 - Regional Disruption Score now uses the actively selected policy threshold for its delayed-share component; serious delay remains fixed above 15 minutes.
 - Historical regional artifact rebuilt from the same 365 source partitions with no coverage/population change.

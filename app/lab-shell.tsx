@@ -40,7 +40,7 @@ const projects = [
     title: "Job Search AI Agent",
     tabTitle: "Job Search Agent",
     description:
-      "A source-grounded job discovery and explainable matching workspace that uses public feeds without personal accounts or paid APIs.",
+      "Public job discovery and explainable matching with an optional evaluated local Ollama RAG agent—no personal accounts or paid APIs.",
   },
   {
     id: "housing" as const,

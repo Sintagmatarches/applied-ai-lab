@@ -5,11 +5,11 @@ import { JobSearchAgent } from "./job-search-agent";
 export const metadata: Metadata = {
   title: "Job Search AI Agent",
   description:
-    "Search public job feeds and inspect source-grounded, deterministic match explanations without an account or paid API.",
+    "Search public job feeds with deterministic matching and an optional local Ollama RAG agent—without an account or paid API.",
   openGraph: {
     title: "Job Search AI Agent · Applied AI Lab",
     description:
-      "Public job discovery and explainable matching without a personal account or paid API.",
+      "Public job discovery, explainable matching and optional local RAG without a personal account or paid API.",
     type: "website",
     images: [],
   },
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Job Search AI Agent · Applied AI Lab",
     description:
-      "Public job discovery and explainable matching without a personal account or paid API.",
+      "Public job discovery, explainable matching and optional local RAG without a personal account or paid API.",
     images: [],
   },
 };
@@ -85,9 +85,9 @@ export default function JobSearchAiAgentPage() {
               <span>04</span>
               <h3>Grounded agent tools</h3>
               <p>
-                The evidence agent can rank, compare and summarize requirements
-                only from the current result set, returning direct vacancy
-                citations with every answer.
+                Local Qwen uses validated search, retrieval, ranking, comparison
+                and gap-analysis tools over a SQLite hybrid vector/keyword
+                index. A grounding gate checks claims and direct vacancy citations.
               </p>
             </article>
           </div>
@@ -99,9 +99,11 @@ export default function JobSearchAiAgentPage() {
             This hosted demonstration searches Arbeitnow and Jobicy because
             they publish documented, keyless feeds. It does not scrape LinkedIn
             or other login-gated pages. Saved jobs and the demo profile stay in
-            this browser. Matching is deterministic; optional local-language
-            reasoning is designed for an Ollama adapter and is not represented
-            as running in this public Cloudflare deployment.
+            this browser. Match scores and the hosted fallback remain
+            deterministic. The repository also contains a working local Ollama
+            adapter, real embeddings, hybrid retrieval, tool calling and
+            grounded output. That on-device process was evaluated locally but
+            cannot be reached from this public Cloudflare deployment.
           </p>
           <nav aria-label="Job data sources">
             <a href="https://www.arbeitnow.com/blog/job-board-api" target="_blank" rel="noreferrer">

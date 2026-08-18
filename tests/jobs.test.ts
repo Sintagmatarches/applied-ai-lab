@@ -9,6 +9,7 @@ import {
   textFromHtml,
   type PublicJob,
 } from "../lib/jobs.ts";
+import { localAiUrl } from "../lib/job-ai-local.ts";
 
 test("normalizes Arbeitnow HTML into inert structured job evidence", () => {
   const job = normalizeArbeitnow({
@@ -133,4 +134,23 @@ test("job search API survives one provider failure and reports source status", a
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("local AI boundary rejects non-loopback targets and invalid inputs", async () => {
+  const configured = process.env.JOB_AI_LOCAL_URL;
+  process.env.JOB_AI_LOCAL_URL = "https://example.com/ollama";
+  try {
+    assert.throws(() => localAiUrl("health"), /loopback/);
+  } finally {
+    if (configured === undefined) delete process.env.JOB_AI_LOCAL_URL;
+    else process.env.JOB_AI_LOCAL_URL = configured;
+  }
+
+  const { POST: ask } = await import("../app/api/jobs/ai/ask/route.ts");
+  const invalidQuestion = await ask(new Request("https://lab.example/api/jobs/ai/ask", {
+    method: "POST",
+    body: JSON.stringify({ question: "x" }),
+  }));
+  assert.equal(invalidQuestion.status, 400);
+  assert.equal(invalidQuestion.headers.get("cache-control"), "no-store");
 });

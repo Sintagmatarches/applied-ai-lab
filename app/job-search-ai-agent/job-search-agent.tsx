@@ -21,6 +21,43 @@ type Match = {
 
 type RankedJob = PublicJob & { match: Match };
 
+type LocalAiStatus = {
+  connected: boolean;
+  chat_model?: string;
+  embedding_model?: string;
+  boundary?: string;
+  error?: string | null;
+  knowledge_base?: {
+    jobs: number;
+    embeddings: number;
+    dimensions: number | null;
+  };
+};
+
+type LocalAiResult = {
+  status: string;
+  model: string;
+  answer: string;
+  citations: Array<{ job_id: string; url: string; title: string; source: string }>;
+  unknown: boolean;
+  tool_calls: Array<{ name: string; arguments: Record<string, unknown>; success: boolean }>;
+  tool_failures: string[];
+  retrieved_document_ids: string[];
+  metrics: {
+    retrieval_latency_ms: number;
+    llm_latency_ms: number;
+    total_request_ms: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+  };
+  grounding: {
+    schema_valid: boolean;
+    supported_claims: number;
+    unsupported_claims: number;
+    citation_correctness: number;
+  };
+};
+
 const exampleProfile: Profile = {
   roles: "Data Analyst, AI Engineer, Analytics Engineer",
   skills: "Python, SQL, Power BI, Excel, Machine Learning, Git, Azure",
@@ -28,7 +65,7 @@ const exampleProfile: Profile = {
   remoteOnly: false,
 };
 
-const STORAGE_KEY = "applied-ai-lab-job-search-v20260818-1";
+const STORAGE_KEY = "applied-ai-lab-job-search-v20260818-2";
 
 function terms(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[,;/\n]+|\s{2,}/).map((term) => term.trim()).filter(Boolean))];
@@ -86,6 +123,20 @@ export function JobSearchAgent() {
   const [selected, setSelected] = useState<string[]>([]);
   const [question, setQuestion] = useState("");
   const [agentAnswer, setAgentAnswer] = useState("");
+  const [localAiStatus, setLocalAiStatus] = useState<LocalAiStatus | null>(null);
+  const [localAiQuestion, setLocalAiQuestion] = useState("");
+  const [localAiResult, setLocalAiResult] = useState<LocalAiResult | null>(null);
+  const [localAiPending, setLocalAiPending] = useState(false);
+  const [localAiError, setLocalAiError] = useState("");
+
+  async function refreshLocalAiStatus() {
+    try {
+      const result = await fetch("/api/jobs/ai/status", { cache: "no-store" });
+      setLocalAiStatus(await result.json() as LocalAiStatus);
+    } catch {
+      setLocalAiStatus({ connected: false, error: "The local service did not answer." });
+    }
+  }
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -95,6 +146,7 @@ export function JobSearchAgent() {
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
+      void refreshLocalAiStatus();
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -118,6 +170,13 @@ export function JobSearchAgent() {
       if (!result.ok) throw new Error(body.error || "Search failed.");
       setResponse(body);
       setSelected([]);
+      if (localAiStatus?.connected && body.jobs.length) {
+        void fetch("/api/jobs/ai/ingest", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ jobs: body.jobs }),
+        }).then(() => refreshLocalAiStatus()).catch(() => undefined);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Public sources are temporarily unavailable.");
       setResponse(null);
@@ -164,6 +223,37 @@ export function JobSearchAgent() {
     } else {
       const best = scope[0];
       setAgentAnswer(`Best current evidence-backed match: ${best.title} at ${best.company} (${best.match.score}%). Role overlap contributes ${best.match.roleScore}/35, profile-skill coverage ${best.match.skillScore}/45, and location/work-mode fit ${best.match.preferenceScore}/20.`);
+    }
+  }
+
+  async function askLocalAi(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLocalAiPending(true);
+    setLocalAiError("");
+    setLocalAiResult(null);
+    try {
+      const result = await fetch("/api/jobs/ai/ask", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          question: selected.length
+            ? `Trusted selected job IDs: ${selected.map((id) => id.slice(0, 140)).join(", ")}\nQuestion: ${localAiQuestion}`
+            : localAiQuestion,
+          profile: {
+            roles: terms(profile.roles),
+            skills: terms(profile.skills),
+            location: profile.location,
+            remote_only: profile.remoteOnly,
+          },
+        }),
+      });
+      const body = await result.json() as LocalAiResult & { error?: string };
+      if (!result.ok) throw new Error(body.error || "Local AI request failed.");
+      setLocalAiResult(body);
+    } catch (caught) {
+      setLocalAiError(caught instanceof Error ? caught.message : "The local AI service is unavailable.");
+    } finally {
+      setLocalAiPending(false);
     }
   }
 
@@ -215,6 +305,83 @@ export function JobSearchAgent() {
             </label>
           </fieldset>
         </div>
+      </section>
+
+      <section className="local-ai-console" aria-labelledby="local-ai-title">
+        <div className="local-ai-heading">
+          <div>
+            <p className="eyebrow">Optional · free · on-device</p>
+            <h2 id="local-ai-title">Local AI / RAG</h2>
+          </div>
+          <span className={`local-ai-status ${localAiStatus?.connected ? "is-connected" : "is-offline"}`}>
+            {localAiStatus === null ? "Checking local runtime" : localAiStatus.connected ? "Ollama connected" : "Local runtime unavailable"}
+          </span>
+        </div>
+
+        <div className="local-ai-layout">
+          <div className="local-ai-explainer">
+            <p>
+              When this project runs locally, Qwen plans validated tools and a real embedding index retrieves SQLite vacancy evidence. Job text is treated as untrusted data; unsupported claims and invalid citations are removed before display.
+            </p>
+            {localAiStatus?.connected ? (
+              <dl className="local-ai-facts">
+                <div><dt>Chat model</dt><dd>{localAiStatus.chat_model}</dd></div>
+                <div><dt>Embedding model</dt><dd>{localAiStatus.embedding_model}</dd></div>
+                <div><dt>Knowledge base</dt><dd>{localAiStatus.knowledge_base?.jobs ?? 0} jobs · {localAiStatus.knowledge_base?.embeddings ?? 0} vectors</dd></div>
+              </dl>
+            ) : (
+              <p className="local-ai-boundary">
+                The public Cloudflare site intentionally cannot reach a visitor&apos;s Ollama. Public search, deterministic matching, save, compare and the evidence tools below still work without it.
+              </p>
+            )}
+            <button className="local-ai-retry" type="button" onClick={() => void refreshLocalAiStatus()}>Check local runtime</button>
+          </div>
+
+          <form className="local-ai-form" onSubmit={askLocalAi}>
+            <label>
+              Ask the local tool agent
+              <textarea
+                value={localAiQuestion}
+                required
+                minLength={2}
+                maxLength={650}
+                disabled={!localAiStatus?.connected || localAiPending}
+                onChange={(event) => setLocalAiQuestion(event.target.value)}
+                placeholder="Find Python and SQL roles, compare two jobs, or identify profile gaps…"
+              />
+            </label>
+            <button type="submit" disabled={!localAiStatus?.connected || localAiPending}>
+              {localAiPending ? "Running local retrieval + tools…" : "Ask local Qwen agent"}
+            </button>
+          </form>
+        </div>
+
+        {localAiError && <div className="local-ai-error" role="alert">{localAiError}</div>}
+        {localAiResult && (
+          <div className="local-ai-result" aria-live="polite">
+            <div>
+              <strong>{localAiResult.unknown ? "Safe fallback" : "Grounded local answer"}</strong>
+              <p>{localAiResult.answer}</p>
+            </div>
+            <div className="local-ai-audit">
+              <span>{localAiResult.model}</span>
+              <span>{Math.round(localAiResult.metrics.total_request_ms)} ms total</span>
+              <span>{localAiResult.metrics.prompt_tokens + localAiResult.metrics.completion_tokens} tokens</span>
+              <span>{localAiResult.retrieved_document_ids.length} evidence records</span>
+              <span>{localAiResult.grounding.unsupported_claims} unsupported claims published</span>
+            </div>
+            {localAiResult.tool_calls.length > 0 && (
+              <p className="local-ai-tools">Tools: {localAiResult.tool_calls.map((call) => `${call.name} · ${call.success ? "ok" : "rejected"}`).join(" → ")}</p>
+            )}
+            {localAiResult.citations.length > 0 && (
+              <ol className="local-ai-citations">
+                {localAiResult.citations.map((citation) => (
+                  <li key={citation.job_id}><a href={citation.url} target="_blank" rel="noreferrer">{citation.title} · {citation.source}</a></li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
       </section>
 
       {error && <div className="jobs-error" role="alert"><strong>Search unavailable.</strong> {error}</div>}
@@ -269,8 +436,8 @@ export function JobSearchAgent() {
               </div>
 
               <aside className="evidence-agent">
-                <p className="eyebrow">Evidence agent</p>
-                <h3>Ask the retrieved jobs</h3>
+                <p className="eyebrow">Deterministic fallback</p>
+                <h3>Ask without an LLM</h3>
                 <p>Try “What should I learn?”, “Compare selected jobs” or “What skills repeat?”</p>
                 <form onSubmit={askAgent}>
                   <textarea value={question} required onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about the current evidence…" />
