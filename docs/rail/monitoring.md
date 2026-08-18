@@ -30,7 +30,7 @@ The grain is one unique passenger train per region per selected window. Multiple
 For a train-region observation:
 
 - regional delay is the maximum known actual delay (or current estimate in `LIVE`) among qualifying regional stops;
-- delayed means more than 5 whole minutes;
+- delayed means more than the user-selected 5, 10, 15 or 30 whole minutes; the API and historical artifact carry all four counts/shares in one snapshot so switching does not refetch the source;
 - serious means more than 15 whole minutes;
 - a train-level cancellation or cancelled qualifying row marks the regional observation cancelled;
 - cancelled and unobserved trains are not included in the measured-delay denominator;
@@ -39,13 +39,13 @@ For a train-region observation:
 The Disruption Score is transparent and bounded from 0 (best) to 100 (worst):
 
 ```text
-45 × delayed share
+45 × selected-threshold delayed share
 + 25 × serious-delay share
 + 20 × cancellation share
 + 10 × min(max(average delay, 0) / 30, 1)
 ```
 
-Reliability Score is `100 - Disruption Score`. Map status thresholds are normal below 10, elevated from 10 through 24.9, and serious from 25. These project-defined thresholds make a rapidly readable operating picture; they are not official Fintraffic classifications or passenger-weighted service levels.
+Reliability Score is `100 - Disruption Score`. Map status thresholds are normal below 10, elevated from 10 through 24.9, and serious from 25. The selected delay policy can therefore change the map score/status, while the `>15` serious-event count remains fixed. These project-defined thresholds make a rapidly readable operating picture; they are not official Fintraffic classifications or passenger-weighted service levels.
 
 ## Failure handling and caching
 
@@ -59,3 +59,4 @@ Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows a
 - Current estimates can be revised, and cancellation status can change.
 - Delay cause codes and infrastructure incidents are not yet complete enough in this implementation to claim causality.
 - The public runtime has no durable seven-day event store. That period belongs in the incremental Fabric/Lakehouse path rather than an expensive on-demand workaround.
+- Comparing scores across screenshots requires the same delay threshold; the UI exposes the active policy to prevent an unlabeled comparison.

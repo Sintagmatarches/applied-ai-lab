@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260812-rail-regions-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260818-portfolio-process-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -27,9 +27,9 @@ The monitor answers: **Where is Finland's passenger-rail network operating norma
 - The current metadata contains 552 Finnish station coordinates, all assigned to one of the 19 official 2026 maakunta polygons by point-in-polygon. Only the 209 Finnish stations marked `passengerTraffic=true` can create passenger-rail observations.
 - Åland has zero passenger-rail stations and is reported as `No rail service`, with no disruption or reliability score.
 
-Within a region, each train is counted once even if it has several stops there. A train crossing multiple regions contributes one observation to each affected region, which is why the national total is labelled **regional train observations**, not unique trains. Delayed means more than 5 whole minutes late; serious means more than 15. Missing actual/current estimated timing is not converted to zero delay.
+Within a region, each train is counted once even if it has several stops there. A train crossing multiple regions contributes one observation to each affected region, which is why the national total is labelled **regional train observations**, not unique trains. The live map now uses the same 5/10/15/30-minute policy selector as the historical analysis; serious always means more than 15 minutes regardless of selection. Missing actual/current estimated timing is not converted to zero delay.
 
-The public Disruption Score runs from 0 (best) to 100 (worst): 45% delayed share, 25% serious-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes. The complementary Reliability Score is `100 - disruption`. Scores below 10 are normal, 10–24.9 elevated, and 25+ serious. These are transparent operational indicators, not official Fintraffic service levels.
+The public Disruption Score runs from 0 (best) to 100 (worst): 45% selected-threshold delayed share, 25% serious-delay share, 20% cancellation share and 10% average positive delay capped at 30 minutes. The complementary Reliability Score is `100 - disruption`. Scores below 10 are normal, 10–24.9 elevated, and 25+ serious. These are transparent operational indicators, not official Fintraffic service levels; compare scores only under the same selected policy.
 
 The committed analytical snapshot covers **1 August 2025 through 31 July 2026**, twelve fully completed operating months retrieved on 9 August 2026. The population is Digitraffic `Long-distance` and `Commuter` trains. Passenger endpoints and station rankings require official station metadata `passengerTraffic=true`; depot/service locations are excluded at the transformation layer.
 
@@ -73,7 +73,7 @@ flowchart LR
   M --> U
 ```
 
-The Python standard-library pipeline downloads only missing source partitions, respects Digitraffic identification/compression guidance, splits FMI requests into the official seven-day maximum, converts UTC using `Europe/Helsinki`, and produces a compact public artifact plus ignored full-grain curated CSVs. Raw third-party responses and the 41 MB journey fact are not committed.
+The Python standard-library pipeline downloads only missing source partitions, validates each daily train array/date/passenger population before atomic publication and again on cache read, respects Digitraffic identification/compression guidance, splits FMI requests into the official seven-day maximum, converts UTC using `Europe/Helsinki`, and produces a compact public artifact plus ignored full-grain curated CSVs. Raw third-party responses and the 41 MB journey fact are not committed.
 
 ```bash
 python -m rail.pipeline
@@ -93,6 +93,8 @@ Important references:
 - [`docs/rail/methodology.md`](docs/rail/methodology.md) — grains, metrics, weather scope and limitations;
 - [`docs/rail/data-dictionary.md`](docs/rail/data-dictionary.md) — analytical tables and fields;
 - [`docs/rail/architecture.md`](docs/rail/architecture.md) — public and Fabric architecture.
+- [`docs/business/`](docs/business/) — explicitly simulated requirements, backlog, change request, incident traceability and stakeholder delivery.
+- [`docs/manual-tasks/USER_ACTIONS.md`](docs/manual-tasks/USER_ACTIONS.md) — only credentialed/native work left to the user.
 
 ### Microsoft Fabric and Power BI
 
@@ -101,6 +103,7 @@ The repository includes two Fabric notebook sources, an incremental Bronze/Silve
 - [`fabric/`](fabric/) — workspace object plan and runnable ingestion/transformation notebook code;
 - [`power-bi/measures.dax`](power-bi/measures.dax) — production measures for journeys, arrivals, cancellations, missing actuals, percentiles and threshold selection;
 - [`power-bi/README.md`](power-bi/README.md) — semantic relationships, report pages and deployment checklist.
+- [`fabric/pipeline-spec.md`](fabric/pipeline-spec.md) — activity dependencies, watermark, data-quality gates and recovery.
 
 A Fabric capacity/workspace, attached Lakehouse, scheduled pipeline and Power BI tenant permissions are required outside GitHub. They are documented, not presented as already deployed. The website is the defensible public interactive delivery because a Power BI `Publish to web` embed would require explicit tenant/licence configuration and exposes underlying model data publicly.
 

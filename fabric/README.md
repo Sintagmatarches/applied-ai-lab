@@ -2,6 +2,10 @@
 
 This directory contains an import-ready engineering design for moving the reproducible public Python pipeline into Microsoft Fabric. It is deliberately not labelled as deployed: a Fabric tenant, capacity, workspace and Lakehouse connection are external requirements unavailable to this repository environment.
 
+> **Portfolio simulation.** The workspace roles and delivery workflow are simulated. Notebook source, partition quality gates and pipeline contract are real repository artifacts; tenant execution is not claimed.
+
+Use [`pipeline-spec.md`](pipeline-spec.md) for parameters, activity dependencies, watermark/idempotency, quality gates, audit schema, Dev/Test/Prod promotion and recovery. Use [`docs/manual-tasks/fabric.md`](../docs/manual-tasks/fabric.md) for the remaining credentialed actions.
+
 ## Workspace objects
 
 Create these objects in one Fabric workspace:

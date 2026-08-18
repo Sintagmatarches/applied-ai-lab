@@ -36,6 +36,29 @@ RETURN
 On-time Rate =
 DIVIDE([On-time Journeys], [Completed Journeys])
 
+Delayed Journeys =
+[Completed Journeys] - [On-time Journeys]
+
+Delay Rate =
+DIVIDE([Delayed Journeys], [Completed Journeys])
+
+Completed Journey Coverage =
+DIVIDE([Completed Journeys], [Scheduled Journeys])
+
+On-time Journeys at 5 Minutes =
+CALCULATE(
+    COUNTROWS('Fact Train Journey'),
+    'Fact Train Journey'[Cancelled] = FALSE(),
+    NOT ISBLANK('Fact Train Journey'[Final Delay Minutes]),
+    'Fact Train Journey'[Final Delay Minutes] <= 5
+)
+
+On-time Rate at 5 Minutes =
+DIVIDE([On-time Journeys at 5 Minutes], [Completed Journeys])
+
+Policy Sensitivity vs 5 Minutes =
+[On-time Rate] - [On-time Rate at 5 Minutes]
+
 Missing Final Actual =
 CALCULATE(
     COUNTROWS('Fact Train Journey'),
@@ -117,3 +140,17 @@ MAX('Dim Date'[Date])
 Last Successful Retrieval UTC =
 MAX('Ingestion Audit'[Retrieved At UTC])
 
+Refresh Age Hours =
+VAR LastRefresh = [Last Successful Retrieval UTC]
+RETURN
+    IF(
+        ISBLANK(LastRefresh),
+        BLANK(),
+        DATEDIFF(LastRefresh, UTCNOW(), HOUR)
+    )
+
+Distinct Journey Keys =
+DISTINCTCOUNT('Fact Train Journey'[Journey Key])
+
+Duplicate Journey Rows =
+[Scheduled Journeys] - [Distinct Journey Keys]

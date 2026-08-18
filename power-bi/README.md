@@ -1,6 +1,15 @@
 # Power BI analytical component
 
-The Power BI component is designed for a Direct Lake connection to the Fabric Gold tables. The repository contains the star-schema contract, production DAX measures and a page-by-page report specification. A `.pbix` file and public embed are not fabricated because Power BI Desktop, a Fabric workspace and tenant publishing permissions are not available in this environment.
+The Power BI component is designed for a Direct Lake connection to the Fabric Gold tables. The repository contains the star-schema contract, production DAX measures and a page-by-page report specification. A `.pbix`/`.pbip` file and public embed are not fabricated because Power BI Desktop, a Fabric workspace and tenant publishing permissions are not available in this environment.
+
+> **Portfolio simulation.** The simulated stakeholder scenario is documented in `docs/business/`; the source metrics and DAX contract are real repository evidence, while native report deployment remains an explicit manual task.
+
+Implementation pack:
+
+- [`semantic-model.md`](semantic-model.md) — table grain, relationships, types, formatting, reconciliation and lifecycle;
+- [`measures.dax`](measures.dax) — threshold-aware executive, route, station, quality and freshness measures;
+- [`report-spec.md`](report-spec.md) — page layouts, filters, interactions, tooltips and accessibility;
+- [`docs/manual-tasks/power-bi.md`](../docs/manual-tasks/power-bi.md) — only the native Desktop/tenant work that cannot be completed from this repository.
 
 ## Semantic model
 

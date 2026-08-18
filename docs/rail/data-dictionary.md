@@ -46,3 +46,13 @@ Recommended Fabric Silver grain: one commercial, stopping arrival row. Keep jour
 - `dim_route`: canonical route key, endpoint station keys and display label.
 - `dim_train_service`: train type, category and commuter line.
 - `delay_threshold`: disconnected rows 5, 10, 15 and 30 used by the Power BI measure.
+
+## Regional monitoring API
+
+`RailRegionMetric` has one record per official region and snapshot window. `observedTrains`, `measuredTrains`, `averageDelayMinutes`, `severeDelays`, `cancellations` and `cancellationShare` follow the definitions in `monitoring.md`.
+
+- `delayedTrainsByThreshold` / `delayedShareByThreshold`: keyed by `5`, `10`, `15`, `30`; a delay must be strictly greater than the key.
+- `disruptionScoreByThreshold` / `reliabilityScoreByThreshold` / `statusByThreshold`: score/state under each policy threshold; serious-share remains fixed at `>15`.
+- `problemStationsByThreshold` / `problemRoutesByThreshold`: top five exceptions ranked by fixed serious count, cancellations, selected-threshold delayed count and average delay.
+- legacy scalar fields without `ByThreshold` remain aliases for the 5-minute view.
+- Åland has `hasRailService=false`, `statusByThreshold=no-service` and null scores for every threshold.

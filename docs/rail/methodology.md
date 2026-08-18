@@ -43,7 +43,9 @@ Condition groups can overlap. The comparison is unadjusted for season, infrastru
 
 ## Data-quality treatment
 
-The run audits duplicate train keys, missing route endpoints, missing scheduled departure, missing final actual arrival, unknown station codes, delays over 12 hours, and reported-versus-calculated delay mismatches. No missing actual is imputed. Extreme values remain in counts and percentile calculations unless the source record is structurally invalid; they are surfaced for review rather than silently winsorized.
+Before a daily response can enter the trusted cache, it must be a non-empty train array, contain object records for the requested `departureDate`, and contain at least one passenger train. The same rule runs again on cache read. A rejected refresh is validated before the atomic temporary-file promotion, so it cannot replace a valid cached partition. The Fabric design mirrors the rule and requires one latest complete non-empty audit record for every requested date before transformation.
+
+The run then audits duplicate train keys, missing route endpoints, missing scheduled departure, missing final actual arrival, unknown station codes, delays over 12 hours, and reported-versus-calculated delay mismatches. No missing actual is imputed. Extreme values remain in counts and percentile calculations unless the source record is structurally invalid; they are surfaced for review rather than silently winsorized.
 
 The historical endpoint is called with its default `include_deleted=false`. Digitraffic describes deleted trains as trains cancelled ten days before departure; they are outside the committed snapshot. This means the reported cancellation rate is not a complete measure of all services withdrawn far in advance.
 
