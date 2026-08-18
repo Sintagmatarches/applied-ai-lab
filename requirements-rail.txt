@@ -1,3 +1,2 @@
 pyspark==4.0.4
 delta-spark==4.0.1
-

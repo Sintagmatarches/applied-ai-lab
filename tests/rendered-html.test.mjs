@@ -49,8 +49,8 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-portfolio-process-1/);
-  assert.match(html, /og\.png\?v=20260818-portfolio-process-1/);
+  assert.match(html, /favicon\.svg\?v=20260818-data-platform-1/);
+  assert.match(html, /og\.png\?v=20260818-data-platform-1/);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {

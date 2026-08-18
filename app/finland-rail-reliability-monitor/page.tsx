@@ -39,10 +39,12 @@ export default function FinlandRailReliabilityMonitor() {
             </p>
             <ul className="rail-tech-summary" aria-label="Technology and engineering stack">
               <li>Python</li>
+              <li>PySpark / Delta Lake</li>
+              <li>Bronze / Silver / Gold</li>
               <li>Fintraffic / Digitraffic API</li>
               <li>FMI Open Data</li>
               <li>Analytics engineering</li>
-              <li>Microsoft Fabric architecture</li>
+              <li>Incremental Lakehouse</li>
               <li>Power BI / DAX</li>
             </ul>
             <nav className="project-resources" aria-label="Rail project resources">
@@ -119,27 +121,28 @@ export default function FinlandRailReliabilityMonitor() {
             <article>
               <span>01</span>
               <h3>Incremental ingestion</h3>
-              <p>One immutable Digitraffic departure-date partition is cached at a time. Re-runs download only missing days and preserve source fields.</p>
+              <p>Immutable Bronze payloads use SHA-256 identity. Delta watermarks skip unchanged dates and replace only revised or backfilled partitions.</p>
             </article>
             <article>
               <span>02</span>
               <h3>Quality gates</h3>
-              <p>Unique train keys, route endpoints, missing actuals, station codes, cancellations, extreme values and reported-versus-calculated delay are audited.</p>
+              <p>Executable contracts block duplicate keys, empty/anomalous partitions, missing critical fields and impossible values before Gold publication.</p>
             </article>
             <article>
               <span>03</span>
               <h3>Analytical model</h3>
-              <p>Train journeys, commercial station arrivals, dates, routes and stations form explicit grains for Fabric Lakehouse and Power BI measures.</p>
+              <p>PySpark builds Delta journey facts plus network, route, station and maakunta marts with the monitor&apos;s existing KPI thresholds.</p>
             </article>
             <article>
               <span>04</span>
               <h3>Honest delivery</h3>
-              <p>The public site uses a versioned aggregate snapshot. Fabric workspace deployment and Power BI publishing remain documented external steps, not simulated claims.</p>
+              <p>Local and CI Delta runs are evidenced. Fabric, Databricks and Power BI are clearly separated credentialed deployment targets, not simulated claims.</p>
             </article>
           </div>
           <div className="rail-method-links">
             <Link href="/olist-delivery-delay-predictor">Compare with the Olist ML project</Link>
             <a href="https://github.com/Sintagmatarches/applied-ai-lab/blob/main/docs/rail/methodology.md" target="_blank" rel="noreferrer">Read definitions and limitations</a>
+            <a href="https://github.com/Sintagmatarches/applied-ai-lab/blob/main/docs/rail/data-platform.md" target="_blank" rel="noreferrer">Review the Lakehouse implementation</a>
             <a href="https://github.com/Sintagmatarches/applied-ai-lab/tree/main/power-bi" target="_blank" rel="noreferrer">Review the Power BI semantic model</a>
           </div>
         </section>

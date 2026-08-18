@@ -54,4 +54,3 @@ class ContractRegistry:
 
     def as_dict(self) -> dict[str, Any]:
         return {name: contract.__dict__ for name, contract in self._tables.items()}
-

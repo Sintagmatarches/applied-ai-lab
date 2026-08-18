@@ -32,4 +32,3 @@ def require_no_failures(results: list[QualityResult], stage: str) -> None:
     if failures:
         messages = "; ".join(f"{item.check}: {item.detail}" for item in failures)
         raise ValueError(f"{stage} quality gate rejected partition: {messages}")
-

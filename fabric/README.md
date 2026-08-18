@@ -2,6 +2,8 @@
 
 This directory contains an import-ready engineering design for moving the reproducible public Python pipeline into Microsoft Fabric. It is deliberately not labelled as deployed: a Fabric tenant, capacity, workspace and Lakehouse connection are external requirements unavailable to this repository environment.
 
+The equivalent core Lakehouse is no longer documentation-only: [`rail/lakehouse/`](../rail/lakehouse/) executes locally and in CI with PySpark/Delta, contracts, watermarks and recovery tests. These notebooks are the Fabric adapter and must preserve that contract when imported. The Gold journey write now uses targeted `replaceWhere` partition replacement rather than overwriting unrelated history.
+
 > **Portfolio simulation.** The workspace roles and delivery workflow are simulated. Notebook source, partition quality gates and pipeline contract are real repository artifacts; tenant execution is not claimed.
 
 Use [`pipeline-spec.md`](pipeline-spec.md) for parameters, activity dependencies, watermark/idempotency, quality gates, audit schema, Dev/Test/Prod promotion and recovery. Use [`docs/manual-tasks/fabric.md`](../docs/manual-tasks/fabric.md) for the remaining credentialed actions.

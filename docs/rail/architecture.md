@@ -1,6 +1,6 @@
 # Finland Rail Monitoring System architecture
 
-The public project and the enterprise analytics design share the same analytical definitions. The repository can be reproduced without Microsoft Fabric; Fabric is the production-oriented extension for persistent history, orchestration, lineage and the Power BI semantic model.
+The public project and the executable Delta Lakehouse share the same analytical definitions. The repository runs without Microsoft Fabric; Fabric and Databricks are optional hosted execution targets rather than the only place where the architecture exists.
 
 ```mermaid
 flowchart LR
@@ -39,9 +39,9 @@ The transformation emits:
 
 Raw third-party responses are deliberately not committed.
 
-## Fabric target path
+## Executable Lakehouse path
 
-The intended Fabric implementation uses a Lakehouse with Bronze/Silver/Gold Delta tables, two parameterized notebooks and a scheduled Data Factory pipeline.
+The repository implementation uses PySpark and Delta Lake Bronze/Silver/Gold tables, executable contracts and persisted control tables. Fabric notebooks remain a hosted-target adapter and Power BI remains the intended enterprise consumer.
 
 1. The pipeline passes a departure-date watermark to the ingestion notebook.
 2. The notebook requests missing days and re-requests the most recent three completed operating dates, because actual times can be revised.

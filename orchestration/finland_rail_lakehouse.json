@@ -15,4 +15,3 @@
   "normalWindow": {"completedDate": "yesterday", "refreshRecentDays": 3},
   "observability": ["control.pipeline_runs", "control.quality_results", "control.bronze_manifest", "control.watermark"]
 }
-

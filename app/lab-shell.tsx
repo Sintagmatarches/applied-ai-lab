@@ -156,7 +156,7 @@ function HomeContent() {
             <ul className="featured-project-facts" aria-label="Rail project summary">
               <li>Official Finnish railway data</li>
               <li>12 complete operating months</li>
-              <li>Fabric and Power BI model</li>
+              <li>PySpark / Delta Lakehouse</li>
             </ul>
           </div>
           <div className="featured-project-actions">

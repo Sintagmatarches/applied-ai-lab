@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260818-portfolio-process-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260818-data-platform-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -12,7 +12,7 @@ The production hostname is deployment configuration rather than a repository con
 
 | Project | Primary skills | Public result |
 | --- | --- | --- |
-| Finland Rail Monitoring System | Live operational monitoring, geospatial analytics, official APIs, data quality, Microsoft Fabric design, Power BI/DAX | Live choropleth of all 19 Finnish regions plus the preserved historical reliability analysis |
+| Finland Rail Monitoring System | Live monitoring, PySpark/Delta Lakehouse, incremental Bronze/Silver/Gold, geospatial analytics, Power BI/DAX | Live choropleth plus an executable and evidenced data-platform case |
 | Olist Delivery Delay Predictor | Python ML, point-in-time features, chronological evaluation, model parity, server inference | Working relative delay-risk scorer with held-out evidence and limitations |
 
 ## Finland Rail Monitoring System
@@ -75,11 +75,16 @@ flowchart LR
 
 The Python standard-library pipeline downloads only missing source partitions, validates each daily train array/date/passenger population before atomic publication and again on cache read, respects Digitraffic identification/compression guidance, splits FMI requests into the official seven-day maximum, converts UTC using `Europe/Helsinki`, and produces a compact public artifact plus ignored full-grain curated CSVs. Raw third-party responses and the 41 MB journey fact are not committed.
 
+The production-like data-platform layer is executable locally and in CI: PySpark 4.0.4 transforms nested train events into Delta Lake 4.0.1 Bronze/Silver/Gold tables, while content-hash watermarks make unchanged reruns no-ops and changed/forced dates replace only their partitions. Blocking gates prevent invalid data from receiving a watermark. The original monitor, source cache, KPIs and public artifacts remain unchanged.
+
 ```bash
 python -m rail.pipeline
 python -m rail.build_regions --refresh-stations
 python -m rail.build_regional_history
 python -m unittest discover -s rail/tests
+python -m pip install -r requirements-rail.txt
+python -m rail.lakehouse.orchestrate --start 2026-07-31 --end 2026-07-31
+RAIL_SPARK_TESTS=1 python -m unittest discover -s rail/lakehouse/tests
 ```
 
 Important references:
@@ -93,6 +98,8 @@ Important references:
 - [`docs/rail/methodology.md`](docs/rail/methodology.md) — grains, metrics, weather scope and limitations;
 - [`docs/rail/data-dictionary.md`](docs/rail/data-dictionary.md) — analytical tables and fields;
 - [`docs/rail/architecture.md`](docs/rail/architecture.md) — public and Fabric architecture.
+- [`docs/rail/data-platform.md`](docs/rail/data-platform.md) — executable Lakehouse layers, contracts, lineage and evidence.
+- [`docs/rail/runbook.md`](docs/rail/runbook.md) — incremental operations, backfill and recovery.
 - [`docs/business/`](docs/business/) — explicitly simulated requirements, backlog, change request, incident traceability and stakeholder delivery.
 - [`docs/manual-tasks/USER_ACTIONS.md`](docs/manual-tasks/USER_ACTIONS.md) — only credentialed/native work left to the user.
 
