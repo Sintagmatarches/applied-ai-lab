@@ -18,6 +18,7 @@ This changelog records real repository releases. Business roles labelled as simu
 - Regional Disruption Score now uses the actively selected policy threshold for its delayed-share component; serious delay remains fixed above 15 minutes.
 - Historical regional artifact rebuilt from the same 365 source partitions with no coverage/population change.
 - Public assets and monitoring requests cache-busted for the release.
+- Build/runtime tooling updated to patched Vinext/Cloudflare/RSC/Wrangler versions after dependency audit; no package overrides were introduced.
 
 ### Preserved
 
