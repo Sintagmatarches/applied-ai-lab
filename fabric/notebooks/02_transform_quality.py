@@ -175,4 +175,11 @@ gold_journey = (
     .withColumn("on_time_15", (~F.col("cancelled") & (F.col("final_delay_minutes") <= 15)).cast("int"))
     .withColumn("on_time_30", (~F.col("cancelled") & (F.col("final_delay_minutes") <= 30)).cast("int"))
 )
-gold_journey.write.format("delta").mode("overwrite").saveAsTable("rail_gold_fact_train_journey")
+gold_writer = (
+    gold_journey.write.format("delta")
+    .mode("overwrite")
+    .option("replaceWhere", f"departureDate >= '{p_start_date}' AND departureDate <= '{p_end_date}'")
+)
+if not spark.catalog.tableExists("rail_gold_fact_train_journey"):
+    gold_writer = gold_writer.partitionBy("departureDate")
+gold_writer.saveAsTable("rail_gold_fact_train_journey")

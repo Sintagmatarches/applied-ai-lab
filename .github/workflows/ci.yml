@@ -35,3 +35,22 @@ jobs:
       - run: python -m pip install -r requirements-ml.txt
       - run: npm run test:ml
       - run: python -m unittest discover -s rail/tests
+
+  rail-lakehouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-rail.txt
+      - uses: actions/setup-java@v5
+        with:
+          distribution: microsoft
+          java-version: "17"
+      - run: python -m pip install -r requirements-rail.txt
+      - run: python -m unittest discover -s rail/lakehouse/tests
+        env:
+          RAIL_SPARK_TESTS: "1"
+          SPARK_LOCAL_IP: 127.0.0.1

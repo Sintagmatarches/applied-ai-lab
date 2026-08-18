@@ -1,0 +1,18 @@
+{
+  "name": "finland-rail-lakehouse-daily",
+  "timezone": "Europe/Helsinki",
+  "schedule": "daily after completed departure-date availability",
+  "entryPoint": "python -m rail.lakehouse.orchestrate",
+  "parameters": ["start", "end", "refresh-source", "force-transform"],
+  "activities": [
+    {"id": "acquire", "dependsOn": [], "retries": 3, "failure": "retain trusted cache and watermark"},
+    {"id": "bronze_validate", "dependsOn": ["acquire"], "retries": 0, "failure": "reject source partition"},
+    {"id": "silver_transform_and_gate", "dependsOn": ["bronze_validate"], "retries": 0, "failure": "do not publish Gold"},
+    {"id": "gold_build_and_gate", "dependsOn": ["silver_transform_and_gate"], "retries": 0, "failure": "do not advance watermark"},
+    {"id": "watermark_commit", "dependsOn": ["gold_build_and_gate"], "retries": 0, "failure": "next run safely reprocesses date"},
+    {"id": "downstream_refresh", "dependsOn": ["watermark_commit"], "retries": 1, "failure": "Gold remains committed; alert downstream owner"}
+  ],
+  "normalWindow": {"completedDate": "yesterday", "refreshRecentDays": 3},
+  "observability": ["control.pipeline_runs", "control.quality_results", "control.bronze_manifest", "control.watermark"]
+}
+

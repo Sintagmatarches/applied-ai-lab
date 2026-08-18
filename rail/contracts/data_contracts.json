@@ -1,0 +1,49 @@
+{
+  "contractVersion": "1.0.0",
+  "owner": "Applied AI Lab / Finland Rail",
+  "source": "Fintraffic Digitraffic Railway API",
+  "tables": {
+    "bronze.train_partition": {
+      "grain": "one immutable source payload per departure date and SHA-256",
+      "businessKey": ["departure_date", "content_sha256"],
+      "expectedFreshnessHours": 30,
+      "required": ["departure_date", "content_sha256", "source_path", "source_row_count", "ingested_at", "run_id"]
+    },
+    "silver.train_journey": {
+      "grain": "one passenger journey per departureDate + trainNumber",
+      "businessKey": ["journey_key"],
+      "partitionBy": ["departure_date"],
+      "required": ["journey_key", "departure_date", "train_number", "origin_code", "destination_code", "scheduled_departure_utc", "route_key", "source_content_sha256", "run_id"]
+    },
+    "silver.station_arrival": {
+      "grain": "one commercial arrival event at a Finnish passenger station",
+      "businessKey": ["arrival_key"],
+      "partitionBy": ["departure_date"],
+      "required": ["arrival_key", "journey_key", "departure_date", "station_code", "scheduled_time_utc", "source_content_sha256", "run_id"]
+    },
+    "gold.fact_train_journey": {
+      "grain": "one normalized passenger journey",
+      "businessKey": ["journey_key"],
+      "partitionBy": ["departure_date"],
+      "required": ["journey_key", "departure_date", "train_number", "completed", "cancelled", "on_time_5", "on_time_10", "on_time_15", "on_time_30"],
+      "metrics": {
+        "cancelled": "Digitraffic train-level cancellation flag",
+        "completed": "final arrival has a measured delay and is not cancelled",
+        "on_time_N": "completed journey with final_delay_minutes <= N; thresholds N are 5, 10, 15, 30"
+      }
+    },
+    "gold.mart_regional_performance_daily": {
+      "grain": "one departure date + maakunta + delay threshold",
+      "businessKey": ["departure_date", "region_code", "threshold_minutes"],
+      "partitionBy": ["departure_date"],
+      "required": ["departure_date", "region_code", "threshold_minutes", "observed_trains", "measured_trains", "delayed_trains", "cancelled_trains"],
+      "metrics": {
+        "observed_trains": "distinct passenger journeys with a commercial arrival in the region",
+        "delayed_trains": "journeys whose maximum measured arrival delay in the region exceeds threshold_minutes",
+        "cancelled_trains": "journeys with a train-level or regional arrival cancellation",
+        "reliability_rate": "1 - (delayed_trains + cancelled_trains) / observed_trains"
+      }
+    }
+  }
+}
+

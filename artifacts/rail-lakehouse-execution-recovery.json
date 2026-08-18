@@ -1,0 +1,104 @@
+{
+  "sparkVersion": "4.0.4",
+  "deltaVersion": "4.0.1",
+  "runId": "5eebcdee-e7a4-4641-83e1-8261e5871ef9",
+  "startedAt": "2026-08-18T14:47:01.961962+00:00",
+  "requestedRange": [
+    "2026-07-31",
+    "2026-07-31"
+  ],
+  "force": true,
+  "partitionDecisions": [
+    {
+      "date": "2026-07-31",
+      "action": "process",
+      "reason": "forced backfill/recovery",
+      "sha256": "249611978d359b7dc37b920da89ea3855e2a30c3c6d87450eecb6c8939877c1b"
+    }
+  ],
+  "partitions": [
+    {
+      "date": "2026-07-31",
+      "sourceRows": 1415,
+      "silverJourneys": 887,
+      "silverArrivals": 9525,
+      "regionalRows": 72,
+      "networkMetrics": {
+        "scheduled": 887,
+        "completed": 880,
+        "cancelled": 7,
+        "average_delay_minutes": 2.0113636363636362,
+        "on_time_5": 813,
+        "on_time_10": 853,
+        "on_time_15": 860,
+        "on_time_30": 870
+      },
+      "quality": [
+        {
+          "layer": "bronze",
+          "check": "row_count_anomaly",
+          "status": "PASS",
+          "observed": 1415
+        },
+        {
+          "layer": "bronze",
+          "check": "freshness",
+          "status": "WARN",
+          "observed": 446.8
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_source_business_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_journey_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_arrival_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "missing_critical_fields",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "impossible_delay_over_24h",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "station_referential_integrity",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "nonempty_modelled_partition",
+          "status": "PASS",
+          "observed": 887
+        },
+        {
+          "layer": "gold",
+          "check": "metric_monotonicity",
+          "status": "PASS",
+          "observed": 0
+        }
+      ]
+    }
+  ],
+  "status": "SUCCEEDED",
+  "processedPartitions": 1,
+  "skippedPartitions": 0,
+  "finishedAt": "2026-08-18T14:48:37.482621+00:00"
+}

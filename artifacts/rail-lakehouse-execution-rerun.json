@@ -1,0 +1,24 @@
+{
+  "sparkVersion": "4.0.4",
+  "deltaVersion": "4.0.1",
+  "runId": "de6696f5-1071-4dd9-afb0-d2f4d976ee68",
+  "startedAt": "2026-08-18T14:34:39.518649+00:00",
+  "requestedRange": [
+    "2026-07-31",
+    "2026-07-31"
+  ],
+  "force": false,
+  "partitionDecisions": [
+    {
+      "date": "2026-07-31",
+      "action": "skip",
+      "reason": "same source hash already committed",
+      "sha256": "249611978d359b7dc37b920da89ea3855e2a30c3c6d87450eecb6c8939877c1b"
+    }
+  ],
+  "partitions": [],
+  "status": "SUCCEEDED",
+  "processedPartitions": 0,
+  "skippedPartitions": 1,
+  "finishedAt": "2026-08-18T14:34:58.037412+00:00"
+}

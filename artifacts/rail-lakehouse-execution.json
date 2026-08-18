@@ -1,0 +1,75 @@
+{
+  "evidenceVersion": "1.0.0",
+  "environment": {
+    "executedAt": "2026-08-18",
+    "runtime": "Ubuntu WSL2 / Python 3.12.3 / Microsoft OpenJDK 17",
+    "sparkVersion": "4.0.4",
+    "deltaVersion": "4.0.1",
+    "source": "real cached Fintraffic Digitraffic departure-date partition"
+  },
+  "sourcePartition": {
+    "departureDate": "2026-07-31",
+    "sha256": "249611978d359b7dc37b920da89ea3855e2a30c3c6d87450eecb6c8939877c1b",
+    "sourceRows": 1415
+  },
+  "firstSuccessfulRun": {
+    "runId": "c1625420-7040-4957-abdf-13a13b8dc1bf",
+    "status": "SUCCEEDED",
+    "processedPartitions": 1,
+    "silverJourneys": 887,
+    "silverArrivals": 9525,
+    "goldRegionalRows": 72,
+    "qualityChecksPassed": 7
+  },
+  "idempotentSecondRun": {
+    "runId": "de6696f5-1071-4dd9-afb0-d2f4d976ee68",
+    "status": "SUCCEEDED",
+    "processedPartitions": 0,
+    "skippedPartitions": 1,
+    "reason": "same source hash already committed"
+  },
+  "orchestratedAcquisitionRerun": {
+    "runId": "2d12f041-e63c-4361-993a-f4a5698e095d",
+    "entryPoint": "python -m rail.lakehouse.orchestrate",
+    "acquisition": "trusted source partition resolved",
+    "processedPartitions": 0,
+    "skippedPartitions": 1,
+    "status": "SUCCEEDED"
+  },
+  "forcedRecoveryRun": {
+    "runId": "5eebcdee-e7a4-4641-83e1-8261e5871ef9",
+    "status": "SUCCEEDED",
+    "processedPartitions": 1,
+    "reason": "forced backfill/recovery",
+    "goldNetworkMetrics": {
+      "scheduled": 887,
+      "completed": 880,
+      "cancelled": 7,
+      "averageDelayMinutes": 2.0113636363636362,
+      "onTime5": 813,
+      "onTime10": 853,
+      "onTime15": 860,
+      "onTime30": 870
+    }
+  },
+  "legacyKpiReconciliation": {
+    "legacyPythonPipeline": {"scheduled": 887, "completed": 880, "cancelled": 7, "onTime5": 813},
+    "deltaGold": {"scheduled": 887, "completed": 880, "cancelled": 7, "onTime5": 813},
+    "exactMatch": true
+  },
+  "failureRecoveryTests": {
+    "command": "RAIL_SPARK_TESTS=1 python -m unittest discover -s rail/lakehouse/tests -v",
+    "result": "6 tests passed in 114.518 seconds",
+    "duplicatePartitionRejected": true,
+    "watermarkRemainedEmptyAfterRejection": true,
+    "forcedPartitionReplacementStayedIdempotent": true,
+    "goldMetricThresholdsVerified": true,
+    "stationReferentialIntegrityVerified": true,
+    "historicalFreshnessReportedAsWarning": true
+  },
+  "rawEvidence": [
+    "artifacts/rail-lakehouse-execution-first.json",
+    "artifacts/rail-lakehouse-execution-rerun.json",
+    "artifacts/rail-lakehouse-execution-recovery.json"
+  ]
+}

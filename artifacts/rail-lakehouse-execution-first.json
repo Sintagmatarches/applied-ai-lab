@@ -1,0 +1,76 @@
+{
+  "sparkVersion": "4.0.4",
+  "deltaVersion": "4.0.1",
+  "runId": "c1625420-7040-4957-abdf-13a13b8dc1bf",
+  "startedAt": "2026-08-18T14:33:13.648001+00:00",
+  "requestedRange": [
+    "2026-07-31",
+    "2026-07-31"
+  ],
+  "force": false,
+  "partitionDecisions": [
+    {
+      "date": "2026-07-31",
+      "action": "process",
+      "reason": "no successful watermark",
+      "sha256": "249611978d359b7dc37b920da89ea3855e2a30c3c6d87450eecb6c8939877c1b"
+    }
+  ],
+  "partitions": [
+    {
+      "date": "2026-07-31",
+      "sourceRows": 1415,
+      "silverJourneys": 887,
+      "silverArrivals": 9525,
+      "regionalRows": 72,
+      "quality": [
+        {
+          "layer": "bronze",
+          "check": "row_count_anomaly",
+          "status": "PASS",
+          "observed": 1415
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_source_business_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_journey_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "duplicate_arrival_keys",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "missing_critical_fields",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "impossible_delay_over_24h",
+          "status": "PASS",
+          "observed": 0
+        },
+        {
+          "layer": "silver",
+          "check": "nonempty_modelled_partition",
+          "status": "PASS",
+          "observed": 887
+        }
+      ]
+    }
+  ],
+  "status": "SUCCEEDED",
+  "processedPartitions": 1,
+  "skippedPartitions": 0,
+  "finishedAt": "2026-08-18T14:34:22.849149+00:00"
+}
