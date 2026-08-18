@@ -6,6 +6,7 @@ export type ProjectId =
   | "home"
   | "olist"
   | "rail"
+  | "jobs"
   | "housing"
   | "credit"
   | "documents"
@@ -32,6 +33,14 @@ const projects = [
     tabTitle: "Rail Monitoring System",
     description:
       "Official Fintraffic data transformed into a reproducible view of passenger-train, route and station reliability.",
+  },
+  {
+    id: "jobs" as const,
+    href: "/job-search-ai-agent",
+    title: "Job Search AI Agent",
+    tabTitle: "Job Search Agent",
+    description:
+      "A source-grounded job discovery and explainable matching workspace that uses public feeds without personal accounts or paid APIs.",
   },
   {
     id: "housing" as const,
@@ -75,7 +84,7 @@ function ProjectTabs({ activeProject }: LabShellProps) {
   const currentPlanned = projects.find(
     (project) =>
       project.id === activeProject &&
-      project.id !== "olist" && project.id !== "rail",
+      project.id !== "olist" && project.id !== "rail" && project.id !== "jobs",
   );
 
   return (
@@ -102,6 +111,13 @@ function ProjectTabs({ activeProject }: LabShellProps) {
           aria-current={activeProject === "rail" ? "page" : undefined}
         >
           {projects[1].tabTitle}
+        </Link>
+        <Link
+          href={projects[2].href}
+          className={activeProject === "jobs" ? "is-active" : ""}
+          aria-current={activeProject === "jobs" ? "page" : undefined}
+        >
+          {projects[2].tabTitle}
         </Link>
         {currentPlanned && (
           <Link
@@ -165,13 +181,31 @@ function HomeContent() {
             </Link>
           </div>
         </article>
+
+        <article className="featured-project featured-project-jobs">
+          <div className="featured-project-copy">
+            <p className="project-status">Completed project · 03</p>
+            <h2>{projects[2].title}</h2>
+            <p>{projects[2].description}</p>
+            <ul className="featured-project-facts" aria-label="Job search project summary">
+              <li>Two documented public feeds</li>
+              <li>No personal account or paid API</li>
+              <li>Explainable 35 / 45 / 20 scoring</li>
+            </ul>
+          </div>
+          <div className="featured-project-actions">
+            <Link className="primary-link" href={projects[2].href}>
+              Open job agent
+            </Link>
+          </div>
+        </article>
       </section>
 
       <section className="planned-projects" aria-labelledby="planned-title">
         <p className="eyebrow">Next</p>
         <h2 id="planned-title">Planned projects</h2>
         <ul className="project-link-list">
-          {projects.slice(2).map((project) => (
+          {projects.slice(3).map((project) => (
             <li key={project.id}>
               <Link href={project.href}>{project.title}</Link>
               <span>Planned</span>

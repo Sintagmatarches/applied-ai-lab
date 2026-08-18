@@ -19,29 +19,20 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Evidence-backed machine learning, analytics engineering and BI projects built to be inspected.",
     icons: {
-      icon: "/favicon.svg?v=20260818-data-platform-1",
-      shortcut: "/favicon.svg?v=20260818-data-platform-1",
+      icon: "/favicon.svg?v=20260818-job-agent-1",
+      shortcut: "/favicon.svg?v=20260818-job-agent-1",
     },
     openGraph: {
       title: "Applied AI Lab",
       description:
         "Machine learning, analytics engineering and BI projects with reproducible evidence.",
       type: "website",
-      images: [
-        {
-          url: "/og.png?v=20260818-data-platform-1",
-          width: 1731,
-          height: 909,
-          alt: "Applied AI Lab — Olist Delivery Delay Predictor and Finland Rail Monitoring System",
-        },
-      ],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: "Applied AI Lab",
       description:
         "Machine learning, analytics engineering and BI projects with reproducible evidence.",
-      images: ["/og.png?v=20260818-data-platform-1"],
     },
   };
 }

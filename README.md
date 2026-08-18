@@ -12,8 +12,50 @@ The production hostname is deployment configuration rather than a repository con
 
 | Project | Primary skills | Public result |
 | --- | --- | --- |
+| Job Search AI Agent | Public web acquisition, source adapters, normalization, deduplication, deterministic ranking, grounded tool use | Working account-free search across two documented keyless feeds with local save/compare and cited answers |
 | Finland Rail Monitoring System | Live monitoring, PySpark/Delta Lakehouse, incremental Bronze/Silver/Gold, geospatial analytics, Power BI/DAX | Live choropleth plus an executable and evidenced data-platform case |
 | Olist Delivery Delay Predictor | Python ML, point-in-time features, chronological evaluation, model parity, server inference | Working relative delay-risk scorer with held-out evidence and limitations |
+
+## Job Search AI Agent
+
+The job agent answers: **Which public vacancies fit a structured profile, why, and what evidence supports that conclusion?** It deliberately does not connect a personal LinkedIn or other job-board account, reuse cookies, solve CAPTCHA, cross a paywall or call a paid AI/search API.
+
+The deployed page searches the documented keyless [Arbeitnow API](https://www.arbeitnow.com/blog/job-board-api) and [Jobicy API](https://jobicy.com/jobs-rss-feed). Arbeitnow normalizes vacancies sourced mostly from public European applicant-tracking systems; Jobicy supplies public remote listings. Provider-specific payloads stop at thin adapters. The domain model, filters, URL validation, HTML-to-inert-text conversion, skill/seniority extraction and duplicate fingerprint are shared code.
+
+```mermaid
+flowchart LR
+  A["Arbeitnow public API"] --> N["Provider adapters"]
+  J["Jobicy public API"] --> N
+  N --> V["Validated job model"]
+  V --> D["Company + title + location deduplication"]
+  D --> F["Query / location / remote filters"]
+  P["Browser-local structured profile"] --> M["Explainable match engine"]
+  F --> M
+  M --> U["Ranked UI + save / compare"]
+  M --> T["Evidence agent tools"]
+  T --> C["Cited answer with original vacancy links"]
+```
+
+### Matching and agent tools
+
+The score is intentionally not an LLM opinion. It is capped at 100 and decomposes into target-role token overlap (35 points), explicit profile-skill coverage (45 points), and declared location/remote preferences (20 points). Every card shows the component totals, matched profile skills and extracted advertised skills missing from the profile.
+
+The browser agent routes questions to deterministic tools over the current retrieval set:
+
+- `filter_results` selects the current or user-selected vacancies;
+- `aggregate_requirements` counts repeated extracted requirements and gaps;
+- `rank_matches` orders the declared scoring features;
+- the answer cites the original vacancy URL for every record in scope.
+
+No vacancy HTML is rendered or treated as an instruction. Script/style blocks are removed, remaining markup becomes inert text, descriptions are size-bounded and only `http`/`https` URLs survive normalization. Provider timeouts and `Promise.allSettled` keep one source failure from becoming an invented result or a full outage. Responses expose per-source status and use an hour-long shared cache to limit polling.
+
+### AI boundary and limitations
+
+The hosted Cloudflare worker does not pretend to run a local LLM. Ranking, extraction and agent answers are deterministic and fully operational without one. The extension boundary is an Ollama-compatible local reasoning adapter; `Qwen2.5 3B Instruct` is the intended small open-weight default because it runs on typical developer hardware, while the source adapters, retrieval records, scoring features and citations remain model-independent. That optional local runtime is not presented as deployed evidence.
+
+Saved vacancies and the example profile use device-local browser storage, not a server database or personal account. The current public slice has no cross-device history, JavaScript-rendered page crawler, embeddings/vector database or completed local-LLM evaluation. LinkedIn and other login-gated sources are deliberately excluded. These are explicit scope limits, not simulated capabilities.
+
+Job-specific tests cover both provider normalizers, unsafe URL rejection, executable/oversized HTML handling, deterministic filters, duplicate collapse and graceful single-provider failure. The rendered-route test enforces the no-account/no-paid-API boundary. No fabricated retrieval, ranking or hallucination benchmark is reported.
 
 ## Finland Rail Monitoring System
 

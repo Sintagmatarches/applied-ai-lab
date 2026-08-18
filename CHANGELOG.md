@@ -6,6 +6,8 @@ This changelog records real repository releases. Business roles labelled as simu
 
 ### Added
 
+- Job Search AI Agent page with account-free Arbeitnow and Jobicy acquisition, shared normalization, URL/HTML guards, deduplication, explainable profile matching, browser-local saves, comparison and cited evidence tools.
+- Job-source unit, resilience and adversarial normalization tests plus rendered-route coverage for the no-account/no-paid-API boundary.
 - Regional delay-policy selector for 5, 10, 15 and 30 minutes, with threshold-specific delay shares, scores, statuses and problem rankings.
 - Daily Digitraffic partition completeness validation before trusted cache/Bronze publication and on local cache read.
 - Simulated business requirements, prioritised issue-ready backlog, CR-001 change request, INC-001 incident, stakeholder delivery memo and traceability matrix.
@@ -15,6 +17,7 @@ This changelog records real repository releases. Business roles labelled as simu
 
 ### Changed
 
+- Applied AI Lab navigation and home page now treat Job Search AI Agent as completed project 03; favicon metadata was cache-busted for the release.
 - Regional Disruption Score now uses the actively selected policy threshold for its delayed-share component; serious delay remains fixed above 15 minutes.
 - Historical regional artifact rebuilt from the same 365 source partitions with no coverage/population change.
 - Public assets and monitoring requests cache-busted for the release.

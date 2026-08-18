@@ -31,7 +31,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders both completed projects before clearly marked planned work", async () => {
+test("renders all completed projects before clearly marked planned work", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -41,16 +41,35 @@ test("renders both completed projects before clearly marked planned work", async
   assert.match(html, /Home Page/);
   assert.match(html, /Delivery Delay Predictor/);
   assert.match(html, /Rail Monitoring System/);
+  assert.match(html, /Job Search Agent/);
   assert.match(html, /Completed project/);
   assert.match(html, /Open predictor/);
   assert.match(html, /Open monitor/);
+  assert.match(html, /Open job agent/);
   assert.match(html, /Planned projects/);
   assert.match(html, /href="\/housing-value-forecast"/);
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-data-platform-1/);
-  assert.match(html, /og\.png\?v=20260818-data-platform-1/);
+  assert.match(html, /favicon\.svg\?v=20260818-job-agent-1/);
+  assert.doesNotMatch(html, /og\.png\?v=/);
+});
+
+test("renders the account-free public Job Search AI Agent", async () => {
+  const response = await render("/job-search-ai-agent");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Job Search AI Agent/);
+  assert.match(html, /Search public jobs/);
+  assert.match(html, /No personal job-board account/);
+  assert.match(html, /No CAPTCHA, paywall or login bypass/);
+  assert.match(html, /No paid LLM or search API/);
+  assert.match(html, /Explainable matching/);
+  assert.match(html, /Arbeitnow API documentation/);
+  assert.match(html, /Jobicy API documentation/);
+  assert.match(html, /aria-current="page"[^>]*>Job Search Agent/);
+  assert.doesNotMatch(html, /linkedin\.com\/(?:login|uas\/login)|session[_ -]?token|password=/i);
 });
 
 test("renders the evidence-backed Finland rail monitor and methodology", async () => {
