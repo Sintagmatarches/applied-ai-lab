@@ -27,6 +27,7 @@ The pre-change repository built and its existing suites passed (14 rendered/Work
 - Typecheck, ESLint, rendered HTML and targeted cross-project regression passed before final release validation.
 - Terraform 1.9.8 `fmt -check`, provider initialization and `validate` pass after adding the required Container Apps traffic weight.
 - The OCI image built locally with Podman as image `98f4441bf20d…`; a non-root container started and returned HTTP 200 from `/health`. It correctly reported local Ollama disconnected inside that isolated smoke test.
+- The first remote dependency audit exposed six 2026 Starlette advisories under the old FastAPI 0.116.1 constraint. FastAPI/Starlette were upgraded and pinned to 0.141.1/1.6.0; the clean-environment audit now blocks regressions in CI.
 - Retrieval microbenchmark at 768 dimensions measured 168 ms / 833 ms / 1,660 ms for 1k / 5k / 10k exact scans on this host. All vector/lexical blends tied on the two-query recorded set, so the previous unexplained 72/28 blend was replaced with a neutral 50/50 and the 10k safety boundary retained.
 
 ## Evaluation and live evidence
