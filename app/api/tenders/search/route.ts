@@ -20,13 +20,45 @@ function cleanNumber(value: unknown): number | undefined {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
+function invalidPayload(payload: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  for (const key of ["keywords", "cpv", "buyerCountry", "placeCountry", "publishedFrom", "publishedTo", "deadlineFrom", "procedureType", "iterationNextToken"]) {
+    if (payload[key] !== undefined && typeof payload[key] !== "string") errors.push(`${key} must be a string`);
+  }
+  for (const key of ["minValue", "maxValue", "limit", "page"]) {
+    if (payload[key] !== undefined && (typeof payload[key] === "boolean" || payload[key] === null || String(payload[key]).trim() === "" || !Number.isFinite(Number(payload[key])) || Number(payload[key]) < 0)) errors.push(`${key} must be a non-negative number`);
+  }
+  return errors;
+}
+
+function invalidFilters(filters: TenderSearchFilters): string[] {
+  const errors: string[] = [];
+  const validDate = (value: string | undefined) => {
+    if (!value) return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  const validCountry = (value: string | undefined) => !value || /^[A-Z]{3}$/.test(value);
+  if (!validCountry(filters.buyerCountry)) errors.push("buyerCountry must be a three-letter TED country code");
+  if (!validCountry(filters.placeCountry)) errors.push("placeCountry must be a three-letter TED country code");
+  if (filters.cpv && !/^\d{2,8}\*?$/.test(filters.cpv)) errors.push("cpv must contain 2-8 digits with an optional trailing wildcard");
+  if (!validDate(filters.publishedFrom)) errors.push("publishedFrom must be a real YYYY-MM-DD date");
+  if (!validDate(filters.publishedTo)) errors.push("publishedTo must be a real YYYY-MM-DD date");
+  if (!validDate(filters.deadlineFrom)) errors.push("deadlineFrom must be a real YYYY-MM-DD date");
+  if (filters.publishedFrom && filters.publishedTo && filters.publishedFrom > filters.publishedTo) errors.push("publishedFrom must not be after publishedTo");
+  if (filters.minValue !== undefined && filters.maxValue !== undefined && filters.minValue > filters.maxValue) errors.push("minValue must not exceed maxValue");
+  if (filters.procedureType && !["open", "restricted", "neg-w-call", "comp-dial", "innovation", "neg-wo-call", "other"].includes(filters.procedureType)) errors.push("procedureType is unsupported");
+  return errors;
+}
+
 function filtersFromPayload(payload: Record<string, unknown>): TenderSearchFilters {
   return {
-    keywords: cleanText(payload.keywords), cpv: cleanText(payload.cpv, 9),
-    buyerCountry: cleanText(payload.buyerCountry, 3), placeCountry: cleanText(payload.placeCountry, 3),
-    publishedFrom: cleanText(payload.publishedFrom, 10), publishedTo: cleanText(payload.publishedTo, 10),
+    keywords: cleanText(payload.keywords), cpv: cleanText(payload.cpv),
+    buyerCountry: cleanText(payload.buyerCountry), placeCountry: cleanText(payload.placeCountry),
+    publishedFrom: cleanText(payload.publishedFrom), publishedTo: cleanText(payload.publishedTo),
     minValue: cleanNumber(payload.minValue), maxValue: cleanNumber(payload.maxValue),
-    deadlineFrom: cleanText(payload.deadlineFrom, 10), procedureType: cleanText(payload.procedureType, 40),
+    deadlineFrom: cleanText(payload.deadlineFrom), procedureType: cleanText(payload.procedureType),
     limit: Math.max(1, Math.min(50, cleanNumber(payload.limit) ?? 12)),
     page: Math.max(1, Math.min(15_000, cleanNumber(payload.page) ?? 1)),
     iterationNextToken: cleanText(payload.iterationNextToken, 500),
@@ -60,6 +92,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "A JSON search request is required." }, { status: 400 });
   }
   const filters = filtersFromPayload(payload);
+  const validationErrors = [...invalidPayload(payload), ...invalidFilters(filters)];
+  if (validationErrors.length) return Response.json({ error: "Invalid tender search filters.", details: validationErrors }, { status: 422, headers: { "cache-control": "no-store" } });
   const paginationMode = filters.iterationNextToken ? "ITERATION" : "PAGE_NUMBER";
   const tedRequest: Record<string, unknown> = {
     query: buildTedQuery(filters), fields: TED_FIELDS, limit: filters.limit,
@@ -79,16 +113,22 @@ export async function POST(request: Request): Promise<Response> {
     const normalized = (Array.isArray(raw.notices) ? raw.notices : [])
       .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
       .map((item) => normalizeTedNotice(item));
-    const notices = applyClientFilters(normalized, filters).map((notice) => ({ notice, assessment: assessTender(notice, profileFromPayload(payload.profile)) }));
+    const filtered = applyClientFilters(normalized, filters);
+    const notices = filtered.map((notice) => ({ notice, assessment: assessTender(notice, profileFromPayload(payload.profile)) }));
+    const hasPostFilters = filters.minValue !== undefined || filters.maxValue !== undefined || Boolean(filters.deadlineFrom);
+    const hasMore = Boolean(raw.iterationNextToken) || (!raw.iterationNextToken && normalized.length === filters.limit && (raw.totalNoticeCount ?? 0) > (filters.page ?? 1) * (filters.limit ?? 12));
     return Response.json({
       retrievedAt: new Date().toISOString(), source: "TED Search API v3", endpoint: TED_SEARCH_URL,
       officialDocs: "https://docs.ted.europa.eu/api/latest/search.html", query: tedRequest.query,
-      notices, totalNoticeCount: raw.totalNoticeCount ?? notices.length,
+      notices, tedTotalNoticeCount: raw.totalNoticeCount ?? normalized.length,
+      filteredBatchCount: notices.length, filteredTotalKnown: !hasPostFilters,
+      totalNoticeCount: hasPostFilters ? null : raw.totalNoticeCount ?? notices.length,
       iterationNextToken: raw.iterationNextToken ?? null, timedOut: raw.timedOut ?? false,
-      trace: { source: "TED", fetched: normalized.length, returned: notices.length, page: filters.page, paginationMode, latencyMs: Math.round(performance.now() - started) },
-    }, { headers: { "cache-control": "public, max-age=120, s-maxage=600, stale-while-revalidate=3600" } });
+      hasMore, trace: { source: "TED", fetched: normalized.length, returned: notices.length, page: filters.page, paginationMode, latencyMs: Math.round(performance.now() - started) },
+    }, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
     console.error("TED ingestion failed", error);
-    return Response.json({ error: "The official TED Search API is temporarily unavailable.", source: "TED Search API v3" }, { status: 502, headers: { "cache-control": "no-store" } });
+    const timedOut = error instanceof DOMException && error.name === "TimeoutError";
+    return Response.json({ error: timedOut ? "The official TED Search API timed out." : "The official TED Search API is temporarily unavailable.", category: timedOut ? "TED_TIMEOUT" : "TED_UPSTREAM", source: "TED Search API v3" }, { status: timedOut ? 504 : 502, headers: { "cache-control": "no-store" } });
   }
 }

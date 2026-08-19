@@ -6,5 +6,6 @@ Code, automated tests, public web deployment and GitHub traceability are complet
 2. Complete and evidence the native [Microsoft Fabric tasks](fabric.md) in an approved Fabric tenant if Fabric deployment is desired.
 3. Complete and evidence the native [Power BI tasks](power-bi.md) in Power BI Desktop and the target tenant.
 4. Review the finished Power BI report visually and approve tenant sharing; this requires human judgement and organisational permissions.
+5. If a hosted private Tender AI runtime is wanted, authenticate to the user's Azure subscription, publish `Dockerfile.tender-ai` to a user-owned registry, supply that image and the private Ollama endpoint to `infra/azure-tender`, then run the reviewed Terraform plan. The public portfolio and local/container runtime do not depend on this optional deployment.
 
 Do not mark Power BI/Fabric deployment complete in the portfolio until the listed native evidence exists.

@@ -57,3 +57,6 @@ __pycache__/
 
 # Incremental TypeScript compiler cache
 *.tsbuildinfo
+
+# Terraform provider/plugin working directories; keep dependency lock files.
+**/.terraform/*

@@ -191,3 +191,37 @@ test("published predictor works and keeps its responsive layout", async ({
   await expect(page.getByText("Relative risk score", { exact: true })).toBeVisible();
   expect(browserErrors).toEqual([]);
 });
+
+test("published tender agent runs one live example and exposes lot evidence", async ({ page }, testInfo) => {
+  const browserErrors = failOnBrowserErrors(page);
+  const response = await page.goto(freshPath("/eu-tender-intelligence-agent"), { waitUntil: "networkidle" });
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "EU Tender Intelligence Agent" })).toBeVisible();
+  await expect(page.getByText("PUBLIC LIVE", { exact: true })).toBeVisible();
+  await expect(page.getByText("LOCAL AI", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Architecture/ })).toBeVisible();
+  await expect(page.getByLabel("Languages")).toBeVisible();
+  await page.getByRole("button", { name: "Run live example search" }).click();
+  await expect(page.getByText(/FETCHED THIS BATCH/)).toBeVisible({ timeout: 30_000 });
+  const cards = page.locator(".tender-card");
+  if (await cards.count()) {
+    await cards.first().getByRole("button", { name: "Inspect evidence" }).click();
+    await expect(page.getByRole("heading", { name: "Lot decisions" })).toBeVisible();
+    await cards.first().getByRole("button", { name: "Watch" }).click();
+    await expect(page.getByRole("button", { name: "Recheck watched notices" })).toBeEnabled();
+  }
+  if (testInfo.project.name === "mobile-chromium") {
+    const columns = await page.locator(".tender-filters").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+    expect(columns).toBe(1);
+  }
+  expect(browserErrors).toEqual([]);
+});
+
+test("published tender agent renders a controlled search error", async ({ page }) => {
+  const browserErrors = failOnBrowserErrors(page);
+  await page.route("**/api/tenders/search", async (route) => route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify({ error: "Invalid tender search filters.", details: ["test validation error"] }) }));
+  await page.goto(freshPath("/eu-tender-intelligence-agent"), { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Search live TED" }).click();
+  await expect(page.getByRole("alert")).toContainText("test validation error");
+  expect(browserErrors).toEqual([]);
+});

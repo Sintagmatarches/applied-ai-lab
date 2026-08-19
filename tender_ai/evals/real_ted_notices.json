@@ -1,0 +1,55 @@
+{
+  "dataset": "recorded-ted-structured-2026-08-19",
+  "recorded_at": "2026-08-19T00:00:00Z",
+  "source": "Official TED Search API v3 structured fields",
+  "notices": [
+    {
+      "source_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
+      "raw": {
+        "notice-identifier": "2aedcdcc-1912-4080-8776-3e6f8827771e",
+        "publication-number": "131555-2026",
+        "notice-version": 1,
+        "notice-title": { "eng": "Finland – IT services – Detection and response technology and services" },
+        "buyer-name": { "eng": ["Veikkaus Oy"] },
+        "buyer-country": ["FIN"],
+        "identifier-lot": ["LOT-0000"],
+        "title-lot": { "eng": ["Detection and response technology and services"] },
+        "description-lot": { "eng": ["Managed Detection and Response services using artificial intelligence and machine learning."] },
+        "selection-criterion-lot": ["slc-suit-reg-trade"],
+        "selection-criterion-description-lot": { "eng": ["The tenderer is registered in the relevant trade registers kept by the Member State of establishment."] },
+        "submission-language": ["ENG"],
+        "award-criterion-type-lot": ["price", "quality"],
+        "award-criterion-name-lot": { "eng": ["Price", "Quality"] },
+        "award-criterion-description-lot": { "eng": ["Price: 282 total points", "Quality: 188 total points"] },
+        "award-criterion-number-weight-lot": ["poi-exa", "poi-exa"],
+        "BT-541-Lot": ["282", "188"],
+        "links": { "html": { "ENG": "https://ted.europa.eu/en/notice/-/detail/131555-2026" }, "xml": { "MUL": "https://ted.europa.eu/en/notice/131555-2026/xml" } }
+      },
+      "expected": { "lot_ids": ["LOT-0000"], "structured_requirement_categories": ["professional", "language"], "award_weights": [282, 188] }
+    },
+    {
+      "source_url": "https://ted.europa.eu/en/notice/-/detail/71933-2026",
+      "raw": {
+        "notice-identifier": "4e533503-751f-43e7-8b2a-c030c8cb9766",
+        "publication-number": "71933-2026",
+        "notice-version": 1,
+        "notice-title": { "fin": "Suomi – Karhulan Koulukeskuksen liikuntahalli, LVIA-urakka" },
+        "buyer-name": { "fin": ["Kotkan kaupunki"] },
+        "buyer-country": ["FIN"],
+        "identifier-lot": ["LOT-0000"],
+        "title-lot": { "fin": ["Karhulan Koulukeskuksen liikuntahalli, LVIA-urakka"] },
+        "description-lot": { "fin": ["Kotkan kaupungin tekniset palvelut pyytää tarjousta liikuntahallin LVIA-urakasta."] },
+        "submission-language": ["FIN"],
+        "award-criterion-type-lot": ["price"],
+        "award-criterion-name-lot": { "fin": ["Kokonaishinta"] },
+        "award-criterion-description-lot": { "fin": ["Kokonaistaloudellisen edullisuuden perusteena on halvin hinta."] },
+        "links": { "html": { "ENG": "https://ted.europa.eu/en/notice/-/detail/71933-2026" }, "xml": { "MUL": "https://ted.europa.eu/en/notice/71933-2026/xml" } }
+      },
+      "expected": { "lot_ids": ["LOT-0000"], "structured_requirement_categories": ["language"], "award_weights": [null] }
+    }
+  ],
+  "retrieval_queries": [
+    { "query": "managed detection artificial intelligence", "relevant_publications": ["131555-2026"] },
+    { "query": "LVIA liikuntahalli", "relevant_publications": ["71933-2026"] }
+  ]
+}

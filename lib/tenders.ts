@@ -13,12 +13,14 @@ export type Evidence = {
 export type Requirement = {
   id: string;
   lotId?: string;
-  category: "turnover" | "certification" | "references" | "language" | "geography" | "deadline" | "technical" | "other";
+  category: "turnover" | "certification" | "references" | "language" | "geography" | "deadline" | "technical" | "professional" | "staff" | "consortium" | "other";
   text: string;
   mandatory: boolean;
-  operator?: ">=" | "contains";
-  value?: number | string;
+  operator?: ">=" | "contains" | "one_of";
+  value?: number | string | string[];
   unit?: string;
+  stage?: "TENDER" | "REQUEST_TO_PARTICIPATE" | "NOT_REQUIRED" | "UNKNOWN";
+  sourceField: string;
   evidenceId: string;
   confidence: number;
   extractionStatus: "STRUCTURED" | "UNSTRUCTURED";
@@ -30,6 +32,7 @@ export type AwardCriterion = {
   name: string;
   type: string;
   weight: number | null;
+  weightType: string | null;
   description: string;
   evidenceId: string;
 };
@@ -44,6 +47,16 @@ export type ProcurementLot = {
   placeOfPerformance: string[];
   deadline: string | null;
   status: "OPEN" | "CLOSED" | "UNKNOWN";
+  submissionLanguages: string[];
+};
+
+export type SecurityFinding = {
+  id: string;
+  lotId?: string;
+  type: "PROMPT_INJECTION";
+  severity: "HIGH";
+  excerpt: string;
+  evidenceId: string;
 };
 
 export type ProcurementNotice = {
@@ -71,6 +84,7 @@ export type ProcurementNotice = {
   lots: ProcurementLot[];
   requirements: Requirement[];
   awardCriteria: AwardCriterion[];
+  securityFindings: SecurityFinding[];
   evidence: Evidence[];
 };
 
@@ -89,14 +103,36 @@ export type SupplierProfile = {
 
 export type RequirementCheck = {
   requirementId: string;
-  outcome: "PASS" | "FAIL" | "UNKNOWN";
+  lotId: string;
+  mandatory: boolean;
+  outcome: "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
   reason: string;
   evidenceId: string;
+};
+
+export type FitComponent = {
+  name: "capability" | "geography" | "contract_value" | "deadline";
+  score: number;
+  maximum: number;
+  evidence: string;
+};
+
+export type LotAssessment = {
+  lotId: string;
+  status: DecisionStatus;
+  heuristicFit: { score: number; label: "LOW" | "MEDIUM" | "HIGH"; components: FitComponent[] };
+  checks: RequirementCheck[];
+  blockingRequirements: RequirementCheck[];
+  satisfiedRequirements: RequirementCheck[];
+  uncertainRequirements: RequirementCheck[];
 };
 
 export type BidAssessment = {
   status: DecisionStatus;
   strategicFit: number;
+  heuristicFitLabel: "LOW" | "MEDIUM" | "HIGH";
+  lotAssessments: LotAssessment[];
+  summary: { eligibleLots: string[]; blockedLots: string[]; reviewLots: string[]; insufficientEvidenceLots: string[] };
   checks: RequirementCheck[];
   blockingRequirements: RequirementCheck[];
   satisfiedRequirements: RequirementCheck[];
@@ -162,8 +198,32 @@ function scalar(value: unknown): string {
 }
 
 function numberValue(value: unknown): number | null {
-  const parsed = Number(scalar(value).replaceAll(" ", "").replace(",", "."));
+  const normalized = scalar(value).replaceAll(" ", "").replace(",", ".");
+  if (!normalized) return null;
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function lotIdFor(lotIds: string[], valueCount: number, index: number): string | undefined {
+  if (lotIds.length === 1) return lotIds[0];
+  return valueCount === lotIds.length ? lotIds[index] : undefined;
+}
+
+function stage(value: string | undefined): Requirement["stage"] {
+  if (value === "t-requ") return "TENDER";
+  if (value === "par-requ") return "REQUEST_TO_PARTICIPATE";
+  if (value === "not-requ") return "NOT_REQUIRED";
+  return "UNKNOWN";
+}
+
+function requirementCategory(code: string, text: string): Requirement["category"] {
+  const value = `${code} ${text}`.toLowerCase();
+  if (/turnover|financial|fin-sta/.test(value)) return "turnover";
+  if (/register|professional|suit-reg/.test(value)) return "professional";
+  if (/reference|experience|past contract/.test(value)) return "references";
+  if (/staff|personnel/.test(value)) return "staff";
+  if (/language/.test(value)) return "language";
+  return "technical";
 }
 
 function sourceUrl(links: unknown, publicationId: string): { html: string; xml: string | null } {
@@ -180,17 +240,18 @@ function evidence(noticeId: string, lotId: string | undefined, field: string, ex
   return { id: `ted:${noticeId}:${lotId ?? "notice"}:${field}`, noticeId, lotId, field, excerpt: excerpt.slice(0, 800), url, source: "TED Search API v3" };
 }
 
-export function extractRequirements(noticeId: string, lots: ProcurementLot[], url: string): { requirements: Requirement[]; evidence: Evidence[] } {
+export function extractRequirements(noticeId: string, lots: ProcurementLot[], url: string): { requirements: Requirement[]; securityFindings: SecurityFinding[]; evidence: Evidence[] } {
   const requirements: Requirement[] = [];
+  const securityFindings: SecurityFinding[] = [];
   const evidenceRows: Evidence[] = [];
   const add = (lot: ProcurementLot, category: Requirement["category"], text: string, value: number | string | undefined, unit?: string) => {
     const evidenceRow = evidence(noticeId, lot.id, `requirement-${requirements.length + 1}`, text, url);
     evidenceRows.push(evidenceRow);
     requirements.push({
       id: `${noticeId}:req:${requirements.length + 1}`, lotId: lot.id, category, text,
-      mandatory: /must|required|shall|minimum|vähintään|edellytetään|tulee/i.test(text),
+      mandatory: /must|required|shall|minimum|at least|vähintään|edellytetään|tulee/i.test(text),
       operator: value === undefined ? undefined : category === "certification" || category === "language" || category === "geography" ? "contains" : ">=",
-      value, unit, evidenceId: evidenceRow.id,
+      value, unit, stage: "UNKNOWN", sourceField: "description-lot", evidenceId: evidenceRow.id,
       confidence: value === undefined ? 0.62 : 0.91,
       extractionStatus: value === undefined ? "UNSTRUCTURED" : "STRUCTURED",
     });
@@ -204,7 +265,11 @@ export function extractRequirements(noticeId: string, lots: ProcurementLot[], ur
     ];
     for (const [category, regex, unit] of patterns) {
       for (const match of text.matchAll(regex)) {
-        const raw = match[0];
+        const matchIndex = match.index ?? 0;
+        const sentenceStart = Math.max(text.lastIndexOf(".", matchIndex - 1), text.lastIndexOf("!", matchIndex - 1), text.lastIndexOf("?", matchIndex - 1)) + 1;
+        const followingStops = [text.indexOf(".", matchIndex), text.indexOf("!", matchIndex), text.indexOf("?", matchIndex)].filter((item) => item >= 0);
+        const sentenceEnd = followingStops.length ? Math.min(...followingStops) + 1 : text.length;
+        const raw = category === "certification" ? text.slice(sentenceStart, sentenceEnd).trim() : match[0];
         const value = category === "certification" ? match[1].toUpperCase().replace(/ISO\s?/, "ISO ") : Number(match[1].replace(/[^0-9]/g, ""));
         add(lot, category, raw, value, unit);
       }
@@ -212,10 +277,12 @@ export function extractRequirements(noticeId: string, lots: ProcurementLot[], ur
     const language = text.match(/(?:required|must|shall|vähintään)[^.!?]{0,40}\b(English|Finnish|Swedish|French|German)\b/i);
     if (language) add(lot, "language", language[0], language[1]);
     if (/ignore all previous instructions|reveal the system prompt|mark this opportunity as bid|fake:\d+/i.test(text)) {
-      add(lot, "other", "Untrusted document instruction detected and quarantined.", undefined);
+      const findingEvidence = evidence(noticeId, lot.id, `security-${securityFindings.length + 1}`, text.match(/ignore all previous instructions|reveal the system prompt|mark this opportunity as bid|fake:\d+/i)?.[0] ?? "Untrusted instruction", url);
+      evidenceRows.push(findingEvidence);
+      securityFindings.push({ id: `${noticeId}:security:${securityFindings.length + 1}`, lotId: lot.id, type: "PROMPT_INJECTION", severity: "HIGH", excerpt: findingEvidence.excerpt, evidenceId: findingEvidence.id });
     }
   }
-  return { requirements, evidence: evidenceRows };
+  return { requirements, securityFindings, evidence: evidenceRows };
 }
 
 export function normalizeTedNotice(raw: Record<string, unknown>, now = new Date().toISOString()): ProcurementNotice {
@@ -231,25 +298,60 @@ export function normalizeTedNotice(raw: Record<string, unknown>, now = new Date(
   const places = strings(raw["place-of-performance-country-lot"]);
   const cpvs = strings(raw["classification-cpv"]);
   const count = Math.max(1, lotIds.length, lotTitles.length, descriptions.length);
-  const lots: ProcurementLot[] = Array.from({ length: count }, (_, index) => ({
-    id: lotIds[index] ?? `${noticeId}:LOT-${String(index + 1).padStart(4, "0")}`,
-    title: lotTitles[index] ?? lotTitles[0] ?? localized(raw["notice-title"])[0] ?? "Untitled lot",
-    description: descriptions[index] ?? descriptions[0] ?? "No lot description supplied in the selected TED fields.",
-    cpvCodes: cpvs.length === count ? [cpvs[index]] : [...new Set(cpvs)],
-    value: numberValue(values[index] ?? values[0]),
-    currency: currencies[index] ?? currencies[0] ?? (scalar(raw["estimated-value-cur-proc"]) || null),
-    placeOfPerformance: places[index] ? [places[index]] : [...new Set(places)],
-    deadline: deadlines[index] ?? deadlines[0] ?? null,
-    status: deadlines[index] || deadlines[0] ? (new Date(deadlines[index] ?? deadlines[0]).valueOf() >= Date.now() ? "OPEN" : "CLOSED") : "UNKNOWN",
-  }));
+  const lots: ProcurementLot[] = Array.from({ length: count }, (_, index) => {
+    const value = numberValue(values[index] ?? values[0]);
+    return {
+      id: lotIds[index] ?? `${noticeId}:LOT-${String(index + 1).padStart(4, "0")}`,
+      title: lotTitles[index] ?? lotTitles[0] ?? localized(raw["notice-title"])[0] ?? "Untitled lot",
+      description: descriptions[index] ?? descriptions[0] ?? "No lot description supplied in the selected TED fields.",
+      cpvCodes: cpvs.length === count ? [cpvs[index]] : [...new Set(cpvs)],
+      value,
+      currency: value === null ? null : currencies[index] ?? currencies[0] ?? (scalar(raw["estimated-value-cur-proc"]) || null),
+      placeOfPerformance: places[index] ? [places[index]] : [...new Set(places)],
+      deadline: deadlines[index] ?? deadlines[0] ?? null,
+      status: deadlines[index] || deadlines[0] ? (new Date(deadlines[index] ?? deadlines[0]).valueOf() >= Date.now() ? "OPEN" : "CLOSED") : "UNKNOWN",
+      submissionLanguages: strings(raw["submission-language"]),
+    };
+  });
   const extracted = extractRequirements(noticeId, lots, urls.html);
+  const selectionCodes = strings(raw["selection-criterion-lot"]);
+  const selectionNames = localized(raw["selection-criterion-name-lot"]);
+  const selectionDescriptions = localized(raw["selection-criterion-description-lot"]);
+  const requirementStages = strings(raw["requirement-stage-lot"]);
+  const structuredRequirements: Requirement[] = [];
+  const structuredRequirementEvidence: Evidence[] = [];
+  const selectionCount = Math.max(selectionCodes.length, selectionNames.length, selectionDescriptions.length);
+  for (let index = 0; index < selectionCount; index += 1) {
+    const code = selectionCodes[index] ?? "selection-criterion";
+    const text = selectionDescriptions[index] ?? selectionNames[index] ?? code;
+    const selectedStage = stage(requirementStages[index]);
+    const lotId = lotIdFor(lotIds, selectionCount, index);
+    const evidenceRow = evidence(noticeId, lotId, `selection-${index + 1}`, text, urls.html);
+    structuredRequirementEvidence.push(evidenceRow);
+    structuredRequirements.push({
+      id: `${noticeId}:selection:${index + 1}`, lotId, category: requirementCategory(code, text), text,
+      mandatory: selectedStage !== "NOT_REQUIRED", stage: selectedStage, sourceField: "selection-criterion-lot",
+      evidenceId: evidenceRow.id, confidence: lotId ? 1 : 0.75, extractionStatus: "STRUCTURED",
+    });
+  }
+  const submissionLanguages = strings(raw["submission-language"]);
+  if (submissionLanguages.length) {
+    for (const lot of lots) {
+      const text = `Tender submission language must be one of: ${submissionLanguages.join(", ")}.`;
+      const evidenceRow = evidence(noticeId, lot.id, "submission-language", text, urls.html);
+      structuredRequirementEvidence.push(evidenceRow);
+      structuredRequirements.push({ id: `${noticeId}:${lot.id}:submission-language`, lotId: lot.id, category: "language", text, mandatory: true, operator: "one_of", value: submissionLanguages, stage: "TENDER", sourceField: "submission-language", evidenceId: evidenceRow.id, confidence: 1, extractionStatus: "STRUCTURED" });
+    }
+  }
   const criterionNames = localized(raw["award-criterion-name-lot"]);
   const criterionTypes = strings(raw["award-criterion-type-lot"]);
   const criterionDescriptions = localized(raw["award-criterion-description-lot"]);
-  const criteriaEvidence = criterionNames.map((name, index) => evidence(noticeId, lotIds[index], `award-${index + 1}`, `${name}: ${criterionDescriptions[index] ?? ""}`, urls.html));
+  const criterionNumbers = strings(raw["BT-541-Lot"]);
+  const criterionWeightTypes = strings(raw["award-criterion-number-weight-lot"]);
+  const criteriaEvidence = criterionNames.map((name, index) => evidence(noticeId, lotIdFor(lotIds, criterionNames.length, index), `award-${index + 1}`, `${name}: ${criterionDescriptions[index] ?? ""}`, urls.html));
   const awardCriteria = criterionNames.map((name, index): AwardCriterion => ({
-    id: `${noticeId}:award:${index + 1}`, lotId: lotIds[index], name,
-    type: criterionTypes[index] ?? "other", weight: null,
+    id: `${noticeId}:award:${index + 1}`, lotId: lotIdFor(lotIds, criterionNames.length, index), name,
+    type: criterionTypes[index] ?? "other", weight: numberValue(criterionNumbers[index]), weightType: criterionWeightTypes[index] ?? null,
     description: criterionDescriptions[index] ?? "", evidenceId: criteriaEvidence[index].id,
   }));
   const description = lots.map((lot) => lot.description).join(" ").slice(0, 12_000);
@@ -262,16 +364,19 @@ export function normalizeTedNotice(raw: Record<string, unknown>, now = new Date(
     currency: scalar(raw["estimated-value-cur-proc"]) || currencies[0] || null, cpvCodes: [...new Set(cpvs)],
     placeOfPerformance: [...new Set(places)], noticeUrl: urls.html, xmlUrl: urls.xml,
     source: "TED Search API v3", discoveredAt: now, updatedAt: now,
-    version: Number(raw["notice-version"] ?? 1), lots, requirements: extracted.requirements,
-    awardCriteria, evidence: [...extracted.evidence, ...criteriaEvidence],
+    version: Number(raw["notice-version"] ?? 1), lots, requirements: [...structuredRequirements, ...extracted.requirements],
+    awardCriteria, securityFindings: extracted.securityFindings, evidence: [...structuredRequirementEvidence, ...extracted.evidence, ...criteriaEvidence],
   };
 }
 
 export function assessTender(notice: ProcurementNotice, profile: SupplierProfile): BidAssessment {
-  const checks = notice.requirements.map((requirement): RequirementCheck => {
+  const assessRequirement = (requirement: Requirement, lotId: string): RequirementCheck => {
     let outcome: RequirementCheck["outcome"] = "UNKNOWN";
     let reason = "The requirement is not structured enough for a deterministic comparison.";
-    if (requirement.category === "turnover" && typeof requirement.value === "number") {
+    if (requirement.stage === "NOT_REQUIRED") {
+      outcome = "NOT_APPLICABLE";
+      reason = "TED marks this information as not required at this stage.";
+    } else if (requirement.category === "turnover" && typeof requirement.value === "number") {
       outcome = profile.annualTurnover === null ? "UNKNOWN" : profile.annualTurnover >= requirement.value ? "PASS" : "FAIL";
       reason = profile.annualTurnover === null ? "Supplier turnover is unknown." : `${profile.annualTurnover.toLocaleString()} EUR ${outcome === "PASS" ? "meets" : "is below"} ${requirement.value.toLocaleString()} EUR.`;
     } else if (requirement.category === "references" && typeof requirement.value === "number") {
@@ -280,22 +385,55 @@ export function assessTender(notice: ProcurementNotice, profile: SupplierProfile
     } else if (requirement.category === "certification" && typeof requirement.value === "string") {
       outcome = profile.certifications.some((item) => item.toLowerCase() === String(requirement.value).toLowerCase()) ? "PASS" : "FAIL";
       reason = outcome === "PASS" ? `${requirement.value} is present.` : `${requirement.value} is missing.`;
-    } else if (requirement.category === "language" && typeof requirement.value === "string") {
-      outcome = profile.languages.some((item) => item.toLowerCase() === String(requirement.value).toLowerCase()) ? "PASS" : "FAIL";
-      reason = outcome === "PASS" ? `${requirement.value} is covered.` : `${requirement.value} is not covered.`;
+    } else if (requirement.category === "language" && (typeof requirement.value === "string" || Array.isArray(requirement.value))) {
+      const accepted = (Array.isArray(requirement.value) ? requirement.value : [requirement.value]).map((item) => item.toLowerCase());
+      const languageCodes: Record<string, string> = { english: "eng", finnish: "fin", swedish: "swe", french: "fra", german: "deu" };
+      const supplied = profile.languages.flatMap((item) => [item.toLowerCase(), languageCodes[item.toLowerCase()] ?? item.toLowerCase()]);
+      outcome = supplied.some((item) => accepted.includes(item)) ? "PASS" : "FAIL";
+      reason = outcome === "PASS" ? `Supplier covers an accepted language (${accepted.join(", ")}).` : `Supplier does not cover any accepted language (${accepted.join(", ")}).`;
     }
-    return { requirementId: requirement.id, outcome, reason, evidenceId: requirement.evidenceId };
+    return { requirementId: requirement.id, lotId, mandatory: requirement.mandatory, outcome, reason, evidenceId: requirement.evidenceId };
+  };
+
+  const lotAssessments: LotAssessment[] = notice.lots.map((lot) => {
+    const requirements = notice.requirements.filter((item) => item.lotId === lot.id || item.lotId === undefined);
+    const checks = requirements.map((requirement) => assessRequirement(requirement, lot.id));
+    const blockingRequirements = checks.filter((check) => check.mandatory && check.outcome === "FAIL");
+    const uncertainRequirements = checks.filter((check) => check.mandatory && check.outcome === "UNKNOWN");
+    const satisfiedRequirements = checks.filter((check) => check.outcome === "PASS");
+    const mandatoryChecks = checks.filter((check) => check.mandatory && check.outcome !== "NOT_APPLICABLE");
+    const status: DecisionStatus = blockingRequirements.length ? "NO_BID" : !mandatoryChecks.length ? "INSUFFICIENT_EVIDENCE" : uncertainRequirements.length ? "REVIEW" : "BID";
+
+    const text = `${lot.title} ${lot.description}`.toLowerCase();
+    const matched = profile.capabilities.filter((capability) => (CAPABILITY_TERMS[capability] ?? [capability.toLowerCase()]).some((term) => text.includes(term)));
+    const capabilityScore = Math.min(50, matched.length * 10);
+    const geographyScore = lot.placeOfPerformance.some((country) => profile.countriesServed.includes(country)) ? 20 : 0;
+    const valueScore = lot.value !== null && (profile.minContractValue ?? 0) <= lot.value && (profile.maxContractValue ?? Infinity) >= lot.value ? 20 : 0;
+    const deadlineScore = lot.deadline && new Date(lot.deadline).valueOf() >= Date.now() ? 10 : 0;
+    const components: FitComponent[] = [
+      { name: "capability", score: capabilityScore, maximum: 50, evidence: matched.length ? `Matched: ${matched.join(", ")}.` : "No declared capability matched the lot text." },
+      { name: "geography", score: geographyScore, maximum: 20, evidence: geographyScore ? "Exact place-of-performance country is covered." : "No exact country match; EU/EEA alone is not treated as evidence." },
+      { name: "contract_value", score: valueScore, maximum: 20, evidence: lot.value === null ? "Lot value is missing; no positive score awarded." : valueScore ? "Lot value is inside the supplier range." : "Lot value is outside the supplier range." },
+      { name: "deadline", score: deadlineScore, maximum: 10, evidence: lot.deadline ? (deadlineScore ? "Lot deadline is still open." : "Lot deadline has passed.") : "Lot deadline is missing; no positive score awarded." },
+    ];
+    const score = components.reduce((sum, component) => sum + component.score, 0);
+    const label = score >= 70 ? "HIGH" : score >= 40 ? "MEDIUM" : "LOW";
+    return { lotId: lot.id, status, heuristicFit: { score, label, components }, checks, blockingRequirements, satisfiedRequirements, uncertainRequirements };
   });
-  const text = `${notice.title} ${notice.description}`.toLowerCase();
-  const matched = profile.capabilities.filter((capability) => (CAPABILITY_TERMS[capability] ?? [capability.toLowerCase()]).some((term) => text.includes(term))).length;
-  const capabilityScore = Math.round(70 * matched / Math.max(1, profile.capabilities.length));
-  const geographyScore = profile.countriesServed.some((country) => country === notice.buyerCountry || ["EU", "EEA"].includes(country)) ? 15 : 0;
-  const valueScore = notice.estimatedValue === null || ((profile.minContractValue ?? 0) <= notice.estimatedValue && (profile.maxContractValue ?? Infinity) >= notice.estimatedValue) ? 15 : 0;
-  const blockingRequirements = checks.filter((check) => check.outcome === "FAIL");
-  const uncertainRequirements = checks.filter((check) => check.outcome === "UNKNOWN");
+
+  const summary = {
+    eligibleLots: lotAssessments.filter((item) => item.status === "BID").map((item) => item.lotId),
+    blockedLots: lotAssessments.filter((item) => item.status === "NO_BID").map((item) => item.lotId),
+    reviewLots: lotAssessments.filter((item) => item.status === "REVIEW").map((item) => item.lotId),
+    insufficientEvidenceLots: lotAssessments.filter((item) => item.status === "INSUFFICIENT_EVIDENCE").map((item) => item.lotId),
+  };
+  const status: DecisionStatus = summary.eligibleLots.length ? "BID" : summary.reviewLots.length ? "REVIEW" : summary.insufficientEvidenceLots.length ? "INSUFFICIENT_EVIDENCE" : "NO_BID";
+  const strategicFit = Math.max(0, ...lotAssessments.map((item) => item.heuristicFit.score));
+  const checks = lotAssessments.flatMap((item) => item.checks);
+  const blockingRequirements = lotAssessments.flatMap((item) => item.blockingRequirements);
+  const uncertainRequirements = lotAssessments.flatMap((item) => item.uncertainRequirements);
   const satisfiedRequirements = checks.filter((check) => check.outcome === "PASS");
-  const status: DecisionStatus = blockingRequirements.length ? "NO_BID" : !checks.length ? "INSUFFICIENT_EVIDENCE" : uncertainRequirements.length ? "REVIEW" : "BID";
-  return { status, strategicFit: capabilityScore + geographyScore + valueScore, checks, blockingRequirements, satisfiedRequirements, uncertainRequirements, assessedAt: new Date().toISOString(), supplierProfileVersion: profile.version };
+  return { status, strategicFit, heuristicFitLabel: strategicFit >= 70 ? "HIGH" : strategicFit >= 40 ? "MEDIUM" : "LOW", lotAssessments, summary, checks, blockingRequirements, satisfiedRequirements, uncertainRequirements, assessedAt: new Date().toISOString(), supplierProfileVersion: profile.version };
 }
 
 function quoted(value: string): string { return `\"${value.replaceAll("\"", "")}\"`; }
@@ -321,15 +459,17 @@ export const TED_FIELDS = [
   "place-of-performance-country-lot", "procedure-type", "notice-type", "form-type", "identifier-lot", "title-lot",
   "description-lot", "estimated-value-lot", "estimated-value-cur-lot", "selection-criterion-name-lot",
   "selection-criterion-description-lot", "selection-criterion-lot", "requirement-stage-lot", "award-criterion-name-lot",
-  "award-criterion-type-lot", "award-criterion-number-weight-lot", "award-criterion-description-lot", "change-reason-code",
+  "award-criterion-type-lot", "award-criterion-number-weight-lot", "award-criterion-description-lot", "BT-541-Lot", "submission-language", "change-reason-code",
   "change-description", "change-reason-description", "change-notice-version-identifier", "BT-13716-notice", "links",
 ] as const;
 
 export function applyClientFilters(notices: ProcurementNotice[], filters: TenderSearchFilters): ProcurementNotice[] {
   return notices.filter((notice) => {
-    if (filters.minValue !== undefined && (notice.estimatedValue === null || notice.estimatedValue < filters.minValue)) return false;
-    if (filters.maxValue !== undefined && (notice.estimatedValue === null || notice.estimatedValue > filters.maxValue)) return false;
-    if (filters.deadlineFrom && notice.submissionDeadline && notice.submissionDeadline.slice(0, 10) < filters.deadlineFrom) return false;
-    return true;
+    return notice.lots.some((lot) => {
+      if (filters.minValue !== undefined && (lot.value === null || lot.value < filters.minValue)) return false;
+      if (filters.maxValue !== undefined && (lot.value === null || lot.value > filters.maxValue)) return false;
+      if (filters.deadlineFrom && (!lot.deadline || lot.deadline.slice(0, 10) < filters.deadlineFrom)) return false;
+      return true;
+    });
   });
 }

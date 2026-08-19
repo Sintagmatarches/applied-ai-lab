@@ -1,0 +1,67 @@
+{
+  "measured_at": "2026-08-19T15:00:18.579078+00:00",
+  "method": "Single-process CPython exact cosine scan; deterministic 768-d float32 vectors; no embedding/network time.",
+  "scan": [
+    {
+      "candidate_count": 1000,
+      "dimensions": 768,
+      "scan_ms": 176.567,
+      "candidates_per_second": 5663.6,
+      "packed_vector_memory_mb": 3.07,
+      "best_score_guard": 0.736673
+    },
+    {
+      "candidate_count": 5000,
+      "dimensions": 768,
+      "scan_ms": 908.736,
+      "candidates_per_second": 5502.1,
+      "packed_vector_memory_mb": 15.36,
+      "best_score_guard": 0.736673
+    },
+    {
+      "candidate_count": 10000,
+      "dimensions": 768,
+      "scan_ms": 1680.396,
+      "candidates_per_second": 5951.0,
+      "packed_vector_memory_mb": 30.72,
+      "best_score_guard": 0.736673
+    }
+  ],
+  "weight_ablation": [
+    {
+      "vector_weight": 1.0,
+      "lexical_weight": 0.0,
+      "mrr": 1.0
+    },
+    {
+      "vector_weight": 0.75,
+      "lexical_weight": 0.25,
+      "mrr": 1.0
+    },
+    {
+      "vector_weight": 0.5,
+      "lexical_weight": 0.5,
+      "mrr": 1.0
+    },
+    {
+      "vector_weight": 0.25,
+      "lexical_weight": 0.75,
+      "mrr": 1.0
+    },
+    {
+      "vector_weight": 0.0,
+      "lexical_weight": 1.0,
+      "mrr": 1.0
+    }
+  ],
+  "selected_weights": {
+    "vector": 0.5,
+    "lexical": 0.5
+  },
+  "selection_reason": "All blends tie on the two-query recorded set, so a neutral blend is safer than claiming unsupported tuning.",
+  "scale_boundary": "Exact scan is deliberately capped at 10,000 candidates. Add a local ANN index and a larger judged query set before increasing the cap.",
+  "limitations": [
+    "Microbenchmark CPU and storage overhead vary by host.",
+    "The recorded dataset is too small to estimate general retrieval quality."
+  ]
+}

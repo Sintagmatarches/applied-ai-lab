@@ -13,13 +13,16 @@ from .assessment import assess
 from .domain import SupplierProfile, normalize_text
 from .versioning import structured_diff
 
+NORMALIZED_SCHEMA_VERSION = 2
+EXTRACTION_VERSION = 2
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
 def source_hash(notice: dict[str, Any]) -> str:
-    material = {key: notice.get(key) for key in ("title", "description", "buyer", "submission_deadline", "estimated_value", "currency", "cpv_codes", "place_of_performance", "lots", "requirements", "award_criteria")}
+    material = {key: notice.get(key) for key in ("notice_id", "publication_id", "source_version", "title", "description", "buyer", "submission_deadline", "estimated_value", "currency", "cpv_codes", "place_of_performance", "lots")}
     return hashlib.sha256(json.dumps(material, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -57,6 +60,10 @@ class TenderKnowledgeBase:
                     title TEXT, description TEXT, cpv_codes_json TEXT, value REAL, currency TEXT, place_json TEXT,
                     deadline TEXT, duration TEXT, status TEXT, PRIMARY KEY(notice_id, lot_id)
                 );
+                CREATE TABLE IF NOT EXISTS notice_cpv (
+                    notice_id TEXT NOT NULL REFERENCES notices(notice_id) ON DELETE CASCADE,
+                    cpv_code TEXT NOT NULL, PRIMARY KEY(notice_id, cpv_code)
+                );
                 CREATE TABLE IF NOT EXISTS requirements (
                     requirement_id TEXT PRIMARY KEY, notice_id TEXT NOT NULL REFERENCES notices(notice_id) ON DELETE CASCADE,
                     lot_id TEXT, category TEXT, text TEXT NOT NULL, requirement_type TEXT, mandatory INTEGER NOT NULL,
@@ -66,6 +73,14 @@ class TenderKnowledgeBase:
                 CREATE TABLE IF NOT EXISTS award_criteria (
                     criterion_id TEXT PRIMARY KEY, notice_id TEXT NOT NULL REFERENCES notices(notice_id) ON DELETE CASCADE,
                     lot_id TEXT, name TEXT, type TEXT, weight REAL, description TEXT, evidence_id TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS security_findings (
+                    finding_id TEXT PRIMARY KEY, notice_id TEXT NOT NULL REFERENCES notices(notice_id) ON DELETE CASCADE,
+                    lot_id TEXT, type TEXT NOT NULL, severity TEXT NOT NULL, excerpt TEXT, evidence_id TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS notice_schema_metadata (
+                    notice_id TEXT PRIMARY KEY REFERENCES notices(notice_id) ON DELETE CASCADE,
+                    ingestion_revision INTEGER NOT NULL, normalized_schema_version INTEGER NOT NULL, extraction_version INTEGER NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS evidence (
                     evidence_id TEXT PRIMARY KEY, notice_id TEXT NOT NULL REFERENCES notices(notice_id) ON DELETE CASCADE,
@@ -94,13 +109,14 @@ class TenderKnowledgeBase:
                     evidence_id TEXT PRIMARY KEY, notice_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL,
                     model TEXT, dimensions INTEGER, vector_json TEXT, updated_at TEXT
                 );
-                CREATE TABLE IF NOT EXISTS ingestion_state (
-                    source TEXT NOT NULL, query_hash TEXT NOT NULL, iteration_token TEXT, last_publication_date TEXT,
-                    updated_at TEXT NOT NULL, stats_json TEXT NOT NULL, PRIMARY KEY(source, query_hash)
+                CREATE TABLE IF NOT EXISTS watchlist (
+                    notice_id TEXT PRIMARY KEY REFERENCES notices(notice_id) ON DELETE CASCADE,
+                    profile_id TEXT NOT NULL, added_at TEXT NOT NULL, last_checked_at TEXT
                 );
                 CREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(evidence_id UNINDEXED, notice_id UNINDEXED, title, buyer, text);
                 CREATE INDEX IF NOT EXISTS notices_country_idx ON notices(buyer_country);
                 CREATE INDEX IF NOT EXISTS notices_deadline_idx ON notices(submission_deadline);
+                CREATE INDEX IF NOT EXISTS notice_cpv_code_idx ON notice_cpv(cpv_code, notice_id);
                 CREATE INDEX IF NOT EXISTS changes_notice_idx ON change_events(notice_id, detected_at);
             """)
 
@@ -109,7 +125,7 @@ class TenderKnowledgeBase:
             connection.execute("INSERT OR REPLACE INTO supplier_profiles VALUES (?, ?, ?, ?, ?)", (profile.profile_id, profile.version, profile.company_name, json.dumps(profile.public(), ensure_ascii=False), utc_now()))
 
     def ingest(self, notices: list[dict[str, Any]], profile: SupplierProfile | None = None) -> dict[str, Any]:
-        stats = {"fetched": len(notices), "new": 0, "updated": 0, "unchanged": 0, "changes": 0, "reassessments": 0, "failures": 0}
+        stats = {"fetched": len(notices), "new": 0, "updated": 0, "unchanged": 0, "changes": 0, "reassessments": 0, "failures": 0, "failure_details": []}
         if profile: self.save_profile(profile)
         for notice in notices:
             try:
@@ -117,8 +133,9 @@ class TenderKnowledgeBase:
                 stats[result["state"]] += 1
                 stats["changes"] += result["changes"]
                 stats["reassessments"] += result["reassessed"]
-            except (KeyError, TypeError, ValueError, sqlite3.Error):
+            except (KeyError, TypeError, ValueError, sqlite3.Error) as error:
                 stats["failures"] += 1
+                stats["failure_details"].append({"notice_id": str(notice.get("notice_id", "unknown")), "category": type(error).__name__, "message": str(error)[:300]})
         return stats
 
     def _ingest_one(self, notice: dict[str, Any], profile: SupplierProfile | None) -> dict[str, Any]:
@@ -130,7 +147,7 @@ class TenderKnowledgeBase:
                 connection.execute("UPDATE notices SET last_seen=? WHERE notice_id=?", (now, notice_id))
                 return {"state": "unchanged", "changes": 0, "reassessed": 0}
             version = int(previous_version["version"] + 1) if previous_version else 1
-            snapshot = {**notice, "version": version}
+            snapshot = {**notice, "ingestion_revision": version}
             changes = structured_diff(json.loads(previous_version["snapshot_json"]), snapshot) if previous_version else []
             connection.execute("""
                 INSERT INTO notices VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -146,9 +163,13 @@ class TenderKnowledgeBase:
                 notice.get("description", ""), notice.get("buyer", ""), notice.get("buyer_country", ""), notice.get("procedure_type", ""),
                 notice.get("publication_date"), notice.get("submission_deadline"), notice.get("estimated_value"), notice.get("currency"),
                 json.dumps(notice.get("cpv_codes", [])), json.dumps(notice.get("place_of_performance", [])), notice.get("notice_url", ""), notice.get("xml_url"),
-                notice.get("source", "TED Search API v3"), notice.get("discovered_at", now) if not previous_row else self._first_seen(connection, notice_id), now, version, digest, normalize_text(notice),
+                notice.get("source", "TED Search API v3"), notice.get("discovered_at", now) if not previous_row else self._first_seen(connection, notice_id), now, int(notice.get("source_version", 1)), digest, normalize_text(notice),
             ))
-            for table in ("lots", "requirements", "award_criteria", "evidence"):
+            connection.execute("INSERT OR REPLACE INTO notice_schema_metadata VALUES (?,?,?,?)", (notice_id, version, NORMALIZED_SCHEMA_VERSION, EXTRACTION_VERSION))
+            connection.execute("DELETE FROM notice_cpv WHERE notice_id=?", (notice_id,))
+            connection.executemany("INSERT INTO notice_cpv VALUES (?,?)", [(notice_id, str(code)) for code in dict.fromkeys(notice.get("cpv_codes", []))])
+            connection.execute("DELETE FROM embeddings WHERE notice_id=?", (notice_id,))
+            for table in ("lots", "requirements", "award_criteria", "security_findings", "evidence"):
                 connection.execute(f"DELETE FROM {table} WHERE notice_id=?", (notice_id,))
             for lot in notice.get("lots", []):
                 connection.execute("INSERT INTO lots VALUES (?,?,?,?,?,?,?,?,?,?,?)", (lot["lot_id"], notice_id, lot.get("title"), lot.get("description"), json.dumps(lot.get("cpv_codes", [])), lot.get("value"), lot.get("currency"), json.dumps(lot.get("place_of_performance", [])), lot.get("deadline"), lot.get("duration"), lot.get("status")))
@@ -156,6 +177,8 @@ class TenderKnowledgeBase:
                 connection.execute("INSERT INTO requirements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (requirement["requirement_id"], notice_id, requirement.get("lot_id"), requirement.get("category"), requirement.get("text"), requirement.get("requirement_type"), int(bool(requirement.get("mandatory"))), requirement.get("operator"), json.dumps(requirement.get("structured_value")), requirement.get("unit"), requirement["evidence_id"], requirement.get("confidence"), requirement.get("extraction_status")))
             for criterion in notice.get("award_criteria", []):
                 connection.execute("INSERT INTO award_criteria VALUES (?,?,?,?,?,?,?,?)", (criterion["criterion_id"], notice_id, criterion.get("lot_id"), criterion.get("name"), criterion.get("type"), criterion.get("weight"), criterion.get("description"), criterion["evidence_id"]))
+            for finding in notice.get("security_findings", []):
+                connection.execute("INSERT INTO security_findings VALUES (?,?,?,?,?,?,?)", (finding["finding_id"], notice_id, finding.get("lot_id"), finding.get("type"), finding.get("severity"), finding.get("excerpt"), finding["evidence_id"]))
             for item in notice.get("evidence", []):
                 connection.execute("INSERT INTO evidence VALUES (?,?,?,?,?,?,?)", (item["evidence_id"], notice_id, item.get("lot_id"), item.get("field"), item.get("excerpt"), item.get("source_url"), item.get("source", "TED")))
             connection.execute("INSERT INTO notice_versions VALUES (?,?,?,?,?)", (notice_id, version, now, digest, json.dumps(snapshot, ensure_ascii=False)))
@@ -188,6 +211,7 @@ class TenderKnowledgeBase:
             for item in requirements: item["structured_value"] = json.loads(item.pop("structured_value_json")); item["mandatory"] = bool(item["mandatory"])
             result["requirements"] = requirements
             result["award_criteria"] = [dict(item) for item in connection.execute("SELECT * FROM award_criteria WHERE notice_id=?", (notice_id,))]
+            result["security_findings"] = [dict(item) for item in connection.execute("SELECT * FROM security_findings WHERE notice_id=?", (notice_id,))]
             result["evidence"] = [dict(item) for item in connection.execute("SELECT * FROM evidence WHERE notice_id=?", (notice_id,))]
             return result
 
@@ -197,7 +221,9 @@ class TenderKnowledgeBase:
             normalized_country = {"FINLAND": "FIN", "SUOMI": "FIN"}.get(country.upper(), country.upper())
             clauses.append("buyer_country=?"); values.append(normalized_country)
         if buyer: clauses.append("lower(buyer) LIKE ?"); values.append(f"%{buyer.lower()}%")
-        if cpv: clauses.append("cpv_codes_json LIKE ?"); values.append(f"%{cpv}%")
+        if cpv:
+            clauses.append("EXISTS (SELECT 1 FROM notice_cpv c WHERE c.notice_id=notices.notice_id AND c.cpv_code LIKE ?)")
+            values.append(f"{cpv.rstrip('*')}%")
         where = " WHERE " + " AND ".join(clauses) if clauses else ""
         with self.connection() as connection:
             ids = [row["notice_id"] for row in connection.execute(f"SELECT notice_id FROM notices{where} ORDER BY last_seen DESC LIMIT ?", (*values, limit))]
@@ -240,6 +266,20 @@ class TenderKnowledgeBase:
             row = connection.execute("SELECT * FROM assessments WHERE notice_id=? ORDER BY assessment_id DESC LIMIT 1", (notice_id,)).fetchone()
         return {**dict(row), "assessment": json.loads(row["assessment_json"])} if row else None
 
+    def watch(self, notice_id: str, profile_id: str) -> None:
+        with self.connection() as connection:
+            if not connection.execute("SELECT 1 FROM notices WHERE notice_id=?", (notice_id,)).fetchone():
+                raise ValueError("notice must be ingested before it can be watched")
+            connection.execute("INSERT INTO watchlist(notice_id,profile_id,added_at,last_checked_at) VALUES (?,?,?,NULL) ON CONFLICT(notice_id) DO UPDATE SET profile_id=excluded.profile_id", (notice_id, profile_id, utc_now()))
+
+    def watched(self) -> list[dict[str, Any]]:
+        with self.connection() as connection:
+            return [dict(row) for row in connection.execute("SELECT w.*,n.publication_id FROM watchlist w JOIN notices n USING(notice_id) ORDER BY added_at")]
+
+    def mark_watched_checked(self, notice_id: str) -> None:
+        with self.connection() as connection:
+            connection.execute("UPDATE watchlist SET last_checked_at=? WHERE notice_id=?", (utc_now(), notice_id))
+
     def stats(self) -> dict[str, Any]:
         with self.connection() as connection:
-            return {table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in ("notices", "lots", "requirements", "award_criteria", "evidence", "notice_versions", "change_events", "supplier_profiles", "assessments", "embeddings")}
+            return {table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in ("notices", "lots", "requirements", "award_criteria", "security_findings", "evidence", "notice_versions", "change_events", "supplier_profiles", "assessments", "embeddings", "watchlist")}

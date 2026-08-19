@@ -1,56 +1,49 @@
 # EU Tender Intelligence architecture
 
-## Migration audit
+## System boundary
 
-The migration kept generic infrastructure and replaced the product domain. Git history preserves the prior implementation; the active tree contains one procurement system, not two parallel agents.
-
-| Reused and generalized | Removed or rewritten |
-| --- | --- |
-| Ollama HTTP adapter and environment model selection | Arbeitnow and Jobicy acquisition |
-| Local embeddings and cosine retrieval | Vacancy, candidate and location models |
-| SQLite, FTS5 and hybrid lexical/vector retrieval | 35/45/20 candidate matching |
-| Validated tool-calling loop and JSON Schema output | Job ranking, saving, comparison and gap tools |
-| Claim-level grounding and deterministic citation resolver | Job fixtures, evals, documentation and artifacts |
-| Privacy-minimized traces and evaluation runner | Job routes, UI, APIs and production claims |
-| Defensive treatment of source text as untrusted data | Vacancy-specific prompts and terminology |
-
-## End-to-end design
+The product implements `DISCOVER → QUALIFY PER LOT → WATCH → DETECT CHANGE → REASSESS → GROUNDED AI ANALYSIS` without treating a procurement notice as a single indivisible opportunity.
 
 ```mermaid
 flowchart LR
-  T["Official TED Search API v3"] --> N["Notice + lot normalization"]
-  N --> X["Official eForms XML enrichment"]
-  X --> E["Structured requirement and award extraction"]
-  E --> K["Procurement SQLite + FTS5"]
-  P["Versioned supplier profile"] --> D["Deterministic eligibility"]
+  TED[Official TED Search API v3] --> N[Notice and lot normalization]
+  N --> X[Bounded eForms XML enrichment]
+  X --> K[SQLite + FTS5 knowledge base]
+  P[Trusted supplier profile] --> D[Deterministic lot eligibility]
   K --> D
-  D --> B["BID / REVIEW / NO_BID / INSUFFICIENT_EVIDENCE"]
-  K --> R["Nomic embeddings + hybrid retrieval"]
-  R --> A["Qwen validated procurement tools"]
-  A --> G["Claim-level evidence gate"]
-  K --> V["Source hash + structured version diff"]
-  V --> C["Material change events"]
+  D --> S[Notice summary by lot]
+  K --> W[Persistent watchlist]
+  W --> C[Source hash + field diff]
   C --> D
+  K --> R[50/50 hybrid retrieval]
+  R --> A[Bounded local Qwen tool loop]
+  A --> G[Schema + citation + fact gate]
 ```
 
-The current anonymous interface is `POST https://api.ted.europa.eu/v3/notices/search`. Page-number mode is supported for bounded navigation and iteration-token mode for incremental batches. Queries support keyword, CPV, buyer/place country, publication period and procedure filters; value and deadline ranges are applied after normalization because the public field representation is not uniform across notice generations.
+The public site calls anonymous `POST https://api.ted.europa.eu/v3/notices/search`. It provides live search, post-normalization lot filters, deterministic qualification and a device-local watchlist with explicit recheck. It does not run Ollama, retain server-side watch state or claim background monitoring.
 
-## Procurement knowledge base
+The local FastAPI runtime adds official XML enrichment, persistence, source-version history, embeddings, the multi-step agent and a persistent watch CLI. Azure Terraform describes an optional private, scale-to-zero API deployment; it is deployment-ready but not claimed as deployed.
 
-`TenderKnowledgeBase` owns normalized `notices`, `lots`, `requirements`, `award_criteria`, `evidence`, `notice_versions`, `change_events`, `supplier_profiles`, `assessments`, `embeddings` and `ingestion_state`. `first_seen`, `last_seen`, source version and a SHA-256 material snapshot make unchanged ingestion idempotent. A changed hash creates a new immutable snapshot, structured field diffs, materiality labels and a new assessment for the active profile.
+## Canonical procurement semantics
 
-Evidence is the retrieval grain. Notice summaries, lots, extracted requirements, award criteria and XML document excerpts receive stable evidence IDs. FTS5 and local embeddings are blended 28/72, then filtered by country, CPV, buyer, value or deadline metadata.
+Structured TED/eForms selection criteria, requirement stages, submission languages and award weight/value fields are primary. Prose regex is a conservative fallback. XML records are assigned using their real `ProcurementProjectLot` identifiers; whole-document text is never appended to the first lot. TS/Python parity fixtures compare lot IDs, values, currencies, deadlines, requirements, award criteria and the resulting decision summary.
 
-## Decision boundary
+Each lot receives requirement checks with `PASS`, `FAIL`, `UNKNOWN` or `NOT_APPLICABLE`. Only `mandatory && FAIL` blocks. A mandatory unknown yields review; optional failures and unknowns are visible but do not change eligibility. If no applicable mandatory evidence exists, the lot is `INSUFFICIENT_EVIDENCE`. A notice is actionable when at least one lot is eligible and separately lists blocked, review and insufficient-evidence lots.
 
-The LLM can route tools and help interpret natural language. It cannot alter numeric or categorical eligibility outcomes. Structured turnover, reference-count, certification and language conditions are compared in deterministic code. A mandatory failure always produces `NO_BID`, even with high strategic fit. Unstructured conditions produce `REVIEW`; absence of eligibility evidence produces `INSUFFICIENT_EVIDENCE`.
+The heuristic fit exposes capability, geography, value and deadline components. Missing evidence contributes zero, generic EU/EEA does not imply a geographic match, and adding a matching capability cannot lower the score. It is a ranking aid, not a calibrated win probability.
 
-The included European Data / AI Consultancy is an editable fictional demo profile. It is versioned data, not hardcoded business logic and not a claim about the repository owner or visitor.
+## Agent and trust boundary
 
-## Security and grounding
+The model may select an allowlisted tool and notice ID, observe a bounded result and request another tool until step/tool/time limits are reached. It cannot send turnover, certifications, references, languages, countries, capabilities, contract limits, profile ID or profile version to assessment tools. Trusted `SupplierProfile` data is injected by runtime code.
 
-Procurement content is wrapped conceptually as untrusted evidence. Phrases that resemble instructions are quarantined as security evidence and never enter the agent instruction channel. Tool names and arguments are allowlisted and schema-validated. The model returns evidence IDs, never URLs. The deterministic resolver rejects unknown IDs, checks lexical support, removes unsupported claims and maps accepted IDs to stored TED URLs.
+The final model payload must satisfy the complete answer schema. Citations must exist, claims must overlap the cited evidence, numbers must occur in evidence and decision words must come from deterministic assessment tools. Unsupported claims are removed. The result explicitly distinguishes model success, rejected output, empty claims, insufficient evidence, deterministic fallback and unavailable model.
 
-## Runtime boundary
+## Storage and change intelligence
 
-The Cloudflare site performs live anonymous TED search, normalization, lot mapping, evidence links and deterministic assessment. Ollama is deliberately loopback-only. Local ingestion additionally retrieves linked XML documents, persists SQLite history, creates embeddings, runs hybrid RAG and exposes the tool-calling agent through FastAPI.
+SQLite stores notices, lots, normalized CPV rows, requirements, award criteria, security findings, evidence, source snapshots, schema metadata, change events, supplier profiles, assessments, embeddings and watch state. The unused ingestion-state placeholder was removed rather than presented as resumability. The canonical source fingerprint excludes extractor-derived requirements. TED/source version, internal ingestion revision, normalized schema version and extraction version are separate fields. Evidence updates invalidate stale embeddings.
+
+Ingestion is transactional and idempotent. Failures retain stage/category/message details. A changed source fingerprint creates an immutable snapshot and field diff, then reassesses all lots. Latest-only live verification does not claim a real amendment pair when one was not observed.
+
+## Retrieval scale boundary
+
+Retrieval combines FTS5 and exact cosine with a neutral 50/50 blend. The committed two-query real-notice ablation cannot distinguish tested blends, so it does not justify a tuned constant. Exact scan is capped at 10,000 candidates; the committed benchmark measures the boundary and requires a local ANN index plus a larger judged set before it is raised.

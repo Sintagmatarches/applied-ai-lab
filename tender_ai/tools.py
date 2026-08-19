@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from .assessment import assess
-from .domain import SupplierProfile
+from .domain import DEMO_PROFILE, SupplierProfile
 from .retrieval import HybridRetriever
 from .storage import TenderKnowledgeBase
 from .versioning import structured_diff
@@ -24,8 +24,8 @@ def _schema(properties: dict[str, Any], required: list[str] | None=None) -> dict
 
 
 class ToolRegistry:
-    def __init__(self, storage: TenderKnowledgeBase, retriever: HybridRetriever):
-        self.storage, self.retriever=storage,retriever
+    def __init__(self, storage: TenderKnowledgeBase, retriever: HybridRetriever, trusted_profile: SupplierProfile = DEMO_PROFILE):
+        self.storage, self.retriever, self.trusted_profile=storage,retriever,trusted_profile
         text={"type":"string","maxLength":300}; ids={"type":"array","items":{"type":"string"},"maxItems":10}
         self.definitions={
             "search_tenders": ("Search persisted procurement notices.", _schema({"country":text,"buyer":text,"cpv":text,"limit":{"type":"integer","minimum":1,"maximum":50}})),
@@ -34,10 +34,10 @@ class ToolRegistry:
             "get_lots": ("Get lots for a stored notice.",_schema({"notice_id":text},["notice_id"])),
             "get_requirements": ("Get structured requirements and evidence.",_schema({"notice_id":text},["notice_id"])),
             "get_award_criteria": ("Get award criteria and evidence.",_schema({"notice_id":text},["notice_id"])),
-            "assess_supplier_fit": ("Run deterministic eligibility and strategic fit.",_schema({"notice_id":text,"profile":{"type":"object"}},["notice_id","profile"])),
+            "assess_supplier_fit": ("Run deterministic lot-level eligibility using the trusted runtime supplier profile.",_schema({"notice_id":text},["notice_id"])),
             "explain_bid_decision": ("Return the persisted assessment evidence.",_schema({"notice_id":text},["notice_id"])),
             "compare_tenders": ("Compare two to ten notices.",_schema({"notice_ids":ids},["notice_ids"])),
-            "find_supplier_gaps": ("Find blocking or unknown requirements.",_schema({"notice_id":text,"profile":{"type":"object"}},["notice_id","profile"])),
+            "find_supplier_gaps": ("Find blocking or unknown requirements using the trusted runtime supplier profile.",_schema({"notice_id":text},["notice_id"])),
             "get_notice_changes": ("Get detected changes.",_schema({"notice_id":text},["notice_id"])),
             "compare_notice_versions": ("Diff two notice versions.",_schema({"notice_id":text,"from_version":{"type":"integer","minimum":1},"to_version":{"type":"integer","minimum":1}},["notice_id","from_version","to_version"])),
             "search_similar_tenders": ("Search semantically similar procurement evidence.",_schema({"query":text,"top_k":{"type":"integer","minimum":1,"maximum":20}},["query"])),
@@ -49,7 +49,9 @@ class ToolRegistry:
 
     def _validate_value(self,path:str,value:Any,schema:dict[str,Any])->None:
         expected=schema.get("type")
-        if expected=="string" and not isinstance(value,str): raise ToolValidationError(f"{path} must be a string")
+        if expected=="string":
+            if not isinstance(value,str): raise ToolValidationError(f"{path} must be a string")
+            if len(value)>schema.get("maxLength",len(value)): raise ToolValidationError(f"{path} is too long")
         if expected=="integer":
             if not isinstance(value,int) or isinstance(value,bool): raise ToolValidationError(f"{path} must be an integer")
             if value < schema.get("minimum",value) or value > schema.get("maximum",value): raise ToolValidationError(f"{path} is out of range")
@@ -66,10 +68,12 @@ class ToolRegistry:
             for key,item in value.items():
                 if key in properties: self._validate_value(f"{path}.{key}",item,properties[key])
 
-    def execute(self,name:str,arguments:Any)->ToolExecution:
+    def execute(self,name:str,arguments:Any,*,trusted_profile:SupplierProfile|None=None)->ToolExecution:
         if name not in self.definitions: raise ToolValidationError(f"unknown tool: {name}")
         self._validate_value("arguments",arguments,self.definitions[name][1])
         handler=getattr(self,f"_{name}")
+        if name in {"assess_supplier_fit", "find_supplier_gaps"}:
+            return handler(arguments, trusted_profile or self.trusted_profile)
         return handler(arguments)
 
     def _evidence(self,notice:dict[str,Any])->list[dict[str,Any]]:
@@ -90,17 +94,14 @@ class ToolRegistry:
         n=self.storage.get_notice(a["notice_id"]); return ToolExecution(name,a,{"notice":n} if n else {"error":"notice not found"},self._evidence(n) if n else [])
     def _field(self,name,a,field):
         n=self.storage.get_notice(a["notice_id"]); return ToolExecution(name,a,{field:n.get(field,[]) if n else []},self._evidence(n) if n else [])
-    @staticmethod
-    def _profile(value:dict[str,Any])->SupplierProfile:
-        return SupplierProfile(profile_id=str(value.get("profile_id","agent-profile")),version=int(value.get("version",1)),company_name=str(value.get("company_name","Supplier")),countries_served=list(value.get("countries_served",[])),capabilities=list(value.get("capabilities",[])),certifications=list(value.get("certifications",[])),annual_turnover=value.get("annual_turnover"),employee_capacity=value.get("employee_capacity"),references=list(value.get("references",[])),languages=list(value.get("languages",[])),min_contract_value=value.get("min_contract_value"),max_contract_value=value.get("max_contract_value"),geographic_constraints=list(value.get("geographic_constraints",[])))
-    def _assess_supplier_fit(self,a):
-        n=self.storage.get_notice(a["notice_id"]); result=assess(n,self._profile(a["profile"])) if n else {"error":"notice not found"}; return ToolExecution("assess_supplier_fit",a,result,[{**item,"_tool_evidence":result} for item in self._evidence(n)] if n else [])
+    def _assess_supplier_fit(self,a,profile:SupplierProfile):
+        n=self.storage.get_notice(a["notice_id"]); result=assess(n,profile) if n else {"error":"notice not found"}; return ToolExecution("assess_supplier_fit",a,result,[{**item,"_tool_evidence":result,"_tool_name":"assess_supplier_fit"} for item in self._evidence(n)] if n else [])
     def _explain_bid_decision(self,a):
         result=self.storage.latest_assessment(a["notice_id"]); n=self.storage.get_notice(a["notice_id"]); return ToolExecution("explain_bid_decision",a,result or {"error":"assessment not found"},[{**item,"_tool_evidence":result} for item in self._evidence(n)] if n else [])
     def _compare_tenders(self,a):
         notices=[n for item in a["notice_ids"] if (n:=self.storage.get_notice(item))]; return ToolExecution("compare_tenders",a,{"notices":notices},sum((self._evidence(n) for n in notices),[]))
-    def _find_supplier_gaps(self,a):
-        execution=self._assess_supplier_fit(a); result=execution.result; return ToolExecution("find_supplier_gaps",a,{"blocking":result.get("blocking_requirements",[]),"uncertain":result.get("uncertain_requirements",[])},execution.evidence)
+    def _find_supplier_gaps(self,a,profile:SupplierProfile):
+        execution=self._assess_supplier_fit(a,profile); result=execution.result; return ToolExecution("find_supplier_gaps",a,{"blocking":result.get("blocking_requirements",[]),"uncertain":result.get("uncertain_requirements",[])},execution.evidence)
     def _get_notice_changes(self,a):
         n=self.storage.get_notice(a["notice_id"]); return ToolExecution("get_notice_changes",a,{"changes":self.storage.changes(a["notice_id"])},self._evidence(n) if n else [])
     def _compare_notice_versions(self,a):

@@ -1,0 +1,11 @@
+.git
+.github
+.next
+dist
+node_modules
+data
+artifacts/*.jsonl
+**/__pycache__
+**/*.pyc
+*.sqlite3*
+.env*

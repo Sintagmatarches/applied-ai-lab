@@ -1,0 +1,20 @@
+{
+  "event_count": 7,
+  "corrupt_lines": 0,
+  "latency_ms": {
+    "p50": 28058.776,
+    "p95": 50798.767
+  },
+  "tool_latency_ms": {
+    "p50": 3.085,
+    "p95": 3.13
+  },
+  "fallback_rate": 0.2857142857142857,
+  "tool_failure_rate": 0.0,
+  "models": [
+    "qwen2.5:3b-instruct"
+  ],
+  "prompt_versions": [
+    "tender-agent-v3"
+  ]
+}

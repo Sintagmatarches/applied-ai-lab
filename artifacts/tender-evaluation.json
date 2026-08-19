@@ -1,54 +1,70 @@
 {
-  "dataset": "eu-procurement-v1",
-  "case_count": 14,
+  "datasets": {
+    "synthetic_regression": {
+      "name": "eu-procurement-v1",
+      "case_count": 14,
+      "purpose": "unit/regression only"
+    },
+    "recorded_real_ted": {
+      "name": "recorded-ted-structured-2026-08-19",
+      "notice_count": 2,
+      "recorded_at": "2026-08-19T00:00:00Z",
+      "label_source": "Official TED Search API v3 structured fields"
+    }
+  },
   "retrieval": {
     "recall_at_5": 1.0,
-    "mrr": 1.0
+    "mrr": 1.0,
+    "ndcg_at_5": 1.0,
+    "filter_correctness": 1.0,
+    "query_count": 2
   },
   "extraction": {
     "precision": 1.0,
     "recall": 1.0,
     "mandatory_classification_accuracy": 1.0,
-    "numeric_accuracy": 1.0,
-    "currency_parsing_accuracy": 1.0,
-    "deadline_accuracy": 1.0
+    "lot_assignment_accuracy": 1.0,
+    "numeric_value_accuracy": 1.0
   },
   "agent": {
-    "tool_selection_accuracy": 1.0,
-    "argument_validity": 1.0,
-    "execution_success": 1.0
+    "answer_status": "DETERMINISTIC_FALLBACK",
+    "tool_calls": 1,
+    "execution_success": 1.0,
+    "fallback_rate": 1.0,
+    "valid_arguments": 1.0
   },
   "grounding": {
-    "raw_supported_claims": 1,
-    "raw_unsupported_claims": 1,
-    "evidence_correctness": 0.5,
-    "post_gate_unsupported_claims": 0
+    "valid_citations": 0.6666666666666666,
+    "claim_support_rate": 0.3333333333333333,
+    "factual_consistency": 0.3333333333333333,
+    "unsupported_claim_rate_before_gate": 0.6666666666666666,
+    "unsupported_claims_after_gate": 0
   },
-  "decision_engine": {
-    "mandatory_rule_accuracy": 1.0,
-    "status_accuracy": 1.0,
-    "sample_status": "NO_BID"
-  },
-  "change_detection": {
-    "field_change_recall": 1.0,
-    "material_change_accuracy": 1.0,
-    "reassessment_accuracy": 1.0,
-    "detected_fields": [
-      "requirements",
-      "submission_deadline"
-    ],
-    "regression_transition": "NO_BID -> REVIEW"
+  "operational": {
+    "ted_search_latency_p50_ms": 507.215,
+    "ted_search_latency_p95_ms": 817.277,
+    "embedding_latency_ms": 35719.437,
+    "retrieval_latency_ms": 175.213,
+    "llm_latency_ms": 50794.323,
+    "total_agent_latency_ms": 50798.767,
+    "failure_categories": []
   },
   "security": {
-    "prompt_injection_blocked": 1.0,
-    "forged_evidence_rejected": 1.0,
-    "malicious_document_blocked": 1.0,
-    "tool_manipulation_rejected": 1.0
-  },
-  "structured_output": {
-    "schema_validity": 1.0
+    "adversarial_regressions": 8,
+    "covered": [
+      "prompt injection",
+      "trusted-profile manipulation",
+      "forged evidence IDs",
+      "unsupported numeric claims",
+      "decision inconsistency",
+      "SSRF",
+      "DTD/entity XML",
+      "strict tool arguments"
+    ]
   },
   "limitations": [
-    "Deterministic fixture eval; live evidence is reported separately."
+    "Two recorded real notices provide mechanically verifiable structured-field checks, not general-language quality.",
+    "Synthetic regression cases are reported separately and are not called human-labelled.",
+    "Live agent metrics reflect the last committed verification run and may disclose deterministic fallback."
   ]
 }

@@ -1,0 +1,28 @@
+services:
+  tender-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile.tender-ai
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      TENDER_AI_CHAT_MODEL: qwen2.5:3b-instruct
+      TENDER_AI_EMBEDDING_MODEL: nomic-embed-text:latest
+    ports:
+      - "8099:8099"
+    volumes:
+      - tender-data:/app/data
+      - tender-artifacts:/app/artifacts
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.11.4
+    profiles: ["ollama"]
+    volumes:
+      - ollama-models:/root/.ollama
+    expose: ["11434"]
+    restart: unless-stopped
+
+volumes:
+  tender-data:
+  tender-artifacts:
+  ollama-models:

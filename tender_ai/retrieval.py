@@ -40,13 +40,22 @@ class HybridRetriever:
         started=time.perf_counter(); vectors, embed_metrics=self.ollama.embed([query]); query_vector=vectors[0]
         lexical_ids=self.storage.lexical_search(query, 50); lexical_rank={item: 1/(rank+1) for rank,item in enumerate(lexical_ids)}
         hits=[]
-        for item in self.storage.embedded_evidence():
+        candidates = self.storage.embedded_evidence()
+        if len(candidates) > self.ollama.config.vector_scan_limit:
+            raise RuntimeError(f"Exact vector scan boundary exceeded ({len(candidates)} > {self.ollama.config.vector_scan_limit}); build a local ANN index before scaling further")
+        vector_weight = self.ollama.config.retrieval_vector_weight
+        lexical_weight = self.ollama.config.retrieval_lexical_weight
+        total_weight = vector_weight + lexical_weight
+        if total_weight <= 0:
+            raise ValueError("retrieval weights must have a positive sum")
+        vector_weight, lexical_weight = vector_weight / total_weight, lexical_weight / total_weight
+        for item in candidates:
             if country and item.get("buyer_country") != country.upper(): continue
             if cpv and not any(str(code).startswith(cpv.rstrip("*")) for code in item.get("cpv_codes", [])): continue
             if buyer and buyer.lower() not in str(item.get("buyer", "")).lower(): continue
             if min_value is not None and (item.get("estimated_value") is None or item["estimated_value"] < min_value): continue
             if deadline_before and item.get("submission_deadline") and item["submission_deadline"] > deadline_before: continue
             vector=max(0.0, cosine(query_vector,item["vector"])); lexical=lexical_rank.get(item["evidence_id"],0.0)
-            hits.append(SearchHit(item,vector,lexical,.72*vector+.28*lexical))
+            hits.append(SearchHit(item,vector,lexical,vector_weight*vector+lexical_weight*lexical))
         hits.sort(key=lambda hit: hit.hybrid_score, reverse=True)
-        return hits[:top_k or self.top_k], {"retrieval_latency_ms": round((time.perf_counter()-started)*1000,3), "embedding_latency_ms": embed_metrics.latency_ms, "candidate_count": len(hits)}
+        return hits[:top_k or self.top_k], {"retrieval_latency_ms": round((time.perf_counter()-started)*1000,3), "embedding_latency_ms": embed_metrics.latency_ms, "candidate_count": len(hits), "scan_strategy": "exact_cosine", "vector_weight":round(vector_weight,3), "lexical_weight":round(lexical_weight,3), "scan_limit":self.ollama.config.vector_scan_limit}

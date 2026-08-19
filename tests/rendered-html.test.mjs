@@ -51,7 +51,7 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /href="\/credit-risk-assessment"/);
   assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260818-tender-intelligence-3/);
+  assert.match(html, /favicon\.svg\?v=20260819-tender-intelligence-4/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -85,14 +85,17 @@ test("renders the EU Tender Intelligence dashboard without hardcoded opportuniti
   const html = await response.text();
   assert.match(html, /EU Tender/);
   assert.match(html, /Intelligence Agent/);
-  assert.match(html, /Official TED data/);
+  assert.match(html, /Official TED procurement data/);
   assert.match(html, /DISCOVER/);
   assert.match(html, /QUALIFY/);
-  assert.match(html, /MONITOR CHANGES/);
-  assert.match(html, /REASSESS/);
+  assert.match(html, /QUALIFY PER LOT/);
+  assert.match(html, /WATCH \+ RECHECK/);
+  assert.match(html, /GROUNDED AI/);
   assert.match(html, /Search live TED/);
-  assert.match(html, /Editable demo supplier/);
-  assert.match(html, /Local only: Ollama embeddings/);
+  assert.match(html, /Editable fictional supplier/);
+  assert.match(html, /Public Cloudflare never calls localhost Ollama/);
+  assert.match(html, /RECORDED VERIFIED EVIDENCE/);
+  assert.match(html, /Source code/);
   assert.doesNotMatch(html, /Arbeitnow|Jobicy|Search public jobs/);
 
   const publishedFrom = html.match(/Published from<input type="date" value="(\d{4}-\d{2}-\d{2})"/)?.[1];

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,12 +43,16 @@ def ingest(request:IngestRequest)->dict[str,Any]:
     response=ted.search(request.filters,limit=request.limit); fetched=utc_now(); notices=[normalize(item,fetched) for item in response.get("notices",[])]
     document_failures=[]
     if request.include_documents:
-        enriched=[]
-        for notice in notices:
-            try: notice=ted.enrich_from_xml(notice)
-            except Exception as error: document_failures.append({"publication_id":notice["publication_id"],"error":f"{type(error).__name__}: {error}"})
-            enriched.append(notice)
-        notices=enriched
+        enriched=[None]*len(notices)
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures={executor.submit(ted.enrich_from_xml,notice):index for index,notice in enumerate(notices)}
+            for future in as_completed(futures):
+                index=futures[future]
+                try: enriched[index]=future.result()
+                except Exception as error:
+                    enriched[index]=notices[index]
+                    document_failures.append({"publication_id":notices[index]["publication_id"],"category":type(error).__name__,"error":str(error)[:300]})
+        notices=[item for item in enriched if item is not None]
     persistence=runtime.storage.ingest(notices,profile_from(request.profile))
     try: indexing=runtime.retriever.index_pending()
     except OllamaUnavailable as error: indexing={"indexed":0,"error":str(error)}
@@ -56,5 +61,5 @@ def ingest(request:IngestRequest)->dict[str,Any]:
 
 @app.post("/ask")
 def ask(request:AskRequest)->dict[str,Any]:
-    try: return as_json(runtime.agent.ask(request.question,profile=request.profile))
+    try: return as_json(runtime.agent.ask(request.question,profile=profile_from(request.profile)))
     except OllamaUnavailable as error: return as_json(unavailable_result(error,runtime.config.chat_model))

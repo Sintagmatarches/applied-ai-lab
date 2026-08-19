@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-08-19T14:55:39.854072+00:00",
+  "source": "Official TED Search API v3",
+  "uniqueNotices": 35,
+  "model": "qwen2.5:3b-instruct",
+  "retrieval": {
+    "hits": 5,
+    "candidateCount": 195,
+    "latencyMs": 175.213
+  },
+  "agent": {
+    "answerStatus": "DETERMINISTIC_FALLBACK",
+    "toolCalls": 1,
+    "fallbackUsed": true,
+    "citationValidity": 1,
+    "claimSupportRate": 1
+  },
+  "evaluation": {
+    "cases": 14,
+    "scope": "synthetic regression + recorded live verification",
+    "securityTests": 8
+  }
+}

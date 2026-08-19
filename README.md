@@ -18,9 +18,9 @@ The production hostname is deployment configuration rather than a repository con
 
 ## EU Tender Intelligence Agent
 
-The agent solves a procurement workflow rather than generic “chat with tenders”: **discover → qualify → monitor changes → reassess**. The public dashboard queries the current official anonymous TED Search API v3, normalizes notices and lots, preserves TED/XML evidence links and compares an editable fictional supplier profile with structured mandatory conditions. Mandatory eligibility and strategic opportunity fit are shown separately; a failed certification or turnover threshold overrides any attractive fit score.
+The agent implements **discover → qualify per lot → watch → detect change → reassess → grounded AI analysis**. The public dashboard queries the official anonymous TED Search API v3, normalizes each lot, preserves TED evidence links and compares an editable fictional supplier profile with structured mandatory conditions. Only a failed mandatory eligibility condition can block a lot. Optional unknowns do not block, and security findings are quarantined outside eligibility. Opportunity fit is explicitly an uncalibrated, component-level heuristic rather than a probability.
 
-The local runtime adds official eForms XML enrichment, SQLite/FTS5 persistence, immutable notice versions, material field diffs, automatic reassessment, Nomic embeddings, hybrid retrieval, Qwen tool calling and a deterministic claim/evidence gate. It has 14 schema-validated procurement tools. Source documents are untrusted data: prompt-like text cannot select tools, change eligibility or forge citations.
+The local runtime adds bounded official eForms XML enrichment, SQLite/FTS5 persistence, separate TED source versions and ingestion revisions, material field diffs, automatic lot reassessment, Nomic embeddings, hybrid retrieval, a bounded multi-step Qwen tool loop and a deterministic claim/evidence gate. The supplier profile is injected by trusted runtime code and is absent from model-controlled tool arguments. Source documents are untrusted data: prompt-like text cannot select tools, change eligibility or forge citations.
 
 ```mermaid
 flowchart LR
@@ -33,17 +33,27 @@ flowchart LR
   V --> Q
 ```
 
-Reproduce the complete local path:
+Reproduce the local path directly:
 
 ```bash
 python -m pip install -r requirements-ai.txt
 python -m unittest discover -s tender_ai/tests
 python -m tender_ai.evals.run
+python -m tender_ai.retrieval_benchmark
 python -m tender_ai.live_verify
 python -m uvicorn tender_ai.server:app --host 127.0.0.1 --port 8099
 ```
 
-The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, normalization and deterministic assessment are public; embeddings, history, agent execution and XML-enriched RAG are local. See [`docs/tender-ai-architecture.md`](docs/tender-ai-architecture.md), [`docs/tender-ai-evaluation.md`](docs/tender-ai-evaluation.md) and [`docs/tender-ai-live-verification.md`](docs/tender-ai-live-verification.md).
+Or use the container stack:
+
+```bash
+docker compose --profile ollama up -d ollama
+docker compose exec ollama ollama pull nomic-embed-text:latest
+docker compose exec ollama ollama pull qwen2.5:3b-instruct
+docker compose up --build tender-ai
+```
+
+The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, lot normalization and deterministic assessment are public; persistent history, XML enrichment, embeddings and agent execution remain local unless the supplied private Azure Container Apps IaC is deployed with user-owned credentials. See the [architecture](docs/tender-ai-architecture.md), [evaluation](docs/tender-ai-evaluation.md), [live verification](docs/tender-ai-live-verification.md), [threat model](docs/tender-ai-threat-model.md), [decision definitions](docs/tender-ai-data-definitions.md) and [runbook](docs/tender-ai-runbook.md).
 
 ## Finland Rail Monitoring System
 
