@@ -223,5 +223,6 @@ test("published tender agent renders a controlled search error", async ({ page }
   await page.goto(freshPath("/eu-tender-intelligence-agent"), { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Search live TED" }).click();
   await expect(page.getByRole("alert")).toContainText("test validation error");
-  expect(browserErrors).toEqual([]);
+  expect(browserErrors.some((message) => /422 \(Unprocessable Entity\)/.test(message))).toBe(true);
+  expect(browserErrors.filter((message) => !/422 \(Unprocessable Entity\)/.test(message))).toEqual([]);
 });
