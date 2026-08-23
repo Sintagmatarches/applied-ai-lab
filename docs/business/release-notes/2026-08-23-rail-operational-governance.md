@@ -16,9 +16,9 @@ This release turns the regional monitor into a governed operational analytics da
 
 | Issue | Repository evidence | Status after release |
 | --- | --- | --- |
-| #6 sample support | shared policy, empirical rationale, boundary/Wilson tests, UI/method copy | complete; may close |
+| #6 sample support | shared policy, empirical rationale, boundary/Wilson tests, UI/method copy | complete; closed with production evidence |
 | #7 freshness | deterministic boundary/failure/recovery tests, persisted Gold timestamp, workflow and runbook | keep open: Fabric alert destination, drill and dashboard evidence require tenant |
 | #8 regional BI | `dim_region`, `bridge_station_region`, additive daily/7d facts and semantic/report contract | keep open: Direct Lake performance and RLS decision require real workspace validation |
-| #9 rolling 7d | exact seven-partition gate, late-correction planning, Delta reconciliation, API/UI and real artifact | complete; may close |
+| #9 rolling 7d | exact seven-partition gate, late-correction planning, Delta reconciliation, API/UI and real artifact | complete; closed with production evidence |
 
 No dbt, Airflow, Kafka, hosted Fabric run, PBIX or cloud screenshot is claimed. Generated raw/Delta data remains ignored; only compact reproducible artifacts and executable code are committed.
