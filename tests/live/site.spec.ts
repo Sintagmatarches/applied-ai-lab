@@ -31,15 +31,12 @@ test("published homepage leads with the completed projects", async ({ page }) =>
     page.getByRole("heading", { name: "Finland Rail Monitoring System" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Open monitor" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Planned projects" })).toBeVisible();
-
-  const completedTop = await completedProjects.boundingBox();
-  const plannedTop = await page
-    .getByRole("heading", { name: "Planned projects" })
-    .boundingBox();
-  expect(completedTop).not.toBeNull();
-  expect(plannedTop).not.toBeNull();
-  expect(completedTop!.y).toBeLessThan(plannedTop!.y);
+  await expect(
+    page.getByRole("heading", { name: "EU Tender Intelligence Agent" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open tender agent" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Planned projects" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Housing Value Forecast" })).toHaveCount(0);
   expect(browserErrors).toEqual([]);
 });
 
