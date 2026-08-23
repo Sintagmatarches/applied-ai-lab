@@ -31,7 +31,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders all completed projects before clearly marked planned work", async () => {
+test("renders only completed projects on the public home page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -46,12 +46,11 @@ test("renders all completed projects before clearly marked planned work", async 
   assert.match(html, /Open predictor/);
   assert.match(html, /Open monitor/);
   assert.match(html, /Open tender agent/);
-  assert.match(html, /Planned projects/);
-  assert.match(html, /href="\/housing-value-forecast"/);
-  assert.match(html, /href="\/credit-risk-assessment"/);
-  assert.ok(html.indexOf("Completed project") < html.indexOf("Planned projects"));
+  assert.doesNotMatch(html, /Planned projects/);
+  assert.doesNotMatch(html, /href="\/(?:housing-value-forecast|credit-risk-assessment|document-processing|image-recognition)"/);
+  assert.doesNotMatch(html, /Housing Value Forecast|Credit Risk Assessment|Document Processing|Image Recognition/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260819-tender-intelligence-4/);
+  assert.match(html, /favicon\.svg\?v=20260823-current-projects-1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -172,7 +171,7 @@ test("renders the working Olist model, evidence and honest limitation", async ()
   assert.doesNotMatch(html, /model has not been built or connected yet/i);
 });
 
-test("keeps every planned project as a minimal direct page and active tab", async () => {
+test("keeps legacy placeholder routes compatible without listing them on home", async () => {
   const routes = [
     ["/housing-value-forecast", "Housing Value Forecast"],
     ["/credit-risk-assessment", "Credit Risk Assessment"],
@@ -186,6 +185,7 @@ test("keeps every planned project as a minimal direct page and active tab", asyn
     const html = await response.text();
     assert.match(html, new RegExp(title));
     assert.match(html, new RegExp(`aria-current="page"[^>]*>${title}`));
+    assert.match(html, /<meta name="robots" content="noindex, nofollow"/);
     assert.doesNotMatch(
       html,
       /INTENDED RESULT|Project availability|Coming later|hero-card/,

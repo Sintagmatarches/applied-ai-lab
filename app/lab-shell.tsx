@@ -200,18 +200,6 @@ function HomeContent() {
 
       </section>
 
-      <section className="planned-projects" aria-labelledby="planned-title">
-        <p className="eyebrow">Next</p>
-        <h2 id="planned-title">Planned projects</h2>
-        <ul className="project-link-list">
-          {projects.slice(3).map((project) => (
-            <li key={project.id}>
-              <Link href={project.href}>{project.title}</Link>
-              <span>Planned</span>
-            </li>
-          ))}
-        </ul>
-      </section>
     </div>
   );
 }
