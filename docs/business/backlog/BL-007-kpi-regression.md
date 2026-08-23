@@ -3,7 +3,7 @@
 > **Portfolio simulation.**
 
 **Priority:** P3  
-**State:** Ready  
+**State:** Done
 **Business reason:** A schema or metric change can pass unit tests yet materially shift headline results.
 
 ## Requirements
@@ -22,3 +22,10 @@
 
 **Dependency:** stable gold schemas.  
 **Definition of Done:** versioned fixture, deterministic test, review rule and documented update path.
+
+## Implementation evidence
+
+- Approved fixture: `rail/tests/fixtures/kpi-regression-v1.json`
+- Deterministic regression test: `rail/tests/test_kpi_regression.py`
+- Approval and update process: `docs/business/release-notes/2026-08-23-rail-kpi-contract.md`
+- CI integration: the existing `model` job runs `python -m unittest discover -s rail/tests`

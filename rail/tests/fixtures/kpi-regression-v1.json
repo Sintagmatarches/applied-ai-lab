@@ -1,0 +1,88 @@
+{
+  "contract_id": "rail-kpi-v1",
+  "description": "Synthetic fixed observations covering KPI thresholds, missing actuals, cancellations, one route and one station.",
+  "approval": {
+    "release_note": "docs/business/release-notes/2026-08-23-rail-kpi-contract.md",
+    "fixture_sha256": "4744fa57a74ba6e2fc982ace7d95329aecce854cdd2a01db5fb28163421c1f89"
+  },
+  "input": {
+    "overall": {
+      "scheduled": 12,
+      "cancelled": 1,
+      "delay_counts": [[-2, 1], [0, 1], [1, 1], [5, 1], [6, 1], [10, 1], [11, 1], [15, 1], [16, 1], [30, 1], [31, 1]]
+    },
+    "route": {
+      "route_key": "HKI|LH",
+      "route": "Helsinki ↔ Lahti",
+      "month": "2026-01",
+      "cancelled": 6,
+      "delay_counts": [[0, 100], [5, 40], [6, 30], [10, 20], [15, 20], [16, 10], [31, 5], [null, 15]]
+    },
+    "station": {
+      "station_code": "LH",
+      "station": "Lahti",
+      "cancelled": 8,
+      "delay_counts": [[0, 280], [5, 120], [6, 80], [10, 40], [15, 30], [16, 20], [31, 10], [null, 20]]
+    }
+  },
+  "expected": {
+    "overall": {
+      "scheduled": 12,
+      "completed": 11,
+      "cancelled": 1,
+      "cancelled_rate": 0.083333,
+      "completion_rate": 0.916667,
+      "on_time": {
+        "5": {"count": 4, "rate": 0.363636},
+        "10": {"count": 6, "rate": 0.545455},
+        "15": {"count": 8, "rate": 0.727273},
+        "30": {"count": 10, "rate": 0.909091}
+      },
+      "median_delay_minutes": 10,
+      "p90_delay_minutes": 30,
+      "p95_delay_minutes": 30.5,
+      "mean_delay_minutes": 11.18
+    },
+    "route": {
+      "route_key": "HKI|LH",
+      "route": "Helsinki ↔ Lahti",
+      "scheduled": 240,
+      "completed": 225,
+      "cancelled": 6,
+      "cancelled_rate": 0.025,
+      "completion_rate": 0.9375,
+      "on_time": {
+        "5": {"count": 140, "rate": 0.622222},
+        "10": {"count": 190, "rate": 0.844444},
+        "15": {"count": 210, "rate": 0.933333},
+        "30": {"count": 220, "rate": 0.977778}
+      },
+      "median_delay_minutes": 5,
+      "p90_delay_minutes": 15,
+      "p95_delay_minutes": 16,
+      "mean_delay_minutes": 5.31,
+      "months_observed": 1,
+      "monthly_on_time_5_stddev": 0,
+      "unreliable_month_share": 1.0
+    },
+    "station": {
+      "station_code": "LH",
+      "station": "Lahti",
+      "scheduled": 600,
+      "completed": 580,
+      "cancelled": 8,
+      "cancelled_rate": 0.013333,
+      "completion_rate": 0.966667,
+      "on_time": {
+        "5": {"count": 400, "rate": 0.689655},
+        "10": {"count": 520, "rate": 0.896552},
+        "15": {"count": 550, "rate": 0.948276},
+        "30": {"count": 570, "rate": 0.982759}
+      },
+      "median_delay_minutes": 5,
+      "p90_delay_minutes": 15,
+      "p95_delay_minutes": 16,
+      "mean_delay_minutes": 4.41
+    }
+  }
+}
