@@ -1,3 +1,4 @@
+import sevenDaySnapshot from "../../../../artifacts/rail-regional-7d.json";
 import historicalSnapshot from "../../../../artifacts/rail-regional-history.json";
 import lookup from "../../../../artifacts/rail-station-regions.json";
 import type { DigitrafficTrain } from "../../../../lib/rail-live";
@@ -6,6 +7,7 @@ import {
   type RailMonitorMode,
   type RegionalRailSnapshot,
 } from "../../../../lib/rail-monitoring";
+import { freshnessContract } from "../../../../lib/rail-operational";
 
 const API_ROOT = "https://rata.digitraffic.fi/api/v1";
 const SOURCE_HEADER = "AppliedAILab/FinlandRailMonitoringSystem github.com/Sintagmatarches";
@@ -48,15 +50,27 @@ async function currentSnapshot(mode: "live" | "24h", now: Date): Promise<Regiona
 export async function GET(request?: Request): Promise<Response> {
   const url = new URL(request?.url ?? "https://localhost/api/rail/monitor");
   const requestedMode = url.searchParams.get("mode") ?? "live";
-  if (!(["live", "24h", "historical"] as RailMonitorMode[]).includes(requestedMode as RailMonitorMode)) {
+  if (!(["live", "24h", "7d", "historical"] as RailMonitorMode[]).includes(requestedMode as RailMonitorMode)) {
     return Response.json(
-      { error: "Unsupported monitoring mode. Use live, 24h or historical." },
+      { error: "Unsupported monitoring mode. Use live, 24h, 7d or historical." },
       { status: 400, headers: { "cache-control": "no-store" } },
     );
   }
-  if (requestedMode === "historical") {
-    return Response.json(historicalSnapshot, {
-      headers: { "cache-control": "public, max-age=3600, s-maxage=86400" },
+  if (requestedMode === "7d" || requestedMode === "historical") {
+    const stored = (requestedMode === "7d" ? sevenDaySnapshot : historicalSnapshot) as unknown as RegionalRailSnapshot;
+    const snapshot: RegionalRailSnapshot = {
+      ...stored,
+      freshness: freshnessContract({
+        mode: requestedMode,
+        now: new Date(),
+        sourceRetrievedAt: stored.sourceRetrievedAt,
+        validatedAt: stored.validatedAt,
+        goldPublishedAt: stored.goldPublishedAt,
+        coverageStatus: stored.coverage.status,
+      }),
+    };
+    return Response.json(snapshot, {
+      headers: { "cache-control": requestedMode === "7d" ? "public, max-age=300, s-maxage=900" : "public, max-age=3600, s-maxage=86400" },
     });
   }
 

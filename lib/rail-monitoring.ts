@@ -1,6 +1,10 @@
 import type { DigitrafficTimeTableRow, DigitrafficTrain } from "./rail-live";
+import {
+  RAIL_OPERATIONAL_POLICY, freshnessContract, sampleSupport, wilsonInterval,
+  type CoverageContract, type FreshnessContract, type SampleSupport,
+} from "./rail-operational";
 
-export type RailMonitorMode = "live" | "24h" | "historical";
+export type RailMonitorMode = "live" | "24h" | "7d" | "historical";
 export type RailRegionStatus = "normal" | "elevated" | "serious" | "no-data" | "no-service";
 export const RAIL_DELAY_THRESHOLDS = [5, 10, 15, 30] as const;
 export type RailDelayThreshold = (typeof RAIL_DELAY_THRESHOLDS)[number];
@@ -47,6 +51,8 @@ export type RailRegionMetric = {
   delayedShare: number | null;
   delayedTrainsByThreshold: RailThresholdValues<number>;
   delayedShareByThreshold: RailThresholdValues<number | null>;
+  delayedShareInterval95ByThreshold: RailThresholdValues<{ lower: number; upper: number } | null>;
+  sampleSupport: SampleSupport;
   averageDelayMinutes: number | null;
   severeDelays: number;
   cancellations: number;
@@ -64,8 +70,18 @@ export type RailRegionMetric = {
 };
 
 export type RegionalRailSnapshot = {
+  schemaVersion: string;
+  kpiDefinitionVersion: string;
+  sampleSupportPolicyVersion: string;
+  freshnessPolicyVersion: string;
   mode: RailMonitorMode;
   retrievedAt: string;
+  sourceRetrievedAt: string | null;
+  validatedAt: string | null;
+  goldPublishedAt: string | null;
+  latestCompletePartition: string | null;
+  coverage: CoverageContract;
+  freshness: FreshnessContract;
   windowStart: string;
   windowEnd: string;
   source: string;
@@ -260,12 +276,16 @@ function statusFor(score: number | null, observed: number, hasRailService: boole
 function finishAggregate(
   aggregate: Aggregate,
   identity: Pick<RailRegionMetric, "code" | "nameFi" | "nameEn" | "passengerStations" | "hasRailService">,
+  mode: RailMonitorMode,
 ): RailRegionMetric {
   const averageDelayMinutes = aggregate.measured ? aggregate.delaySum / aggregate.measured : null;
   const cancellationShare = aggregate.observed ? aggregate.cancelled / aggregate.observed : null;
   const severeShare = aggregate.measured ? aggregate.severe / aggregate.measured : 0;
   const delayedShareByThreshold = thresholdValues((threshold) =>
     aggregate.measured ? aggregate.delayedByThreshold[threshold] / aggregate.measured : null,
+  );
+  const delayedShareInterval95ByThreshold = thresholdValues((threshold) =>
+    wilsonInterval(aggregate.delayedByThreshold[threshold], aggregate.measured),
   );
   const disruptionScoreByThreshold = thresholdValues((threshold) =>
     disruptionScoreFor(
@@ -296,6 +316,8 @@ function finishAggregate(
     delayedShare: delayedShareByThreshold[defaultThreshold],
     delayedTrainsByThreshold: { ...aggregate.delayedByThreshold },
     delayedShareByThreshold,
+    delayedShareInterval95ByThreshold,
+    sampleSupport: sampleSupport(mode, aggregate.observed, aggregate.measured, identity.hasRailService),
     averageDelayMinutes,
     severeDelays: aggregate.severe,
     cancellations: aggregate.cancelled,
@@ -321,7 +343,7 @@ function rowInWindow(row: DigitrafficTimeTableRow, start: number, end: number): 
 export function buildRegionalRailSnapshot(
   trains: DigitrafficTrain[],
   lookup: LookupPayload,
-  mode: Exclude<RailMonitorMode, "historical">,
+  mode: "live" | "24h",
   now = new Date(),
 ): RegionalRailSnapshot {
   const end = now.getTime();
@@ -406,7 +428,7 @@ export function buildRegionalRailSnapshot(
       nameEn: region.nameEn,
       passengerStations,
       hasRailService: passengerStations > 0,
-    });
+    }, mode);
   });
   const networkAggregate = newAggregate();
   for (const aggregate of aggregates.values()) {
@@ -425,7 +447,7 @@ export function buildRegionalRailSnapshot(
     nameEn: "Finland",
     passengerStations: 0,
     hasRailService: true,
-  });
+  }, mode);
   const networkMetrics: RegionalRailSnapshot["network"] = {
     observedTrains: network.observedTrains,
     measuredTrains: network.measuredTrains,
@@ -433,6 +455,8 @@ export function buildRegionalRailSnapshot(
     delayedShare: network.delayedShare,
     delayedTrainsByThreshold: network.delayedTrainsByThreshold,
     delayedShareByThreshold: network.delayedShareByThreshold,
+    delayedShareInterval95ByThreshold: network.delayedShareInterval95ByThreshold,
+    sampleSupport: network.sampleSupport,
     averageDelayMinutes: network.averageDelayMinutes,
     severeDelays: network.severeDelays,
     cancellations: network.cancellations,
@@ -445,9 +469,30 @@ export function buildRegionalRailSnapshot(
     statusByThreshold: network.statusByThreshold,
   };
 
+  const publishedAt = now.toISOString();
+  const currentPartition = publishedAt.slice(0, 10);
+  const previousPartition = new Date(now.getTime() - 24 * 60 * MINUTE).toISOString().slice(0, 10);
+  const coveredDates = mode === "24h" ? [previousPartition, currentPartition] : [];
+  const coverage: CoverageContract = {
+    status: "complete", expectedDates: coveredDates, availableDates: coveredDates, missingDates: [], failedDates: [],
+    duplicatePartitions: 0, coverageRatio: 1,
+  };
   return {
+    schemaVersion: RAIL_OPERATIONAL_POLICY.snapshotSchemaVersion,
+    kpiDefinitionVersion: RAIL_OPERATIONAL_POLICY.kpiDefinitionVersion,
+    sampleSupportPolicyVersion: RAIL_OPERATIONAL_POLICY.sampleSupport.version,
+    freshnessPolicyVersion: RAIL_OPERATIONAL_POLICY.freshness.version,
     mode,
-    retrievedAt: now.toISOString(),
+    retrievedAt: publishedAt,
+    sourceRetrievedAt: publishedAt,
+    validatedAt: publishedAt,
+    goldPublishedAt: mode === "24h" ? publishedAt : null,
+    latestCompletePartition: mode === "24h" ? previousPartition : null,
+    coverage,
+    freshness: freshnessContract({
+      mode, now, sourceRetrievedAt: publishedAt, validatedAt: publishedAt,
+      goldPublishedAt: mode === "24h" ? publishedAt : null, coverageStatus: coverage.status,
+    }),
     windowStart: new Date(start).toISOString(),
     windowEnd: new Date(mode === "live" ? liveFuture : end).toISOString(),
     source: "Fintraffic / Digitraffic",

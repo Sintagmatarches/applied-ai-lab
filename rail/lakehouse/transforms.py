@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from functools import reduce
-
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
@@ -99,26 +97,55 @@ def journey_fact(journeys: DataFrame) -> DataFrame:
 
 
 def regional_daily(arrivals: DataFrame, thresholds: tuple[int, ...] = THRESHOLDS) -> DataFrame:
+    """Additive date × region fact; threshold columns avoid fourfold denominator duplication."""
     train_region = arrivals.groupBy("departure_date", "region_code", "journey_key").agg(
         F.max("delay_minutes").alias("max_delay_minutes"),
         F.max(F.col("cancelled").cast("int")).alias("cancelled"),
     )
-    outputs = []
-    for threshold in thresholds:
-        outputs.append(
-            train_region.groupBy("departure_date", "region_code").agg(
-                F.count("journey_key").alias("observed_trains"),
-                F.sum(F.col("max_delay_minutes").isNotNull().cast("long")).alias("measured_trains"),
-                F.sum((F.col("max_delay_minutes") > threshold).cast("long")).alias("delayed_trains"),
-                F.sum("cancelled").cast("long").alias("cancelled_trains"),
-                F.avg("max_delay_minutes").alias("average_delay_minutes"),
-                F.sum((F.col("max_delay_minutes") > 30).cast("long")).alias("severe_delays"),
-            ).withColumn("threshold_minutes", F.lit(threshold))
-        )
-    result = reduce(lambda left, right: left.unionByName(right), outputs)
-    return result.withColumn(
-        "reliability_rate",
-        F.when(F.col("observed_trains") > 0, F.lit(1.0) - ((F.col("delayed_trains") + F.col("cancelled_trains")) / F.col("observed_trains"))),
+    return train_region.groupBy("departure_date", "region_code").agg(
+        F.count("journey_key").alias("observed_trains"),
+        F.sum(F.col("max_delay_minutes").isNotNull().cast("long")).alias("measured_trains"),
+        F.sum("cancelled").cast("long").alias("cancelled_trains"),
+        F.sum(F.coalesce("max_delay_minutes", F.lit(0))).cast("long").alias("delay_minutes_sum"),
+        F.avg("max_delay_minutes").alias("average_delay_minutes"),
+        F.sum((F.col("max_delay_minutes") > 15).cast("long")).alias("severe_delays"),
+        *[
+            F.sum((F.col("max_delay_minutes") > threshold).cast("long")).alias(f"delayed_{threshold}")
+            for threshold in thresholds
+        ],
+    )
+
+
+def rolling_regional_7d(regional: DataFrame, regions: DataFrame, window_end: str) -> DataFrame:
+    """Build one complete seven-day Gold row per governed region, including no-service regions."""
+    end = F.to_date(F.lit(window_end))
+    filtered = regional.filter(
+        (F.col("departure_date") >= F.date_sub(end, 6)) & (F.col("departure_date") <= end)
+    )
+    if filtered.select("departure_date").distinct().count() != 7:
+        raise ValueError("rolling 7d Gold requires exactly seven complete daily partitions")
+    metrics = filtered.groupBy("region_code").agg(
+        *[
+            F.sum(column).alias(column)
+            for column in (
+                "observed_trains", "measured_trains", "cancelled_trains", "delay_minutes_sum",
+                "severe_delays", "delayed_5", "delayed_10", "delayed_15", "delayed_30",
+            )
+        ],
+    )
+    output = regions.join(metrics, "region_code", "left")
+    count_columns = [
+        "observed_trains", "measured_trains", "cancelled_trains", "delay_minutes_sum",
+        "severe_delays", "delayed_5", "delayed_10", "delayed_15", "delayed_30",
+    ]
+    for column in count_columns:
+        output = output.withColumn(column, F.coalesce(F.col(column), F.lit(0)).cast("long"))
+    return (
+        output.withColumn("component_partitions", F.lit(7))
+        .withColumn("window_end", end)
+        .withColumn("window_start", F.date_sub(end, 6))
+        .withColumn("mode", F.lit("7d"))
+        .withColumn("average_delay_minutes", F.when(F.col("measured_trains") > 0, F.col("delay_minutes_sum") / F.col("measured_trains")))
     )
 
 

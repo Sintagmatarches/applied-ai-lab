@@ -3,7 +3,7 @@
 > **Portfolio simulation.**
 
 **Priority:** P2  
-**State:** Ready  
+**State:** Repository implementation complete; tenant acceptance pending
 **Business reason:** Users need to distinguish a quiet railway from a stale pipeline.
 
 ## Requirements
@@ -22,3 +22,5 @@
 
 **Dependencies:** BL-002 and a Fabric tenant deployment.  
 **Definition of Done:** agreed SLA, automated check, runbook drill and observable dashboard state.
+
+The shared freshness contract, persisted publication timestamp, executable GitHub workflow, UI state and recovery runbook are complete. This item remains open until an authenticated Fabric alert destination, drill and observable tenant dashboard are evidenced.

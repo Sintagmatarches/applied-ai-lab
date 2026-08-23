@@ -21,6 +21,9 @@ flowchart LR
   G2 --> P
   G3 --> P
   G1 --> J["Versioned public aggregate JSON"]
+  G2 --> R7["Regional daily + governed rolling 7-day Gold"]
+  R7 --> J7["Compact reconciled 7 DAYS publication"]
+  J7 --> U
   J --> U
 ```
 
@@ -35,6 +38,7 @@ The transformation emits:
 - ignored curated CSVs below `data/rail/curated/` for local review or Fabric bootstrap.
 - `artifacts/rail-station-regions.json`, the official station-to-maakunta lookup;
 - `artifacts/rail-regional-history.json`, a dated regional snapshot rebuilt from the 365 daily partitions;
+- `artifacts/rail-regional-7d.json`, a compact operational snapshot built from exactly seven validated completed partitions;
 - `public/rail/finland-maakunta.geojson`, simplified display geometry retaining all 19 official regions.
 
 Raw third-party responses are deliberately not committed.
@@ -48,13 +52,13 @@ The repository implementation uses PySpark and Delta Lake Bronze/Silver/Gold tab
 3. Raw responses are written to immutable, date-partitioned Bronze paths with retrieval metadata and a content hash.
 4. The transformation notebook flattens trains and commercial timetable rows, applies the declared grains and writes Silver Delta tables.
 5. Quality checks stop publication if train keys are duplicated, scheduled passenger route endpoints disappear, or an unexpected station-code rate exceeds the declared tolerance. Passenger endpoints require official `passengerTraffic=true`; missing actual times and cancellations are measured, not silently repaired.
-6. Gold tables expose stable keys and additive columns to a Direct Lake Power BI semantic model.
+6. Gold tables expose stable keys, a governed 19-region dimension/bridge, additive daily columns and complete rolling seven-day rows to a Direct Lake Power BI semantic model.
 7. Refresh history, notebook runs and Delta lineage remain visible in Fabric.
 
 ## Incremental policy
 
 - Partition key: Digitraffic `departureDate`.
-- Normal run: ingest yesterday plus refresh the previous three completed dates.
+- Normal run: ingest the latest seven completed UTC departure dates; identical hashes skip, while corrected hashes rebuild only complete affected windows.
 - Backfill: explicit inclusive start/end parameters.
 - Idempotency: replace only the requested Silver/Gold date partitions after a successful Bronze acquisition.
 - Source identity: `(departureDate, trainNumber)`; repeated keys fail the quality gate.

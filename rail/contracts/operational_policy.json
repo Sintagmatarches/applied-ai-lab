@@ -1,0 +1,69 @@
+{
+  "snapshotSchemaVersion": "rail-regional-snapshot-v2",
+  "kpiDefinitionVersion": "rail-regional-kpi-v1",
+  "sampleSupport": {
+    "version": "rail-sample-support-v1",
+    "wilsonConfidence": 0.95,
+    "wilsonZ": 1.959963984540054,
+    "minimumMeasurementCoverage": 0.8,
+    "modes": {
+      "live": {
+        "minimumMeasured": 8,
+        "rationale": "Eight measurements cap the worst-case 95% Wilson half-width below 30 percentage points; the short three-hour window is intentionally labelled limited more often."
+      },
+      "24h": {
+        "minimumMeasured": 20,
+        "rationale": "Twenty measurements approximate a 20-point worst-case Wilson half-width and sit below the observed all-region daily first quartile of 24."
+      },
+      "7d": {
+        "minimumMeasured": 100,
+        "rationale": "One hundred measurements cap the worst-case 95% Wilson half-width below 10 points and match the observed rolling-seven-day 10th percentile of 102."
+      },
+      "historical": {
+        "minimumMeasured": 400,
+        "rationale": "Four hundred measurements cap the worst-case 95% Wilson half-width below 5 points; every rail-served region in the committed year exceeds 4,100."
+      }
+    },
+    "empiricalBasis": {
+      "artifactCoverage": "2025-08-01/2026-07-31",
+      "railServedRegions": 18,
+      "dailyMeasuredP10": 13,
+      "dailyMeasuredP25": 24,
+      "rolling7dMeasuredP10": 102,
+      "rolling7dMeasuredP25": 171
+    }
+  },
+  "freshness": {
+    "version": "rail-freshness-v1",
+    "lateCorrectionDays": 3,
+    "requiredSevenDayPartitions": 7,
+    "owner": "Finland Rail data product owner (portfolio simulation)",
+    "externalNotificationConfigured": false,
+    "modes": {
+      "live": {
+        "basis": "sourceRetrievedAt",
+        "warningAfterMinutes": 5,
+        "staleAfterMinutes": 15,
+        "rationale": "The page refreshes each minute and the public cache serves live data for at most one minute plus two minutes stale-while-revalidate."
+      },
+      "24h": {
+        "basis": "validatedAt",
+        "warningAfterMinutes": 30,
+        "staleAfterMinutes": 120,
+        "rationale": "The governed response is cached for 15 minutes; 30 minutes permits one missed refresh and two hours marks an operationally material gap."
+      },
+      "7d": {
+        "basis": "goldPublishedAt",
+        "warningAfterMinutes": 2160,
+        "staleAfterMinutes": 3600,
+        "rationale": "Completed departure-date partitions are expected daily; 36 hours allows source finalization and 60 hours represents a missed daily publication cycle."
+      },
+      "historical": {
+        "basis": "goldPublishedAt",
+        "warningAfterMinutes": null,
+        "staleAfterMinutes": null,
+        "rationale": "A fixed, explicitly dated analytical snapshot is not evaluated as an operational feed."
+      }
+    }
+  }
+}

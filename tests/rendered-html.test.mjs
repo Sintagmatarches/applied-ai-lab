@@ -50,7 +50,7 @@ test("renders only completed projects on the public home page", async () => {
   assert.doesNotMatch(html, /href="\/(?:housing-value-forecast|credit-risk-assessment|document-processing|image-recognition)"/);
   assert.doesNotMatch(html, /Housing Value Forecast|Credit Risk Assessment|Document Processing|Image Recognition/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260823-current-projects-1/);
+  assert.match(html, /favicon\.svg\?v=20260823-rail-governance-1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -120,6 +120,7 @@ test("renders the evidence-backed Finland rail monitor and methodology", async (
   assert.match(html, /National operating picture/);
   assert.match(html, /Current 3-hour operating window/);
   assert.match(html, /24 HOURS/);
+  assert.match(html, /7 DAYS/);
   assert.match(html, /HISTORICAL/);
   assert.match(html, /Statistics Finland/);
   assert.match(html, /Historical network view/);

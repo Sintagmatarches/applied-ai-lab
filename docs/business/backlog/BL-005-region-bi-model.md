@@ -3,7 +3,7 @@
 > **Portfolio simulation.**
 
 **Priority:** P2  
-**State:** Ready  
+**State:** Repository model complete; tenant acceptance pending
 **Business reason:** The application has a region-first operating view, while the prepared BI model is journey/station-first.
 
 ## Requirements
@@ -22,3 +22,5 @@
 
 **Dependency:** region lookup and Fabric deployment.  
 **Definition of Done:** gold tables, semantic model, reconciliation test, performance check and report page.
+
+The executable Gold dimension/bridge/facts, cardinality contract, 19-region reconciliation and report page specification are complete. Keep the issue open until Direct Lake performance and the explicit no-RLS decision are tested in a real workspace.

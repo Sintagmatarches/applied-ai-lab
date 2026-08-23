@@ -7,7 +7,9 @@
 3. Confirm `status=SUCCEEDED`, quality checks have no `FAIL`, and the watermark contains the new SHA-256.
 4. Refresh downstream historical artifacts or the approved BI model only after the Gold commit.
 
-The scheduler should normally request yesterday plus the prior three completed dates. Same-hash partitions are skipped; revised Digitraffic payloads are selected automatically.
+The governed publisher requests yesterday UTC plus the prior six completed dates. Same-hash partitions are skipped; revised Digitraffic payloads are selected automatically and every complete affected rolling window is recomputed.
+
+The executable schedule is `.github/workflows/rail-data-platform.yml` (daily 04:17 UTC plus manual `window_end`). A successful run must show seven available dates, 19 rolling rows and `fresh` at publication. Its artifact contains the Spark log/evidence and compact JSON for 30 days.
 
 ## Backfill
 
@@ -24,12 +26,14 @@ python -m rail.lakehouse.orchestrate --start 2026-07-01 --end 2026-07-07
 - Rerun the same range. An uncommitted date is selected automatically.
 - Use `--force` only for a deliberate replay after code/contract correction.
 - Verify the successful watermark SHA and compare Gold counts/KPIs with the pre-recovery run.
+- If freshness is `warning`, inspect the latest Gold publication time and the current workflow before the 60-hour stale boundary.
+- If freshness is `stale`, stop downstream refresh, inspect missing/failed dates and timestamp ordering, reacquire only failed dates, rerun, then verify a new `PUBLISHED` control row. Source/API success alone is not recovery.
 
 Because watermark advancement is the final step, partial Silver/Gold writes remain safe: the retry atomically replaces the same date partitions.
 
 ## Orchestration contract
 
-`acquire -> validate source -> immutable Bronze -> Silver transform -> Silver gates -> Gold facts/marts -> Gold contracts -> watermark -> downstream refresh`.
+`acquire -> validate source -> immutable Bronze -> Silver transform -> Silver gates -> daily Gold -> complete-window reconciliation -> rolling Gold publication -> watermark -> downstream refresh`.
 
 Recommended retries are three attempts with exponential backoff for acquisition only. Contract or quality failures are not transient and must not be blindly retried. A scheduler failure notification must include run id, date range, failed stage and the location of the control tables.
 

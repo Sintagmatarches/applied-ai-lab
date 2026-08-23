@@ -22,7 +22,7 @@ class ContractRegistry:
 
     def __init__(self, path: Path):
         raw = json.loads(path.read_text(encoding="utf-8"))
-        if raw.get("contractVersion") != "1.0.0" or not raw.get("tables"):
+        if raw.get("contractVersion") not in {"1.0.0", "2.0.0"} or not raw.get("tables"):
             raise ValueError("Unsupported or empty Finland Rail data contract")
         self.version = raw["contractVersion"]
         self.owner = raw["owner"]

@@ -51,3 +51,16 @@ def select_partitions(
             action, reason = "skip", "same source hash already committed"
         decisions.append(PartitionDecision(day, path, digest, action, reason))
     return decisions
+
+
+def affected_complete_windows(available: set[date], changed: set[date], size: int = 7) -> list[date]:
+    """Return complete rolling-window ends affected by new or corrected daily partitions."""
+    candidates = {
+        changed_day + timedelta(days=offset)
+        for changed_day in changed
+        for offset in range(size)
+    }
+    return sorted(
+        end for end in candidates
+        if all(end - timedelta(days=offset) in available for offset in range(size))
+    )

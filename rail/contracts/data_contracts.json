@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.0.0",
+  "contractVersion": "2.0.0",
   "owner": "Applied AI Lab / Finland Rail",
   "source": "Fintraffic Digitraffic Railway API",
   "tables": {
@@ -33,16 +33,32 @@
       }
     },
     "gold.mart_regional_performance_daily": {
-      "grain": "one departure date + maakunta + delay threshold",
-      "businessKey": ["departure_date", "region_code", "threshold_minutes"],
+      "grain": "one departure date + governed maakunta",
+      "businessKey": ["departure_date", "region_code"],
       "partitionBy": ["departure_date"],
-      "required": ["departure_date", "region_code", "threshold_minutes", "observed_trains", "measured_trains", "delayed_trains", "cancelled_trains"],
+      "required": ["departure_date", "region_code", "observed_trains", "measured_trains", "delayed_5", "delayed_10", "delayed_15", "delayed_30", "severe_delays", "cancelled_trains"],
       "metrics": {
         "observed_trains": "distinct passenger journeys with a commercial arrival in the region",
-        "delayed_trains": "journeys whose maximum measured arrival delay in the region exceeds threshold_minutes",
-        "cancelled_trains": "journeys with a train-level or regional arrival cancellation",
-        "reliability_rate": "1 - (delayed_trains + cancelled_trains) / observed_trains"
+        "delayed_N": "journeys whose maximum measured arrival delay in the region exceeds N whole minutes",
+        "severe_delays": "journeys whose maximum measured arrival delay in the region exceeds 15 whole minutes",
+        "cancelled_trains": "journeys with a train-level or regional arrival cancellation"
       }
+    },
+    "gold.dim_region": {
+      "grain": "one governed Statistics Finland region version",
+      "businessKey": ["region_year", "region_code"],
+      "required": ["region_code", "region_name_fi", "region_name_sv", "region_name_en", "region_year", "has_rail_service", "mapping_source"]
+    },
+    "gold.bridge_station_region": {
+      "grain": "one active station-to-region mapping for a governed region year",
+      "businessKey": ["station_region_key"],
+      "required": ["station_region_key", "station_code", "region_code", "region_year", "is_active", "mapping_source"]
+    },
+    "gold.mart_regional_performance_7d": {
+      "grain": "one governed seven-complete-partition window end + region",
+      "businessKey": ["window_end", "region_code"],
+      "partitionBy": ["window_end"],
+      "required": ["window_start", "window_end", "mode", "region_code", "component_partitions", "observed_trains", "measured_trains", "delayed_5", "delayed_10", "delayed_15", "delayed_30", "severe_delays", "cancelled_trains"]
     }
   }
 }

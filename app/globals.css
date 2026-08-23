@@ -877,8 +877,7 @@ tbody td {
   color: #e7f0f6;
 }
 
-.live-pulse,
-.snapshot-dot {
+.freshness-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -886,9 +885,25 @@ tbody td {
   box-shadow: 0 0 0 5px rgb(110 231 183 / 10%);
 }
 
-.live-pulse {
+.freshness-fresh {
   animation: live-pulse 1.8s ease-out infinite;
 }
+
+.freshness-warning { color: #f3c969; }
+.freshness-dot.freshness-warning { background: #f3c969; }
+.freshness-stale { color: #ff927a; }
+.freshness-dot.freshness-stale { background: #ff6b57; }
+
+.monitor-operational-alert,
+.sample-support {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-left: 3px solid currentColor;
+  background: rgb(255 255 255 / 3%);
+  font-size: 12px;
+}
+
+.sample-support-low { color: #f3c969; }
 
 @keyframes live-pulse {
   50% { box-shadow: 0 0 0 9px rgb(110 231 183 / 2%); }

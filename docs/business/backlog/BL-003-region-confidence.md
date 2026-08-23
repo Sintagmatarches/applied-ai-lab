@@ -3,7 +3,7 @@
 > **Portfolio simulation.**
 
 **Priority:** P2  
-**State:** Ready  
+**State:** Implemented in repository
 **Business reason:** A region with one observed train should not receive the same visual confidence as a region with hundreds.
 
 ## Requirements
@@ -22,3 +22,5 @@
 
 **Dependency:** BL-001.  
 **Definition of Done:** implementation, tests, method note and release evidence are complete.
+
+Implemented through the shared `rail-sample-support-v1` policy, Python/TypeScript boundary tests, Wilson delayed-share intervals and accessible public low-sample labels. The operational score/status remains unchanged.

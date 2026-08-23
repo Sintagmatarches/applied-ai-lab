@@ -15,8 +15,12 @@
 | `Dim Train Service` | distinct category/type/commuter-line combinations | one `Service Key` | `Service Key` |
 | `Delay Threshold` | disconnected DATATABLE | one row for 5, 10, 15 or 30 minutes | `Minutes` |
 | `Ingestion Audit` | `rail_control_ingestion` | one source-partition attempt | source + partition + retrieval timestamp |
+| `Dim Region` | `dim_region` | one official region per governed year | `Region Year` + `Region Code` |
+| `Bridge Station Region` | `bridge_station_region` | one active station mapping per governed year | `Station Region Key` |
+| `Fact Region Daily` | `mart_regional_performance_daily` | one departure date + region | `Date` + `Region Code` |
+| `Fact Region 7D` | `mart_regional_performance_7d` | one complete window end + region | `Window End` + `Region Code` |
 
-Future BL-005 adds `Dim Region`, `Bridge Station Region` and `Fact Region Snapshot`; do not force region into the current journey model through an ambiguous many-to-many relationship.
+Regional facts use additive wide threshold counts. Do not force region onto the journey fact: a train may cross several regions, so the governed station bridge and separate regional facts avoid an ambiguous journey-to-region many-to-many relationship.
 
 ## Relationships
 
@@ -28,6 +32,9 @@ Dim Date ───────┬─> Fact Train Journey <─ Dim Route
 Dim Train Service ─> Fact Train Journey
 Delay Threshold      (disconnected; read by DAX)
 Ingestion Audit      (quality/freshness table; no fact relationship required)
+Dim Region ─────────┬─> Fact Region Daily <─ Dim Date
+                    └─> Fact Region 7D
+Dim Station ─> Bridge Station Region <─ Dim Region
 ```
 
 `Dim Date[Date]` is the marked date table. Create inactive date relationships only for a named alternative date role and activate them in an explicit measure. Do not enable bi-directional filtering to repair a visual.
@@ -62,4 +69,4 @@ If a number differs, investigate table grain, cancellation filter, missing actua
 
 ## Security and lifecycle
 
-The model contains public data and defines no row-level security requirement. Workspace/app permissions still govern distribution. Use a Power BI Project only after opening and saving it in a supported Power BI Desktop version; do not hand-author a fake PBIP structure. Microsoft documents PBIP developer mode and source control at [Power BI Desktop developer mode](https://learn.microsoft.com/en-us/power-bi/developer/projects/).
+The model contains public data and defines no row-level security requirement. Workspace/app permissions still govern distribution. Before accepting Issue #8, test Direct Lake performance and explicitly confirm the no-RLS decision in the real tenant; this repository cannot manufacture that evidence. Use a Power BI Project only after opening and saving it in a supported Power BI Desktop version; do not hand-author a fake PBIP structure. Microsoft documents PBIP developer mode and source control at [Power BI Desktop developer mode](https://learn.microsoft.com/en-us/power-bi/developer/projects/).

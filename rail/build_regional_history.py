@@ -6,9 +6,12 @@ import argparse
 import gzip
 import json
 from collections import defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+
+from rail.operational import POLICY, coverage_contract, freshness_contract, sample_support, wilson_interval
+from rail.pipeline import validate_train_partition
 
 
 PASSENGER_CATEGORIES = {"Long-distance", "Commuter"}
@@ -89,13 +92,17 @@ def finish_problem(key: str, item: dict[str, Any], threshold: int) -> dict[str, 
     }
 
 
-def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dict[str, Any]:
+def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any], mode: str) -> dict[str, Any]:
     severe_share = aggregate["severe"] / aggregate["measured"] if aggregate["measured"] else 0
     average = aggregate["delaySum"] / aggregate["measured"] if aggregate["measured"] else None
     cancelled_share = aggregate["cancelled"] / aggregate["observed"] if aggregate["observed"] else None
     delayed_shares = {
         str(threshold): aggregate["delayedByThreshold"][str(threshold)] / aggregate["measured"]
         if aggregate["measured"] else None
+        for threshold in DELAY_THRESHOLDS
+    }
+    intervals = {
+        str(threshold): wilson_interval(aggregate["delayedByThreshold"][str(threshold)], aggregate["measured"])
         for threshold in DELAY_THRESHOLDS
     }
 
@@ -157,6 +164,10 @@ def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dic
         "delayedShare": delayed_shares["5"],
         "delayedTrainsByThreshold": aggregate["delayedByThreshold"],
         "delayedShareByThreshold": delayed_shares,
+        "delayedShareInterval95ByThreshold": intervals,
+        "sampleSupport": sample_support(
+            mode, aggregate["observed"], aggregate["measured"], has_service=identity["hasRailService"]
+        ),
         "averageDelayMinutes": average,
         "severeDelays": aggregate["severe"],
         "cancellations": aggregate["cancelled"],
@@ -174,20 +185,50 @@ def finish_aggregate(aggregate: dict[str, Any], identity: dict[str, Any]) -> dic
     }
 
 
-def build(args: argparse.Namespace) -> None:
+def expected_dates(start: date, end: date) -> list[str]:
+    return [(start + timedelta(days=offset)).isoformat() for offset in range((end - start).days + 1)]
+
+
+def build(args: argparse.Namespace) -> dict[str, Any]:
     lookup = json.loads(Path(args.lookup).read_text(encoding="utf-8"))
     stations = lookup["stations"]
     start = date.fromisoformat(args.start)
     end = date.fromisoformat(args.end)
     aggregates = {region["code"]: fresh_aggregate() for region in lookup["regions"]}
-    files = sorted(Path(args.train_dir).glob("*.json.gz"))
-    selected = [path for path in files if start <= date.fromisoformat(path.stem.removesuffix(".json")) <= end]
-    if not selected:
-        raise RuntimeError("No cached train partitions matched the requested historical period")
+    expected = expected_dates(start, end)
+    if args.mode == "7d" and len(expected) != POLICY["freshness"]["requiredSevenDayPartitions"]:
+        raise RuntimeError("The governed 7d publication requires exactly seven calendar partitions")
+    by_day: dict[str, list[Path]] = defaultdict(list)
+    for path in Path(args.train_dir).glob("*.json.gz"):
+        day = path.name.removesuffix(".json.gz")
+        if day in expected:
+            by_day[day].append(path)
+    selected = [paths[0] for day in expected for paths in [by_day.get(day, [])] if paths]
+    failed: list[str] = []
+    available: list[str] = []
+    validated_payloads: list[tuple[Path, list[dict[str, Any]]]] = []
+    for path in selected:
+        day = path.name.removesuffix(".json.gz")
+        try:
+            with gzip.open(path, "rt", encoding="utf-8") as source:
+                payload = validate_train_partition(date.fromisoformat(day), json.load(source))
+            validated_payloads.append((path, payload))
+            available.append(day)
+        except (OSError, ValueError, json.JSONDecodeError):
+            failed.append(day)
+    coverage = coverage_contract(expected, available, failed)
+    coverage["duplicatePartitions"] += sum(max(0, len(paths) - 1) for paths in by_day.values())
+    if coverage["duplicatePartitions"]:
+        coverage["status"] = "partial"
+    if coverage["status"] != "complete" and not args.allow_partial:
+        raise RuntimeError(
+            f"Governed window is {coverage['status']}: missing={coverage['missingDates']}, "
+            f"failed={coverage['failedDates']}, duplicates={coverage['duplicatePartitions']}"
+        )
+    if not validated_payloads:
+        raise RuntimeError("No valid cached train partitions matched the requested period")
 
-    for index, path in enumerate(selected, start=1):
-        with gzip.open(path, "rt", encoding="utf-8") as source:
-            trains = json.load(source)
+    for index, (path, trains) in enumerate(validated_payloads, start=1):
         for train in trains:
             if train.get("trainCategory") not in PASSENGER_CATEGORIES:
                 continue
@@ -226,8 +267,8 @@ def build(args: argparse.Namespace) -> None:
                         max(station_delays) if station_delays else None,
                         cancelled or any(row.get("cancelled") for row in grouped_rows),
                     )
-        if index % 30 == 0 or index == len(selected):
-            print(f"Processed {index}/{len(selected)} partitions", flush=True)
+        if index % 30 == 0 or index == len(validated_payloads):
+            print(f"Processed {index}/{len(validated_payloads)} partitions", flush=True)
 
     regions = []
     for region in lookup["regions"]:
@@ -244,7 +285,7 @@ def build(args: argparse.Namespace) -> None:
                     "nameEn": region["nameEn"],
                     "passengerStations": station_count,
                     "hasRailService": station_count > 0,
-                },
+                }, args.mode,
             )
         )
 
@@ -257,6 +298,7 @@ def build(args: argparse.Namespace) -> None:
     network_finished = finish_aggregate(
         network,
         {"code": "FI", "nameFi": "Suomi", "nameEn": "Finland", "passengerStations": 0, "hasRailService": True},
+        args.mode,
     )
     for field in (
         "code", "nameFi", "nameEn", "passengerStations", "hasRailService",
@@ -264,9 +306,28 @@ def build(args: argparse.Namespace) -> None:
     ):
         network_finished.pop(field)
 
+    published = args.published_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    source_retrieved = args.source_retrieved_at or (
+        datetime.fromtimestamp(max(path.stat().st_mtime for path, _ in validated_payloads), timezone.utc)
+        .isoformat().replace("+00:00", "Z")
+        if args.mode == "7d" else published
+    )
     payload = {
-        "mode": "historical",
-        "retrievedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "schemaVersion": POLICY["snapshotSchemaVersion"],
+        "kpiDefinitionVersion": POLICY["kpiDefinitionVersion"],
+        "sampleSupportPolicyVersion": POLICY["sampleSupport"]["version"],
+        "freshnessPolicyVersion": POLICY["freshness"]["version"],
+        "mode": args.mode,
+        "retrievedAt": published,
+        "sourceRetrievedAt": source_retrieved,
+        "validatedAt": published,
+        "goldPublishedAt": published,
+        "latestCompletePartition": max(available) if coverage["status"] == "complete" else None,
+        "coverage": coverage,
+        "freshness": freshness_contract(
+            args.mode, now=published, source_retrieved_at=source_retrieved,
+            validated_at=published, gold_published_at=published, coverage_status=coverage["status"],
+        ),
         "windowStart": f"{start.isoformat()}T00:00:00.000Z",
         "windowEnd": f"{end.isoformat()}T23:59:59.999Z",
         "source": "Fintraffic / Digitraffic",
@@ -284,6 +345,7 @@ def build(args: argparse.Namespace) -> None:
     output = Path(args.output)
     output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"Wrote {output} ({output.stat().st_size:,} bytes)")
+    return payload
 
 
 def parser() -> argparse.ArgumentParser:
@@ -293,6 +355,10 @@ def parser() -> argparse.ArgumentParser:
     cli.add_argument("--start", default="2025-08-01")
     cli.add_argument("--end", default="2026-07-31")
     cli.add_argument("--output", default="artifacts/rail-regional-history.json")
+    cli.add_argument("--mode", choices=("7d", "historical"), default="historical")
+    cli.add_argument("--allow-partial", action="store_true", help="Publish an explicitly partial artifact for recovery diagnostics")
+    cli.add_argument("--source-retrieved-at", help="UTC acquisition timestamp; defaults to publication time")
+    cli.add_argument("--published-at", help="Injected UTC publication clock for deterministic tests")
     return cli
 
 

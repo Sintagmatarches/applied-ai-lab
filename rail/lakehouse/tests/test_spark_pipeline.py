@@ -5,7 +5,7 @@ import json
 import os
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from rail.lakehouse.pipeline import LakehousePipeline
@@ -15,10 +15,11 @@ from rail.lakehouse.spark import build_spark
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def train(number: int, *, duplicate: bool = False):
+def train(number: int, *, day: date = date(2026, 1, 1), duplicate: bool = False):
+    day_text = day.isoformat()
     return {
         "trainNumber": number,
-        "departureDate": "2026-01-01",
+        "departureDate": day_text,
         "trainType": "IC",
         "trainCategory": "Long-distance",
         "commuterLineID": "",
@@ -27,12 +28,12 @@ def train(number: int, *, duplicate: bool = False):
             {
                 "type": "DEPARTURE", "stationShortCode": "HKI", "countryCode": "FI",
                 "commercialStop": True, "trainStopping": True, "cancelled": False,
-                "scheduledTime": "2026-01-01T08:00:00Z", "actualTime": "2026-01-01T08:02:00Z", "differenceInMinutes": 2,
+                "scheduledTime": f"{day_text}T08:00:00Z", "actualTime": f"{day_text}T08:02:00Z", "differenceInMinutes": 2,
             },
             {
                 "type": "ARRIVAL", "stationShortCode": "LH", "countryCode": "FI",
                 "commercialStop": True, "trainStopping": True, "cancelled": False,
-                "scheduledTime": "2026-01-01T09:00:00Z", "actualTime": "2026-01-01T09:12:00Z", "differenceInMinutes": 12,
+                "scheduledTime": f"{day_text}T09:00:00Z", "actualTime": f"{day_text}T09:12:00Z", "differenceInMinutes": 12,
             },
         ],
     }
@@ -48,9 +49,9 @@ class SparkPipelineTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.spark.stop()
 
-    def _write_partition(self, source: Path, payload):
+    def _write_partition(self, source: Path, payload, day: date = date(2026, 1, 1)):
         source.mkdir(parents=True, exist_ok=True)
-        with gzip.open(source / "2026-01-01.json.gz", "wt", encoding="utf-8") as handle:
+        with gzip.open(source / f"{day.isoformat()}.json.gz", "wt", encoding="utf-8") as handle:
             json.dump(payload, handle)
 
     def test_end_to_end_rerun_is_idempotent_and_force_recovers(self):
@@ -77,6 +78,25 @@ class SparkPipelineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate_source_business_keys"):
                 pipeline.process(date(2026, 1, 1), date(2026, 1, 1))
             self.assertEqual(pipeline.successful_hashes(), {})
+
+    def test_seven_daily_partitions_publish_reconciled_region_semantics(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, lakehouse = root / "source", root / "lakehouse"
+            start = date(2026, 1, 1)
+            for offset in range(7):
+                day = start + timedelta(days=offset)
+                self._write_partition(source, [train(offset + 1, day=day)], day)
+            pipeline = LakehousePipeline(self.spark, lakehouse, source, ROOT / "artifacts/rail-station-regions.json")
+            result = pipeline.process(start, start + timedelta(days=6))
+            daily = self.spark.read.format("delta").load(str(lakehouse / "gold/mart_regional_performance_daily"))
+            rolling = self.spark.read.format("delta").load(str(lakehouse / "gold/mart_regional_performance_7d"))
+            bridge = self.spark.read.format("delta").load(str(lakehouse / "gold/bridge_station_region"))
+            self.assertEqual(result["rolling7dWindows"], ["2026-01-07"])
+            self.assertNotIn("threshold_minutes", daily.columns)
+            self.assertEqual(rolling.count(), 19)
+            self.assertEqual(rolling.filter("component_partitions != 7").count(), 0)
+            self.assertEqual(bridge.groupBy("station_region_key").count().filter("count != 1").count(), 0)
 
 
 if __name__ == "__main__":

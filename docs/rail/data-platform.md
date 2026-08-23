@@ -26,8 +26,9 @@ flowchart LR
   Q2 --> G2["Gold regional daily mart"]
   Q2 --> G3["Gold network / route / station marts"]
   G1 --> P["Existing historical artifacts / Power BI"]
-  G2 --> M["Existing regional monitor / future rolling views"]
-  Q2 -->|"all writes succeed"| W["Delta watermark advance"]
+  G2 --> R7["Governed regional rolling 7-day Gold"]
+  R7 --> M["Regional monitor 7 DAYS publication"]
+  R7 -->|"all writes succeed"| W["Delta watermark advance"]
 ```
 
 The acquisition cache remains the network boundary because it already downloads only absent dates, validates array shape, expected `departureDate` and passenger scope before atomic replacement, and revalidates on read. Bronze copies those trusted bytes to a content-addressed immutable path. A changed response creates a new SHA-256 version; it never overwrites the prior good payload.
@@ -44,7 +45,10 @@ The acquisition cache remains the network boundary because it already downloads 
 | Silver | `train_journey` | `departureDate:trainNumber` | atomic `replaceWhere` date partition |
 | Silver | `station_arrival` | journey + station + source event index | atomic `replaceWhere` date partition |
 | Gold | `fact_train_journey` | journey key | atomic `replaceWhere` date partition |
-| Gold | `mart_regional_performance_daily` | date + maakunta + threshold | atomic `replaceWhere` date partition |
+| Gold | `mart_regional_performance_daily` | date + maakunta | atomic `replaceWhere` date partition; additive 5/10/15/30 columns |
+| Gold | `dim_region` | region year + maakunta | governed 19-row replacement |
+| Gold | `bridge_station_region` | region year + station | one active mapping per station/year |
+| Gold | `mart_regional_performance_7d` | window end + maakunta | affected complete windows only; 19 reconciled rows |
 | Gold | network daily | departure date | atomic `replaceWhere` date partition |
 | Gold | route / station performance | entity | recomputed from incremental Delta facts, not source JSON |
 
@@ -61,7 +65,13 @@ For every requested date the planner hashes the trusted source partition and com
 - any blocking failure: append a failed run, do not advance the watermark;
 - retry: the same partition is selected again and `replaceWhere` makes the writes idempotent.
 
-Facts are incremental. Cross-partition route and station marts are rebuilt from compact Delta facts so their denominators remain correct when a historical date changes; raw history is not reparsed.
+Facts are incremental. Cross-partition route and station marts are rebuilt from compact Delta facts so their denominators remain correct when a historical date changes; raw history is not reparsed. A changed daily hash recomputes only complete seven-day windows containing that date. Publication requires seven distinct component dates, 19 region rows, `measured <= observed`, monotonic delayed counts and a successful Gold write before either publication control state or source watermark advances.
+
+## Operational governance
+
+[`operational_policy.json`](../../rail/contracts/operational_policy.json) is the single Python/TypeScript policy for sample support and freshness. The empirically calibrated measured-count minima are 8 (`LIVE`), 20 (`24 HOURS`), 100 (`7 DAYS`) and 400 (`HISTORICAL`), with at least 80% timing coverage. These labels never alter the disruption status or score. Delayed-share uncertainty uses a 95% Wilson interval only; no interval is claimed for the composite score.
+
+Freshness follows evidence, not scheduler activity: source retrieval for `LIVE`, successful validation for `24 HOURS`, and successful Gold publication for `7 DAYS`. Missing/partial partitions or out-of-order timestamps are stale. The fixed historical snapshot is dated and explicitly not operationally freshness-scored.
 
 ## Quality gates
 
@@ -98,4 +108,4 @@ dbt was evaluated and intentionally not added. The difficult transformations sta
 
 ## Execution evidence and limitations
 
-Committed JSON evidence records a real 2026-07-31 run, an unchanged-hash rerun, a duplicate rejection integration test and forced recovery test. Generated Delta data stays below ignored `data/`; no source payload or invented platform screenshot is committed. Databricks Free Edition and Microsoft Fabric runs are not claimed because they require the owner's login/workspace. Local/CI Delta execution is real.
+Committed JSON evidence records a real 2026-07-31 run, an unchanged-hash rerun, a duplicate rejection integration test and forced recovery test. The scheduled/manual `rail-data-platform.yml` workflow acquires seven completed UTC dates, runs the real Java 17 Spark/Delta path, reconciles the compact publication and retains evidence for 30 days. Generated Delta data stays below ignored `data/`; no source payload or invented platform screenshot is committed. Microsoft Fabric and native Power BI execution are not claimed because they require the owner's tenant. Local/CI Delta execution is real.

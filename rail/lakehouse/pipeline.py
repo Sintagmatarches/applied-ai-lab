@@ -18,10 +18,10 @@ from pyspark.sql.types import BooleanType, DoubleType, StringType, StructField, 
 from rail.pipeline import validate_train_partition, write_json
 
 from .contracts import ContractRegistry
-from .planning import date_range, select_partitions
+from .planning import affected_complete_windows, date_range, select_partitions
 from .quality import QualityResult, require_no_failures, row_count_anomaly
 from .spark import build_spark, delta_exists, replace_partitions
-from .transforms import journey_fact, network_daily, normalize, regional_daily, route_performance, station_performance
+from .transforms import journey_fact, network_daily, normalize, regional_daily, rolling_regional_7d, route_performance, station_performance
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -65,6 +65,26 @@ def station_frame(spark, path: Path):
     return spark.createDataFrame(rows, schema)
 
 
+def region_frames(spark, path: Path):
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    station_counts: dict[str, int] = {}
+    for station in raw["stations"].values():
+        if station.get("passengerTraffic") and station.get("regionCode"):
+            station_counts[station["regionCode"]] = station_counts.get(station["regionCode"], 0) + 1
+    dimensions = spark.createDataFrame([{
+        "region_code": region["code"], "region_name_fi": region["nameFi"],
+        "region_name_sv": region["nameSv"], "region_name_en": region["nameEn"],
+        "region_year": int(region["year"]), "has_rail_service": station_counts.get(region["code"], 0) > 0,
+        "mapping_source": raw["meta"]["regionSource"],
+    } for region in raw["regions"]])
+    bridge = spark.createDataFrame([{
+        "station_region_key": f"{raw['meta']['regionYear']}:{code}", "station_code": code,
+        "region_code": value["regionCode"], "region_year": int(raw["meta"]["regionYear"]),
+        "is_active": True, "mapping_source": raw["meta"]["regionSource"],
+    } for code, value in raw["stations"].items() if value.get("regionCode")])
+    return dimensions, bridge
+
+
 class LakehousePipeline:
     def __init__(self, spark, lakehouse: Path, source: Path, stations: Path, contracts: Path = DEFAULT_CONTRACT):
         self.spark = spark
@@ -84,6 +104,10 @@ class LakehousePipeline:
             "gold_network": lakehouse / "gold/mart_network_reliability_daily",
             "gold_routes": lakehouse / "gold/mart_route_performance",
             "gold_stations": lakehouse / "gold/mart_station_performance",
+            "gold_dim_region": lakehouse / "gold/dim_region",
+            "gold_bridge_station_region": lakehouse / "gold/bridge_station_region",
+            "gold_regional_7d": lakehouse / "gold/mart_regional_performance_7d",
+            "publication": lakehouse / "control/regional_publication",
         }
 
     def successful_hashes(self) -> dict[str, str]:
@@ -191,6 +215,7 @@ class LakehousePipeline:
         }
         try:
             stations = station_frame(self.spark, self.stations_path).cache()
+            regions, station_region = region_frames(self.spark, self.stations_path)
             for decision in selected:
                 day = decision.departure_date.isoformat()
                 payload, digest = load_and_validate(decision.source_path, decision.departure_date)
@@ -244,6 +269,32 @@ class LakehousePipeline:
                 all_arrivals = self.spark.read.format("delta").load(str(self.paths["silver_arrivals"]))
                 route_performance(all_facts).write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(str(self.paths["gold_routes"]))
                 station_performance(all_arrivals).write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(str(self.paths["gold_stations"]))
+                self.contracts.validate_columns("gold.dim_region", regions.columns)
+                self.contracts.validate_columns("gold.bridge_station_region", station_region.columns)
+                regions.write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(str(self.paths["gold_dim_region"]))
+                station_region.write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(str(self.paths["gold_bridge_station_region"]))
+                all_regional = self.spark.read.format("delta").load(str(self.paths["gold_regional"]))
+                available = {row[0] for row in all_regional.select("departure_date").distinct().collect()}
+                windows = affected_complete_windows(available, {date.fromisoformat(day) for day, _ in processed})
+                for window_end in windows:
+                    rolling = rolling_regional_7d(all_regional, regions, window_end.isoformat())
+                    self.contracts.validate_columns("gold.mart_regional_performance_7d", rolling.columns)
+                    invalid_rolling = rolling.filter(
+                        (F.col("component_partitions") != 7)
+                        | (F.col("measured_trains") > F.col("observed_trains"))
+                        | (F.col("delayed_5") < F.col("delayed_10"))
+                        | (F.col("delayed_10") < F.col("delayed_15"))
+                        | (F.col("delayed_15") < F.col("delayed_30"))
+                    ).count()
+                    if rolling.count() != 19 or invalid_rolling:
+                        raise ValueError(f"regional 7d publication failed reconciliation for {window_end}")
+                    replace_partitions(rolling, self.paths["gold_regional_7d"], "window_end", [window_end.isoformat()])
+                    self.append_rows("publication", [{
+                        "run_id": run_id, "mode": "7d", "window_end": window_end,
+                        "status": "PUBLISHED", "gold_published_at": datetime.now(timezone.utc),
+                        "row_count": 19, "component_partitions": 7,
+                    }])
+                evidence["rolling7dWindows"] = [item.isoformat() for item in windows]
                 self.advance_watermarks(run_id, processed)
             self.record_run(run_id, "SUCCEEDED", start.isoformat(), end.isoformat(), len(processed), skipped)
             evidence.update({"status": "SUCCEEDED", "processedPartitions": len(processed), "skippedPartitions": skipped})

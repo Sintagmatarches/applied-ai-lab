@@ -56,3 +56,13 @@ Recommended Fabric Silver grain: one commercial, stopping arrival row. Keep jour
 - `problemStationsByThreshold` / `problemRoutesByThreshold`: top five exceptions ranked by fixed serious count, cancellations, selected-threshold delayed count and average delay.
 - legacy scalar fields without `ByThreshold` remain aliases for the 5-minute view.
 - Åland has `hasRailService=false`, `statusByThreshold=no-service` and null scores for every threshold.
+- `sampleSupport` carries status, measured/observed counts, measurement coverage, mode minimum and policy version; it does not modify operational status.
+- `delayedShareInterval95ByThreshold` is the 95% Wilson interval for each delayed proportion, never a composite-score interval.
+- snapshot provenance includes `sourceRetrievedAt`, `validatedAt`, `goldPublishedAt`, `latestCompletePartition`, `coverage` and `freshness`.
+
+## Regional semantic Gold
+
+- `dim_region`: all 19 official 2026 regions, multilingual names, mapping source and `has_rail_service`.
+- `bridge_station_region`: one active mapping per `region_year:station_code`, linked to the governed Statistics Finland region vintage.
+- `mart_regional_performance_daily`: one date × region additive row with observed/measured/cancelled, delay sum, serious `>15`, and `delayed_5/10/15/30` counts.
+- `mart_regional_performance_7d`: one complete window end × region, exactly seven component partitions, the same additive measures, and 19 rows including Åland zeros.

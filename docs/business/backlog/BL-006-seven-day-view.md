@@ -3,7 +3,7 @@
 > **Portfolio simulation.**
 
 **Priority:** P2  
-**State:** Ready  
+**State:** Implemented in repository
 **Business reason:** A 7-day view separates one-off live disruption from an emerging persistent issue.
 
 ## Requirements
@@ -22,3 +22,5 @@
 
 **Dependencies:** BL-002 and BL-005.  
 **Definition of Done:** incremental gold build, reconciliation tests, API/UI mode and runbook.
+
+Implemented with exact seven-date validation, affected-window recomputation, Delta Gold reconciliation, a compact governed artifact, API/UI mode and failure/recovery documentation.

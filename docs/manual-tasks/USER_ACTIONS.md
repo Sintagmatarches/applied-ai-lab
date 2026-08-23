@@ -9,3 +9,8 @@ Code, automated tests, public web deployment and GitHub traceability are complet
 5. If a hosted private Tender AI runtime is wanted, authenticate to the user's Azure subscription, publish `Dockerfile.tender-ai` to a user-owned registry, supply that image and the private Ollama endpoint to `infra/azure-tender`, then run the reviewed Terraform plan. The public portfolio and local/container runtime do not depend on this optional deployment.
 
 Do not mark Power BI/Fabric deployment complete in the portfolio until the listed native evidence exists.
+
+For the regional-governance issues specifically, the only remaining acceptance evidence is:
+
+- Issue #7: bind the shared freshness thresholds to a real Fabric alert destination, execute and record a stale→recovery runbook drill, and capture the observable dashboard state.
+- Issue #8: load the governed region dimension/bridge/daily/7d facts in Direct Lake, record performance results, and explicitly approve the documented no-RLS decision in the tenant.

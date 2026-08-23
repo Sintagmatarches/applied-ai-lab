@@ -141,9 +141,26 @@ test("marks regional cancellations without treating them as measured delays", ()
 
 test("regional API rejects unsupported windows", async () => {
   const { GET } = await import("../app/api/rail/monitor/route.ts");
-  const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
+  const response = await GET(new Request("https://example.test/api/rail/monitor?mode=30d"));
   assert.equal(response.status, 400);
   assert.equal(response.headers.get("cache-control"), "no-store");
+});
+
+test("7d API exposes a complete governed publication with operational evidence", async () => {
+  const { GET } = await import("../app/api/rail/monitor/route.ts");
+  const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
+  const body = (await response.json()) as {
+    mode: string; schemaVersion: string; latestCompletePartition: string;
+    coverage: { status: string; availableDates: string[] }; regions: Array<{ sampleSupport: { status: string } }>;
+  };
+  assert.equal(response.status, 200);
+  assert.equal(body.mode, "7d");
+  assert.equal(body.schemaVersion, "rail-regional-snapshot-v2");
+  assert.equal(body.coverage.status, "complete");
+  assert.equal(body.coverage.availableDates.length, 7);
+  assert.equal(body.latestCompletePartition, "2026-08-22");
+  assert.equal(body.regions.length, 19);
+  assert.ok(body.regions.every((region) => Boolean(region.sampleSupport.status)));
 });
 
 test("historical API returns all official regions and a dated source window", async () => {

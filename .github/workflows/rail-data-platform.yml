@@ -1,0 +1,81 @@
+name: Finland Rail governed publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_end:
+        description: Last completed Digitraffic departure date (YYYY-MM-DD; blank = yesterday UTC)
+        required: false
+        type: string
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rail-governed-publication
+  cancel-in-progress: false
+
+jobs:
+  publish-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-rail.txt
+      - uses: actions/setup-java@v5
+        with:
+          distribution: microsoft
+          java-version: "17"
+      - run: python -m pip install -r requirements-rail.txt
+      - name: Resolve seven completed UTC dates
+        id: dates
+        shell: bash
+        env:
+          REQUESTED_END: ${{ inputs.window_end }}
+        run: |
+          end="${REQUESTED_END:-$(date -u -d yesterday +%F)}"
+          start="$(date -u -d "$end - 6 days" +%F)"
+          echo "start=$start" >> "$GITHUB_OUTPUT"
+          echo "end=$end" >> "$GITHUB_OUTPUT"
+      - name: Acquire, validate, transform and publish Delta Gold
+        env:
+          SPARK_LOCAL_IP: 127.0.0.1
+        run: |
+          mkdir -p outputs
+          python -m rail.lakehouse.orchestrate \
+            --start "${{ steps.dates.outputs.start }}" \
+            --end "${{ steps.dates.outputs.end }}" \
+            --refresh-source --master local[2] | tee outputs/lakehouse-run.json
+      - name: Reconcile compact seven-day publication
+        run: |
+          python -m rail.build_regional_history \
+            --mode 7d \
+            --start "${{ steps.dates.outputs.start }}" \
+            --end "${{ steps.dates.outputs.end }}" \
+            --output outputs/rail-regional-7d.json
+      - name: Regression tests
+        run: python -m unittest discover -s rail/tests && python -m unittest discover -s rail/lakehouse/tests
+      - name: Publication summary
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          payload=json.load(open("outputs/rail-regional-7d.json", encoding="utf-8"))
+          print("## Finland Rail governed publication")
+          print(f"- Window: `{payload['windowStart'][:10]}` → `{payload['windowEnd'][:10]}`")
+          print(f"- Coverage: **{payload['coverage']['status']}** ({len(payload['coverage']['availableDates'])}/7)")
+          print(f"- Regions: **{len(payload['regions'])}**")
+          print(f"- Freshness at publication: **{payload['freshness']['state']}**")
+          PY
+      - uses: actions/upload-artifact@v6
+        with:
+          name: finland-rail-governed-${{ steps.dates.outputs.end }}
+          path: outputs/
+          if-no-files-found: error
+          retention-days: 30

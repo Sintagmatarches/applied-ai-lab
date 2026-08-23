@@ -55,6 +55,14 @@ Decision: is reliability materially outside the default service picture, and whe
 - Explain journey/station grains, threshold denominator, whole vs partial cancellations, deleted-train endpoint limitation and source licences.
 - Add a source-partition audit table when connected to Fabric: partition, retrieval, record count, hash and status.
 
+## 8. Regional Operations
+
+- Window selector: daily or governed rolling seven days; never sum pre-aggregated rates.
+- Map/table: all 19 regions from `Dim Region`; Åland is labelled `No rail service`.
+- Cards/tooltips: observed, measured, coverage, delayed count/share for the selected disconnected threshold, serious `>15`, cancellations, latest complete partition and Gold publication age.
+- Show `Low sample` as a separate icon/text field and a Wilson interval only beside delayed share. Do not present it as score uncertainty.
+- Default ranking excludes low-support regions but retains an explicit show-all option.
+
 ## Accessibility and layout review
 
 - Use semantic titles, alt text, logical tab order and minimum WCAG AA text contrast.

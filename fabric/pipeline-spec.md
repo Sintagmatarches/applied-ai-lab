@@ -12,7 +12,7 @@
 | Parameter | Type | Default | Use |
 | --- | --- | --- | --- |
 | `p_end_date` | ISO date | Helsinki yesterday | newest departure-date partition |
-| `p_refresh_recent_days` | integer | 3 | re-read late-arriving/corrected source dates |
+| `p_refresh_recent_days` | integer | 7 | retain enough completed dates to publish and re-read recent corrections |
 | `p_start_date` | ISO date | `p_end_date - p_refresh_recent_days` | calculated pipeline input |
 | `p_run_id` | string | pipeline run ID | lineage/audit correlation |
 
@@ -24,7 +24,9 @@ Set Helsinki dates
   -> Assert expected complete partition audit rows
   -> Transform Silver + quality gates (02_transform_quality)
   -> Publish Gold atomically by affected partitions
-  -> Reconcile counts and threshold flags
+  -> Build affected complete rolling 7-day region windows
+  -> Reconcile 19 regions, 7 components, counts and threshold flags
+  -> Record Gold publication timestamp
   -> Record successful watermark
   -> Refresh/notify downstream semantic model
 ```
@@ -50,8 +52,9 @@ Failure from any activity skips watermark advancement and downstream refresh. Re
 | Gold unique journey key | before publish | fail run |
 | `on_time_5 >= on_time_10 >= on_time_15 >= on_time_30` is **not** valid for flags; correct invariant is the reverse per row/count | Gold reconciliation | assert `on_time_5 <= on_time_10 <= on_time_15 <= on_time_30` |
 | Completed + cancelled + missing-final-actual reconciliation | Gold reconciliation | fail run on unexplained difference |
+| Seven distinct dates, 19 region rows, measured ≤ observed, delayed_5 ≥ delayed_10 ≥ delayed_15 ≥ delayed_30 | rolling Gold | retain prior publication; no watermark |
 
-The hard partition checks are implemented in notebooks 01 and 02. Gold reconciliation and anomaly alerting remain tenant tasks because table operations and alert destinations require a live workspace.
+The repository Spark path implements the rolling Gold reconciliation and publication control row. Fabric alert destinations, drill evidence and semantic refresh history remain tenant tasks because they require a live workspace.
 
 ## Audit columns
 

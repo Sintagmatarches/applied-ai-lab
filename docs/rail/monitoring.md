@@ -19,9 +19,17 @@ The committed lookup has 552 Finnish stations, including 209 passenger stations.
 
 `24 HOURS` requests the current and previous Digitraffic departure-date partitions, de-duplicates `(departureDate, trainNumber)`, and then applies an exact rolling 24-hour filter. Only actual times count as measured timing in this completed/recent view. The regional response is cached for 15 minutes at the edge.
 
+`7 DAYS` reads the committed compact publication produced from exactly seven validated, completed daily partitions. It never fans seven large source requests out from the public edge. The UI exposes the source/validation/Gold timestamps, latest complete partition and coverage count.
+
 `HISTORICAL` is a committed snapshot covering 1 August 2025 through 31 July 2026. `python -m rail.build_regional_history` rebuilds it from all 365 cached daily source partitions. It is clearly dated in the UI and never substituted for failed live data.
 
-A dynamic seven-day view is intentionally omitted from the current serverless implementation. Digitraffic returns roughly 19 MB of compressed JSON for one busy departure day, so fetching and parsing seven full partitions on demand would create an unsafe public edge workload. Persistent incremental storage in the documented Fabric target is the correct base-level implementation for that window.
+The serverless API reads only the compact governed artifact. The executable Spark/Delta path persists daily and rolling Gold tables; the repository publication builder independently reconciles the same seven validated source partitions for the public deployment. This keeps raw payloads and large on-demand parsing outside the edge runtime.
+
+## Sample support, uncertainty and freshness
+
+Operational state and analytical support are separate. A region can be operationally normal/elevated/serious and still carry `Low sample`. Support requires mode-specific measured counts (8/20/100/400) and 80% measurement coverage, calibrated against the committed 365-day regional distribution. `No data` means a rail-served region has no observations; `No rail service` is a domain fact (Åland). The displayed 95% Wilson interval belongs only to the selected delayed share.
+
+Freshness states are `fresh`, `warning`, `stale` and historical `not-applicable`. `LIVE` uses source retrieval (5/15 minutes), `24 HOURS` validation (30/120 minutes), and `7 DAYS` successful Gold publication (36/60 hours). Incomplete coverage is always stale even if a process recently ran.
 
 ## Regional grain and metrics
 
@@ -49,7 +57,7 @@ Reliability Score is `100 - Disruption Score`. Map status thresholds are normal 
 
 ## Failure handling and caching
 
-Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows an explicit unavailable message and never manufactures or relabels historical data as live. The last successful in-session snapshot may remain visible while a background refresh fails. Map geometry is a versioned public asset derived from the official source. LIVE responses use a one-minute edge cache with stale-while-revalidate; 24-hour responses use 15 minutes; the immutable historical snapshot uses one day.
+Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows an explicit unavailable message and never manufactures or relabels historical data as live. The last successful in-session snapshot may remain visible while a background refresh fails. Map geometry is a versioned public asset derived from the official source. LIVE responses use a one-minute edge cache with stale-while-revalidate; 24-hour and 7-day responses use 15 minutes; the immutable historical snapshot uses one day.
 
 ## Limitations
 
@@ -58,5 +66,5 @@ Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows a
 - A route label uses the first and final passenger endpoints of the full train, even when the selected region covers an intermediate segment.
 - Current estimates can be revised, and cancellation status can change.
 - Delay cause codes and infrastructure incidents are not yet complete enough in this implementation to claim causality.
-- The public runtime has no durable seven-day event store. That period belongs in the incremental Fabric/Lakehouse path rather than an expensive on-demand workaround.
+- The public runtime consumes the compact seven-day publication; raw event retention and the Delta transaction log remain in the pipeline runtime, not in Git.
 - Comparing scores across screenshots requires the same delay threshold; the UI exposes the active policy to prevent an unlabeled comparison.

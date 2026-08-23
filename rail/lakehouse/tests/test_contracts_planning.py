@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from rail.lakehouse.contracts import ContractRegistry
-from rail.lakehouse.planning import select_partitions
+from rail.lakehouse.planning import affected_complete_windows, select_partitions
 from rail.lakehouse.quality import row_count_anomaly
 
 
@@ -50,6 +50,17 @@ class PlanningTests(unittest.TestCase):
                 {"2026-01-01": "new-hash"}, {"2026-01-01": "old-hash"},
             )[0]
         self.assertEqual(decision.reason, "source content changed")
+
+    def test_late_correction_rebuilds_only_complete_affected_seven_day_windows(self):
+        available = {date(2026, 1, day) for day in range(1, 11)}
+        self.assertEqual(
+            affected_complete_windows(available, {date(2026, 1, 4)}),
+            [date(2026, 1, day) for day in range(7, 11)],
+        )
+        self.assertEqual(
+            affected_complete_windows({date(2026, 1, day) for day in range(1, 7)}, {date(2026, 1, 4)}),
+            [],
+        )
 
     def test_row_count_gate_rejects_extreme_partition(self):
         result = row_count_anomaly(10, [1000] * 10)

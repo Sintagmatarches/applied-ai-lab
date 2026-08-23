@@ -18,10 +18,11 @@ type RegionFeature = {
 };
 type RegionGeoJson = { type: "FeatureCollection"; features: RegionFeature[] };
 
-const CACHE_VERSION = "20260818-data-platform-1";
+const CACHE_VERSION = "20260823-rail-governance-1";
 const MODES: Array<{ value: RailMonitorMode; label: string; description: string }> = [
   { value: "live", label: "LIVE", description: "Current 3-hour operating window" },
   { value: "24h", label: "24 HOURS", description: "Rolling previous 24 hours" },
+  { value: "7d", label: "7 DAYS", description: "Latest governed seven complete daily partitions" },
   { value: "historical", label: "HISTORICAL", description: "Committed 12-month snapshot" },
 ];
 
@@ -139,6 +140,7 @@ function RegionDetail({ region, threshold }: { region: RailRegionMetric; thresho
     );
   }
   const view = regionalView(region, threshold);
+  const interval = thresholdValue(region.delayedShareInterval95ByThreshold, threshold, null);
   return (
     <aside className="region-detail" aria-live="polite">
       <div className="region-detail-heading">
@@ -148,6 +150,11 @@ function RegionDetail({ region, threshold }: { region: RailRegionMetric; thresho
         </div>
         <span className={`region-status region-status-${view.status}`}>{statusLabel(view.status)}</span>
       </div>
+      {region.sampleSupport.status === "low-sample" ? (
+        <p className="sample-support sample-support-low" role="note">
+          Low sample: {region.measuredTrains} measured; policy requires {region.sampleSupport.requiredMinimumMeasured} and {percentage(region.sampleSupport.minimumMeasurementCoverage)} coverage.
+        </p>
+      ) : null}
       <dl className="region-metrics">
         <div><dt>Observed trains</dt><dd>{region.observedTrains.toLocaleString("en-FI")}</dd></div>
         <div><dt>Delayed &gt;{threshold} min</dt><dd>{view.delayedTrains.toLocaleString("en-FI")} <small>{percentage(view.delayedShare)}</small></dd></div>
@@ -155,6 +162,7 @@ function RegionDetail({ region, threshold }: { region: RailRegionMetric; thresho
         <div><dt>Serious &gt;15 min</dt><dd>{region.severeDelays.toLocaleString("en-FI")}</dd></div>
         <div><dt>Cancellations</dt><dd>{region.cancellations.toLocaleString("en-FI")} <small>{percentage(region.cancellationShare)}</small></dd></div>
         <div><dt>Reliability score</dt><dd>{view.reliabilityScore?.toFixed(1) ?? "—"}<small> / 100</small></dd></div>
+        <div><dt>Delayed-share 95% interval</dt><dd>{interval ? `${percentage(interval.lower)}–${percentage(interval.upper)}` : "—"}</dd></div>
       </dl>
       <div className="region-problems">
         <div>
@@ -294,11 +302,20 @@ export function RegionalRailMonitor() {
       {snapshot ? (
         <>
           <div className="monitor-freshness" role="status">
-            <span className={mode === "live" ? "live-pulse" : "snapshot-dot"} aria-hidden="true" />
-            <strong>{mode === "live" ? "Live Digitraffic" : mode === "24h" ? "Rolling window" : "Dated historical snapshot"}</strong>
+            <span className={`freshness-dot freshness-${snapshot.freshness.state}`} aria-hidden="true" />
+            <strong>{snapshot.freshness.state === "not-applicable" ? "Dated snapshot" : `Freshness: ${snapshot.freshness.state}`}</strong>
+            <span>{mode === "live" ? "Live Digitraffic" : mode === "24h" ? "Rolling window" : mode === "7d" ? "Governed Gold window" : "Dated historical snapshot"}</span>
             <span>{windowLabel(snapshot)}</span>
-            <span>Updated {localTime(snapshot.retrievedAt)}</span>
+            <span>Source checked {localTime(snapshot.sourceRetrievedAt ?? snapshot.retrievedAt)}</span>
+            {snapshot.goldPublishedAt ? <span>Gold published {localTime(snapshot.goldPublishedAt)}</span> : null}
+            <span>Coverage: {snapshot.coverage.status}{snapshot.coverage.expectedDates.length ? ` (${snapshot.coverage.availableDates.length}/${snapshot.coverage.expectedDates.length} dates)` : ""}</span>
           </div>
+          {snapshot.freshness.state === "warning" || snapshot.freshness.state === "stale" ? (
+            <p className={`monitor-operational-alert freshness-${snapshot.freshness.state}`} role="alert">{snapshot.freshness.reason}</p>
+          ) : null}
+          {snapshot.network.sampleSupport.status === "low-sample" ? (
+            <p className="monitor-operational-alert sample-support-low" role="note">Low sample: national result is shown separately from operational status.</p>
+          ) : null}
           <dl className="monitor-network-kpis" aria-label="National regional observations">
             <div><dt>Regional train observations</dt><dd>{snapshot.network.observedTrains.toLocaleString("en-FI")}</dd></div>
             <div><dt>Delayed &gt;{threshold} min</dt><dd>{percentage(thresholdValue(snapshot.network.delayedShareByThreshold, threshold, snapshot.network.delayedShare))}</dd></div>
@@ -365,6 +382,7 @@ export function RegionalRailMonitor() {
           <p>{snapshot.definitions.delayed} {snapshot.definitions.severe}</p>
           <p>{snapshot.definitions.score}</p>
           <p>Delay shares use trains with actual or current estimated timing; scheduled trains without an observation remain visible in the observed count but are not silently treated as on time.</p>
+          <p>The 95% Wilson interval describes sampling uncertainty for the delayed share only. It is not an uncertainty interval for the reliability or disruption score.</p>
         </details>
       ) : null}
     </section>
