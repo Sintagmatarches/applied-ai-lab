@@ -1,0 +1,29 @@
+{
+  "datasetSchemaVersion": "1.0.0",
+  "datasetVersion": "recorded-real-ted-v2.0.0",
+  "generatedAt": "2026-08-24T09:52:33.221812+00:00",
+  "source": "Official TED Search API v3 (published public procurement notices)",
+  "noticeCount": 15,
+  "queryCount": 30,
+  "noticeIds": [
+    "131555-2026",
+    "71933-2026",
+    "301751-2026",
+    "301635-2026",
+    "300181-2026",
+    "300406-2026",
+    "300192-2026",
+    "300133-2026",
+    "300509-2026",
+    "302075-2026",
+    "301468-2026",
+    "301058-2026",
+    "300384-2026",
+    "301179-2026",
+    "323607-2026"
+  ],
+  "corpusDigest": "61a7395e6f8fe6663c1348cfb286c088f525a1cbd07e554f471775dd0948c5fa",
+  "querySetDigest": "1bd89d358dd1239e506f16f8af88b3a792026c0c3cbc051923877d007bed985d",
+  "labelMethod": "source-derived expectations: mechanically verifiable fields plus explicitly documented interpretations only",
+  "evaluationSplitVersion": "notice-grouped-split-v1"
+}
