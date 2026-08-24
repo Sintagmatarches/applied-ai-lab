@@ -63,7 +63,7 @@ The monitor answers: **Where is Finland's passenger-rail network operating norma
 
 - The `LIVE` view refreshes every minute from Digitraffic and covers a three-hour operating window around the current time. Trains marked `runningCurrently` retain their nearest previous/next commercial stops even when a severe delay moves them outside that normal window.
 - The `24 HOURS` view aggregates the current and previous departure-date partitions into a strict rolling window and uses a longer server cache to protect the public API.
-- The `7 DAYS` view is a governed compact publication from exactly seven validated completed dates; the public edge never downloads seven raw partitions on demand.
+- The `7 DAYS` view is a governed compact publication from exactly seven validated completed dates. Daily data is atomically published as immutable JSON plus a SHA-256 manifest on the dedicated `rail-publications` branch, so it refreshes production without a website rebuild or daily churn on `main`; the public edge never downloads seven raw partitions on demand.
 - `HISTORICAL` is explicitly dated, reproducible and built from the 365 committed source partitions used by the existing analysis. It is never presented as current data.
 - The current metadata contains 552 Finnish station coordinates, all assigned to one of the 19 official 2026 maakunta polygons by point-in-polygon. Only the 209 Finnish stations marked `passengerTraffic=true` can create passenger-rail observations.
 - Åland has zero passenger-rail stations and is reported as `No rail service`, with no disruption or reliability score.
@@ -137,7 +137,7 @@ Important references:
 - [`artifacts/rail-quality.json`](artifacts/rail-quality.json) — source counts, checks and definitions;
 - [`artifacts/rail-station-regions.json`](artifacts/rail-station-regions.json) — reproducible station-to-maakunta lookup;
 - [`artifacts/rail-regional-history.json`](artifacts/rail-regional-history.json) — dated 12-month regional snapshot;
-- [`artifacts/rail-regional-7d.json`](artifacts/rail-regional-7d.json) — complete, reconciled seven-day regional publication;
+- [`artifacts/rail-regional-7d.json`](artifacts/rail-regional-7d.json) — bundled last-known-good fallback; the current complete publication is resolved from the validated `rail-publications` manifest at runtime;
 - [`docs/rail/monitoring.md`](docs/rail/monitoring.md) — live modes, score, spatial join and operational limitations;
 - [`docs/rail/methodology.md`](docs/rail/methodology.md) — grains, metrics, weather scope and limitations;
 - [`docs/rail/data-dictionary.md`](docs/rail/data-dictionary.md) — analytical tables and fields;

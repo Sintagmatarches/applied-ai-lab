@@ -22,8 +22,11 @@ flowchart LR
   G3 --> P
   G1 --> J["Versioned public aggregate JSON"]
   G2 --> R7["Regional daily + governed rolling 7-day Gold"]
-  R7 --> J7["Compact reconciled 7 DAYS publication"]
-  J7 --> U
+  R7 --> GATE["Contract + reconciliation gates"]
+  GATE --> SNAP["Immutable compact snapshot + SHA-256"]
+  SNAP --> MAN["Atomic latest manifest on rail-publications"]
+  MAN --> API["Runtime fetch, validate, cache, fallback"]
+  API --> U
   J --> U
 ```
 
@@ -38,10 +41,14 @@ The transformation emits:
 - ignored curated CSVs below `data/rail/curated/` for local review or Fabric bootstrap.
 - `artifacts/rail-station-regions.json`, the official station-to-maakunta lookup;
 - `artifacts/rail-regional-history.json`, a dated regional snapshot rebuilt from the 365 daily partitions;
-- `artifacts/rail-regional-7d.json`, a compact operational snapshot built from exactly seven validated completed partitions;
+- `artifacts/rail-regional-7d.json`, the bundled last-known-good fallback for a remote publication failure;
 - `public/rail/finland-maakunta.geojson`, simplified display geometry retaining all 19 official regions.
 
 Raw third-party responses are deliberately not committed.
+
+The daily public data plane is intentionally separate from application source. A successful workflow commit on `rail-publications` contains only `manifest.json` and retained `snapshots/*.json`. The manifest points to an immutable content-addressed snapshot and records its SHA-256, schema/KPI/sample/freshness policy versions, source, complete window and latest complete partition. A single Git ref update publishes the snapshot and pointer together; failures before the push leave the previous manifest authoritative. No daily data commit lands on `main`.
+
+The API fetches only the hard-coded trusted branch location, validates the exact manifest fields, canonical snapshot path, digest, versions, seven contiguous partitions, timestamps, metric reconciliation and all 19 governed regions. A short in-process/edge cache limits GitHub traffic. Any timeout, non-2xx response, invalid JSON, digest mismatch or contract defect activates the bundled snapshot with explicit `publicationSource=bundled-fallback`; fallback freshness is always forced to `stale`.
 
 ## Executable Lakehouse path
 
@@ -58,7 +65,7 @@ The repository implementation uses PySpark and Delta Lake Bronze/Silver/Gold tab
 ## Incremental policy
 
 - Partition key: Digitraffic `departureDate`.
-- Normal run: ingest the latest seven completed UTC departure dates; identical hashes skip, while corrected hashes rebuild only complete affected windows.
+- Normal run: resolve yesterday in `Europe/Helsinki` and the prior six completed departure dates; identical hashes skip, while corrected hashes rebuild only complete affected windows.
 - Backfill: explicit inclusive start/end parameters.
 - Idempotency: replace only the requested Silver/Gold date partitions after a successful Bronze acquisition.
 - Source identity: `(departureDate, trainNumber)`; repeated keys fail the quality gate.

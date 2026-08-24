@@ -99,6 +99,10 @@ export type RegionalRailSnapshot = {
     "problemStations" | "problemRoutes" | "problemStationsByThreshold" | "problemRoutesByThreshold"
   >;
   regions: RailRegionMetric[];
+  publicationSource?: "remote-governed" | "bundled-fallback";
+  publicationId?: string;
+  publicationDigest?: string;
+  publicationWarning?: string;
 };
 
 type LookupPayload = {

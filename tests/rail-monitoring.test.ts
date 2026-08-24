@@ -147,20 +147,35 @@ test("regional API rejects unsupported windows", async () => {
 });
 
 test("7d API exposes a complete governed publication with operational evidence", async () => {
-  const { GET } = await import("../app/api/rail/monitor/route.ts");
-  const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
-  const body = (await response.json()) as {
-    mode: string; schemaVersion: string; latestCompletePartition: string;
-    coverage: { status: string; availableDates: string[] }; regions: Array<{ sampleSupport: { status: string } }>;
-  };
-  assert.equal(response.status, 200);
-  assert.equal(body.mode, "7d");
-  assert.equal(body.schemaVersion, "rail-regional-snapshot-v2");
-  assert.equal(body.coverage.status, "complete");
-  assert.equal(body.coverage.availableDates.length, 7);
-  assert.equal(body.latestCompletePartition, "2026-08-22");
-  assert.equal(body.regions.length, 19);
-  assert.ok(body.regions.every((region) => Boolean(region.sampleSupport.status)));
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  globalThis.fetch = async () => { throw new Error("publication unavailable"); };
+  console.warn = () => undefined;
+  try {
+    const { clearRailPublicationCacheForTests } = await import("../lib/rail-publication.ts");
+    const { GET } = await import("../app/api/rail/monitor/route.ts");
+    clearRailPublicationCacheForTests();
+    const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
+    const body = (await response.json()) as {
+      mode: string; schemaVersion: string; latestCompletePartition: string; publicationSource: string;
+      publicationWarning: string; freshness: { state: string };
+      coverage: { status: string; availableDates: string[] }; regions: Array<{ sampleSupport: { status: string } }>;
+    };
+    assert.equal(response.status, 200);
+    assert.equal(body.mode, "7d");
+    assert.equal(body.schemaVersion, "rail-regional-snapshot-v2");
+    assert.equal(body.coverage.status, "complete");
+    assert.equal(body.coverage.availableDates.length, 7);
+    assert.equal(body.latestCompletePartition, "2026-08-22");
+    assert.equal(body.regions.length, 19);
+    assert.equal(body.publicationSource, "bundled-fallback");
+    assert.equal(body.freshness.state, "stale");
+    assert.match(body.publicationWarning, /not considered fresh/);
+    assert.ok(body.regions.every((region) => Boolean(region.sampleSupport.status)));
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
 });
 
 test("historical API returns all official regions and a dated source window", async () => {

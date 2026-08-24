@@ -7,9 +7,9 @@
 3. Confirm `status=SUCCEEDED`, quality checks have no `FAIL`, and the watermark contains the new SHA-256.
 4. Refresh downstream historical artifacts or the approved BI model only after the Gold commit.
 
-The governed publisher requests yesterday UTC plus the prior six completed dates. Same-hash partitions are skipped; revised Digitraffic payloads are selected automatically and every complete affected rolling window is recomputed.
+The governed publisher resolves yesterday in `Europe/Helsinki` plus the prior six completed dates. This calendar rule is independent of runner UTC and remains correct across DST, month and year boundaries. Same-hash partitions are skipped inside a run; because GitHub runners are ephemeral, a scheduled run may reacquire the bounded source window and rebuild local Delta state before publication.
 
-The executable schedule is `.github/workflows/rail-data-platform.yml` (daily 04:17 UTC plus manual `window_end`). A successful run must show seven available dates, 19 rolling rows and `fresh` at publication. Its artifact contains the Spark log/evidence and compact JSON for 30 days.
+The executable schedule is `.github/workflows/rail-data-platform.yml` (daily 04:17 UTC plus manual `window_end`). A successful build job must show seven available dates, 19 rolling rows, `fresh` at publication and a verified digest. The separate write-scoped job then commits only the immutable snapshot and latest manifest to `rail-publications`. Its Actions artifact contains the Spark log/evidence and compact JSON for 30 days; production persistence is the publication branch, not that expiring artifact.
 
 ## Backfill
 
@@ -28,6 +28,7 @@ python -m rail.lakehouse.orchestrate --start 2026-07-01 --end 2026-07-07
 - Verify the successful watermark SHA and compare Gold counts/KPIs with the pre-recovery run.
 - If freshness is `warning`, inspect the latest Gold publication time and the current workflow before the 60-hour stale boundary.
 - If freshness is `stale`, stop downstream refresh, inspect missing/failed dates and timestamp ordering, reacquire only failed dates, rerun, then verify a new `PUBLISHED` control row. Source/API success alone is not recovery.
+- If the publication job fails, do not edit `manifest.json` manually. The previous branch commit remains authoritative and production will either keep using it or show the explicit stale bundled fallback. Fix the failed gate/push and rerun the same `window_end`.
 
 Because watermark advancement is the final step, partial Silver/Gold writes remain safe: the retry atomically replaces the same date partitions.
 

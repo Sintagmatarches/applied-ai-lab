@@ -18,7 +18,7 @@ type RegionFeature = {
 };
 type RegionGeoJson = { type: "FeatureCollection"; features: RegionFeature[] };
 
-const CACHE_VERSION = "20260823-rail-governance-1";
+const CACHE_VERSION = "20260824-rail-publication-plane-1";
 const MODES: Array<{ value: RailMonitorMode; label: string; description: string }> = [
   { value: "live", label: "LIVE", description: "Current 3-hour operating window" },
   { value: "24h", label: "24 HOURS", description: "Rolling previous 24 hours" },
@@ -304,14 +304,18 @@ export function RegionalRailMonitor() {
           <div className="monitor-freshness" role="status">
             <span className={`freshness-dot freshness-${snapshot.freshness.state}`} aria-hidden="true" />
             <strong>{snapshot.freshness.state === "not-applicable" ? "Dated snapshot" : `Freshness: ${snapshot.freshness.state}`}</strong>
-            <span>{mode === "live" ? "Live Digitraffic" : mode === "24h" ? "Rolling window" : mode === "7d" ? "Governed Gold window" : "Dated historical snapshot"}</span>
+            <span>{mode === "live" ? "Live Digitraffic" : mode === "24h" ? "Rolling window" : mode === "7d" ? (snapshot.publicationSource === "remote-governed" ? "Governed daily publication" : "Last-known-good fallback") : "Dated historical snapshot"}</span>
             <span>{windowLabel(snapshot)}</span>
+            {mode === "7d" && snapshot.latestCompletePartition ? <span>Latest complete date: {snapshot.latestCompletePartition}</span> : null}
             <span>Source checked {localTime(snapshot.sourceRetrievedAt ?? snapshot.retrievedAt)}</span>
             {snapshot.goldPublishedAt ? <span>Gold published {localTime(snapshot.goldPublishedAt)}</span> : null}
             <span>Coverage: {snapshot.coverage.status}{snapshot.coverage.expectedDates.length ? ` (${snapshot.coverage.availableDates.length}/${snapshot.coverage.expectedDates.length} dates)` : ""}</span>
           </div>
           {snapshot.freshness.state === "warning" || snapshot.freshness.state === "stale" ? (
             <p className={`monitor-operational-alert freshness-${snapshot.freshness.state}`} role="alert">{snapshot.freshness.reason}</p>
+          ) : null}
+          {snapshot.publicationWarning && snapshot.publicationWarning !== snapshot.freshness.reason ? (
+            <p className="monitor-operational-alert freshness-stale" role="alert">{snapshot.publicationWarning}</p>
           ) : null}
           {snapshot.network.sampleSupport.status === "low-sample" ? (
             <p className="monitor-operational-alert sample-support-low" role="note">Low sample: national result is shown separately from operational status.</p>

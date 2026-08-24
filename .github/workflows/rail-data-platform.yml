@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       window_end:
-        description: Last completed Digitraffic departure date (YYYY-MM-DD; blank = yesterday UTC)
+        description: Last completed Digitraffic departure date (YYYY-MM-DD; blank = yesterday in Helsinki)
         required: false
         type: string
   schedule:
@@ -18,9 +18,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-evidence:
+  build-governed-publication:
+    name: Build and gate governed publication
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      window_end: ${{ steps.dates.outputs.end }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -33,16 +38,12 @@ jobs:
           distribution: microsoft
           java-version: "17"
       - run: python -m pip install -r requirements-rail.txt
-      - name: Resolve seven completed UTC dates
+      - name: Resolve seven completed Helsinki dates
         id: dates
         shell: bash
         env:
           REQUESTED_END: ${{ inputs.window_end }}
-        run: |
-          end="${REQUESTED_END:-$(date -u -d yesterday +%F)}"
-          start="$(date -u -d "$end - 6 days" +%F)"
-          echo "start=$start" >> "$GITHUB_OUTPUT"
-          echo "end=$end" >> "$GITHUB_OUTPUT"
+        run: python -m rail.publication_dates --requested-end "$REQUESTED_END" --github-output "$GITHUB_OUTPUT"
       - name: Acquire, validate, transform and publish Delta Gold
         env:
           SPARK_LOCAL_IP: 127.0.0.1
@@ -59,23 +60,101 @@ jobs:
             --start "${{ steps.dates.outputs.start }}" \
             --end "${{ steps.dates.outputs.end }}" \
             --output outputs/rail-regional-7d.json
-      - name: Regression tests
-        run: python -m unittest discover -s rail/tests && python -m unittest discover -s rail/lakehouse/tests
+      - name: Validate immutable publication contract
+        run: python -m rail.publication --snapshot outputs/rail-regional-7d.json --publication-dir outputs/publication
+      - name: Lightweight publication regression tests
+        run: >-
+          python -m unittest
+          rail.tests.test_operational
+          rail.tests.test_regional_publication
+          rail.tests.test_publication_data_plane
       - name: Publication summary
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
           payload=json.load(open("outputs/rail-regional-7d.json", encoding="utf-8"))
+          manifest=json.load(open("outputs/publication/manifest.json", encoding="utf-8"))
           print("## Finland Rail governed publication")
           print(f"- Window: `{payload['windowStart'][:10]}` → `{payload['windowEnd'][:10]}`")
           print(f"- Coverage: **{payload['coverage']['status']}** ({len(payload['coverage']['availableDates'])}/7)")
           print(f"- Regions: **{len(payload['regions'])}**")
-          print(f"- Freshness at publication: **{payload['freshness']['state']}**")
+          print(f"- Snapshot SHA-256: `{manifest['snapshotSha256']}`")
+          print("- Full Spark integration remains enforced by the `rail-lakehouse` CI job.")
           PY
       - uses: actions/upload-artifact@v6
         with:
-          name: finland-rail-governed-${{ steps.dates.outputs.end }}
+          name: finland-rail-governed-publication
           path: outputs/
           if-no-files-found: error
           retention-days: 30
+
+  publish-data-plane:
+    name: Atomically publish immutable snapshot and latest manifest
+    needs: build-governed-publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v7
+        with:
+          name: finland-rail-governed-publication
+          path: downloaded-publication
+      - name: Prepare isolated publication branch worktree
+        id: publish
+        shell: bash
+        env:
+          PUBLICATION_END: ${{ needs.build-governed-publication.outputs.window_end }}
+        run: |
+          set -euo pipefail
+          publication_dir="$RUNNER_TEMP/rail-publications"
+          if git fetch origin rail-publications:refs/remotes/origin/rail-publications; then
+            git worktree add -B rail-publications "$publication_dir" refs/remotes/origin/rail-publications
+          else
+            git worktree add --detach "$publication_dir"
+            git -C "$publication_dir" switch --orphan rail-publications
+            git -C "$publication_dir" rm -rf --ignore-unmatch .
+          fi
+
+          python -m rail.publication \
+            --snapshot "$GITHUB_WORKSPACE/downloaded-publication/rail-regional-7d.json" \
+            --publication-dir "$publication_dir"
+
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              manifest.json|snapshots/*.json) ;;
+              *) git -C "$publication_dir" rm -r -- "$path" ;;
+            esac
+          done < <(git -C "$publication_dir" ls-files -z)
+
+          git -C "$publication_dir" config user.name "github-actions[bot]"
+          git -C "$publication_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$publication_dir" add manifest.json snapshots
+          if git -C "$publication_dir" diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git -C "$publication_dir" commit -m "rail: publish completed window $PUBLICATION_END"
+            git -C "$publication_dir" push origin HEAD:rail-publications
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "commit=$(git -C "$publication_dir" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          digest=$(python -c "import json; print(json.load(open('$publication_dir/manifest.json'))['snapshotSha256'])")
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Published data-plane evidence
+        shell: bash
+        run: |
+          {
+            echo "## Atomic Rail data-plane publication"
+            echo "- Branch: \`rail-publications\`"
+            echo "- Publication commit: \`${{ steps.publish.outputs.commit }}\`"
+            echo "- Snapshot SHA-256: \`${{ steps.publish.outputs.digest }}\`"
+            echo "- Branch changed: \`${{ steps.publish.outputs.changed }}\`"
+            echo "- Stable manifest: https://raw.githubusercontent.com/Sintagmatarches/applied-ai-lab/rail-publications/manifest.json"
+          } >> "$GITHUB_STEP_SUMMARY"

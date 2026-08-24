@@ -19,11 +19,11 @@ The committed lookup has 552 Finnish stations, including 209 passenger stations.
 
 `24 HOURS` requests the current and previous Digitraffic departure-date partitions, de-duplicates `(departureDate, trainNumber)`, and then applies an exact rolling 24-hour filter. Only actual times count as measured timing in this completed/recent view. The regional response is cached for 15 minutes at the edge.
 
-`7 DAYS` reads the committed compact publication produced from exactly seven validated, completed daily partitions. It never fans seven large source requests out from the public edge. The UI exposes the source/validation/Gold timestamps, latest complete partition and coverage count.
+`7 DAYS` resolves the stable manifest on the dedicated `rail-publications` branch, verifies the immutable snapshot SHA-256 and contract, then serves exactly seven validated, completed daily partitions. It never fans seven large source requests out from the public edge and does not require a website rebuild after the daily pipeline. The UI exposes remote-vs-fallback provenance, source/validation/Gold timestamps, latest complete partition and coverage count.
 
 `HISTORICAL` is a committed snapshot covering 1 August 2025 through 31 July 2026. `python -m rail.build_regional_history` rebuilds it from all 365 cached daily source partitions. It is clearly dated in the UI and never substituted for failed live data.
 
-The serverless API reads only the compact governed artifact. The executable Spark/Delta path persists daily and rolling Gold tables; the repository publication builder independently reconciles the same seven validated source partitions for the public deployment. This keeps raw payloads and large on-demand parsing outside the edge runtime.
+The serverless API reads only a compact governed artifact. The executable Spark/Delta path persists daily and rolling Gold tables; the publication builder reconciles the same seven validated source partitions before an atomic branch update. This keeps raw payloads and large on-demand parsing outside the edge runtime.
 
 ## Sample support, uncertainty and freshness
 
@@ -57,7 +57,7 @@ Reliability Score is `100 - Disruption Score`. Map status thresholds are normal 
 
 ## Failure handling and caching
 
-Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows an explicit unavailable message and never manufactures or relabels historical data as live. The last successful in-session snapshot may remain visible while a background refresh fails. Map geometry is a versioned public asset derived from the official source. LIVE responses use a one-minute edge cache with stale-while-revalidate; 24-hour and 7-day responses use 15 minutes; the immutable historical snapshot uses one day.
+Live and 24-hour API errors return HTTP 502 with `no-store`. The browser shows an explicit unavailable message and never manufactures or relabels historical data as live. The last successful in-session snapshot may remain visible while a background refresh fails. For `7 DAYS`, remote publication failure serves the validated bundled last-known-good snapshot with an explicit warning and forced `stale` state; it is never reported as fresh. Map geometry is a versioned public asset derived from the official source. LIVE responses use a one-minute edge cache with stale-while-revalidate; the remote 7-day publication uses a five-minute application/edge cache; fallback uses one minute; the immutable historical snapshot uses one day.
 
 ## Limitations
 
