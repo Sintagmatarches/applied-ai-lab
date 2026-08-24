@@ -6,10 +6,12 @@ import json
 from pathlib import Path
 import tempfile
 import time
+from uuid import uuid4
 
 from .config import AiConfig
 from .domain import DEMO_PROFILE
 from .ollama import OllamaUnavailable
+from .observability import TraceWriter, safe_query_metadata
 from .runtime import create_runtime
 from .ted import TedClient, normalize
 from .storage import utc_now
@@ -38,8 +40,9 @@ def main()->None:
         except Exception as error:
             scenario_results.append({"name":scenario["name"],"error":f"{type(error).__name__}: {error}","returned":0})
     with tempfile.TemporaryDirectory() as tmp:
-        config=AiConfig.from_env(); config=replace(config,database_path=Path(tmp)/"live.sqlite3",trace_path=Path("artifacts/tender-live-agent-trace.jsonl"))
+        config=AiConfig.from_env(); config=replace(config,database_path=Path(tmp)/"live.sqlite3",trace_path=Path("artifacts/tender-ai-traces.jsonl"))
         runtime=create_runtime(config); notices=list(seen.values())
+        verification_trace_id = str(uuid4()); trace_writer = TraceWriter(config.trace_path)
         enriched_notices=[]; xml_failures=[]
         for index, notice in enumerate(notices):
             if index < 12:
@@ -47,11 +50,15 @@ def main()->None:
                 except Exception as error: xml_failures.append({"publication_id":notice["publication_id"],"error":f"{type(error).__name__}: {error}"})
             enriched_notices.append(notice)
         notices=enriched_notices; persistence=runtime.storage.ingest(notices,DEMO_PROFILE)
-        try: indexing=runtime.retriever.index_pending(limit=500)
+        try:
+            indexing=runtime.retriever.index_pending(limit=500)
+            trace_writer.write({"trace_id":verification_trace_id,"stage":"embedding","status":"succeeded","duration_ms":indexing.get("latency_ms"),"model":indexing.get("model"),"model_fingerprint":runtime.ollama.model_fingerprint(config.embedding_model),"retrieval_result_count":indexing.get("indexed"),**(indexing.get("model_metrics") or {})})
         except OllamaUnavailable as error: indexing={"indexed":0,"error":str(error)}
         try:
-            hits,retrieval_metrics=runtime.retriever.search("data analytics artificial intelligence services in Finland",top_k=5,country="FIN")
+            retrieval_query="data analytics artificial intelligence services in Finland"
+            hits,retrieval_metrics=runtime.retriever.search(retrieval_query,top_k=5,country="FIN")
             retrieval=[hit.public() for hit in hits]
+            trace_writer.write({"trace_id":verification_trace_id,"stage":"retrieval","status":"succeeded",**safe_query_metadata(retrieval_query),"duration_ms":retrieval_metrics.get("retrieval_latency_ms"),"retrieval_candidate_count":retrieval_metrics.get("candidate_count"),"retrieval_result_count":retrieval_metrics.get("result_count"),"retrieval_strategy":retrieval_metrics.get("scan_strategy"),"vector_weight":retrieval_metrics.get("vector_weight"),"lexical_weight":retrieval_metrics.get("lexical_weight"),"model":config.embedding_model,"model_fingerprint":runtime.ollama.model_fingerprint(config.embedding_model)})
         except OllamaUnavailable as error: retrieval_metrics={"error":str(error)}; retrieval=[]
         sample=next((notice for notice in notices if notice.get("requirements")),notices[0] if notices else None)
         sample_id = sample["notice_id"] if sample else "missing"

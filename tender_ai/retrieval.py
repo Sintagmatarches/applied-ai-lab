@@ -34,7 +34,7 @@ class HybridRetriever:
         if not rows: return {"indexed": 0, "latency_ms": 0}
         vectors, metrics = self.ollama.embed([row["text"] for row in rows])
         for row, vector in zip(rows, vectors): self.storage.set_embedding(row["evidence_id"], self.ollama.config.embedding_model, vector)
-        return {"indexed": len(rows), "latency_ms": metrics.latency_ms, "model": self.ollama.config.embedding_model}
+        return {"indexed": len(rows), "latency_ms": metrics.latency_ms, "model": self.ollama.config.embedding_model, "model_metrics": metrics.public()}
 
     def search(self, query: str, *, top_k: int | None = None, country: str | None = None, cpv: str | None = None, buyer: str | None = None, min_value: float | None = None, deadline_before: str | None = None) -> tuple[list[SearchHit], dict[str, Any]]:
         started=time.perf_counter(); vectors, embed_metrics=self.ollama.embed([query]); query_vector=vectors[0]
@@ -58,4 +58,4 @@ class HybridRetriever:
             vector=max(0.0, cosine(query_vector,item["vector"])); lexical=lexical_rank.get(item["evidence_id"],0.0)
             hits.append(SearchHit(item,vector,lexical,vector_weight*vector+lexical_weight*lexical))
         hits.sort(key=lambda hit: hit.hybrid_score, reverse=True)
-        return hits[:top_k or self.top_k], {"retrieval_latency_ms": round((time.perf_counter()-started)*1000,3), "embedding_latency_ms": embed_metrics.latency_ms, "candidate_count": len(hits), "scan_strategy": "exact_cosine", "vector_weight":round(vector_weight,3), "lexical_weight":round(lexical_weight,3), "scan_limit":self.ollama.config.vector_scan_limit}
+        return hits[:top_k or self.top_k], {"retrieval_latency_ms": round((time.perf_counter()-started)*1000,3), "embedding_latency_ms": embed_metrics.latency_ms, "embedding_model_metrics": embed_metrics.public(), "candidate_count": len(hits), "result_count": len(hits[:top_k or self.top_k]), "scan_strategy": "exact_cosine", "vector_weight":round(vector_weight,3), "lexical_weight":round(lexical_weight,3), "scan_limit":self.ollama.config.vector_scan_limit}

@@ -1,18 +1,18 @@
 {
-  "verified_at": "2026-08-19T14:55:39.854072+00:00",
+  "verified_at": "2026-08-24T10:16:06.795975+00:00",
   "source": "Official TED Search API v3",
   "endpoint": "https://api.ted.europa.eu/v3/notices/search",
   "period": {
-    "published_from": "2026-02-20",
-    "published_to": "2026-08-19"
+    "published_from": "2026-02-25",
+    "published_to": "2026-08-24"
   },
   "scenarios": [
     {
       "name": "Finland + data",
-      "query": "FT ~ \"data\" AND buyer-country = FIN AND PD = (20260220 <> 20260819)",
+      "query": "FT ~ \"data\" AND buyer-country = FIN AND PD = (20260225 <> 20260824)",
       "returned": 8,
-      "total_notice_count": 178,
-      "latency_ms": 817.277,
+      "total_notice_count": 180,
+      "latency_ms": 1014.092,
       "publication_ids": [
         "131555-2026",
         "138224-2026",
@@ -26,27 +26,27 @@
     },
     {
       "name": "Finland + software",
-      "query": "FT ~ \"software\" AND buyer-country = FIN AND PD = (20260220 <> 20260819)",
+      "query": "FT ~ \"software\" AND buyer-country = FIN AND PD = (20260225 <> 20260824)",
       "returned": 8,
-      "total_notice_count": 647,
-      "latency_ms": 472.548,
+      "total_notice_count": 637,
+      "latency_ms": 615.19,
       "publication_ids": [
-        "120679-2026",
-        "121223-2026",
-        "121552-2026",
-        "122689-2026",
-        "123066-2026",
-        "123255-2026",
-        "125350-2026",
-        "129194-2026"
+        "131555-2026",
+        "139307-2026",
+        "141414-2026",
+        "143221-2026",
+        "145489-2026",
+        "147723-2026",
+        "150162-2026",
+        "152349-2026"
       ]
     },
     {
       "name": "Finland + artificial intelligence",
-      "query": "FT ~ \"artificial intelligence\" AND buyer-country = FIN AND PD = (20260220 <> 20260819)",
+      "query": "FT ~ \"artificial intelligence\" AND buyer-country = FIN AND PD = (20260225 <> 20260824)",
       "returned": 5,
       "total_notice_count": 5,
-      "latency_ms": 395.528,
+      "latency_ms": 376.625,
       "publication_ids": [
         "131555-2026",
         "271520-2026",
@@ -57,10 +57,10 @@
     },
     {
       "name": "Finland + analytics",
-      "query": "FT ~ \"analytics\" AND buyer-country = FIN AND PD = (20260220 <> 20260819)",
+      "query": "FT ~ \"analytics\" AND buyer-country = FIN AND PD = (20260225 <> 20260824)",
       "returned": 8,
       "total_notice_count": 20,
-      "latency_ms": 489.713,
+      "latency_ms": 427.165,
       "publication_ids": [
         "152349-2026",
         "212000-2026",
@@ -74,10 +74,10 @@
     },
     {
       "name": "EU + machine learning",
-      "query": "FT ~ \"machine learning\" AND PD = (20260220 <> 20260819)",
+      "query": "FT ~ \"machine learning\" AND PD = (20260225 <> 20260824)",
       "returned": 8,
-      "total_notice_count": 44,
-      "latency_ms": 524.716,
+      "total_notice_count": 45,
+      "latency_ms": 939.561,
       "publication_ids": [
         "131555-2026",
         "133710-2026",
@@ -85,51 +85,51 @@
         "207902-2026",
         "258521-2026",
         "275528-2026",
-        "333052-2026",
-        "333260-2026"
+        "351701-2026",
+        "365526-2026"
       ]
     },
     {
       "name": "ICT/Data CPV 72*",
-      "query": "classification-cpv = 72* AND buyer-country = FIN AND PD = (20260220 <> 20260819)",
+      "query": "classification-cpv = 72* AND buyer-country = FIN AND PD = (20260225 <> 20260824)",
       "returned": 8,
-      "total_notice_count": 543,
-      "latency_ms": 586.076,
+      "total_notice_count": 535,
+      "latency_ms": 426.966,
       "publication_ids": [
-        "120679-2026",
-        "121223-2026",
-        "121552-2026",
-        "122689-2026",
-        "123066-2026",
-        "125350-2026",
         "131555-2026",
-        "139612-2026"
+        "139612-2026",
+        "141414-2026",
+        "142722-2026",
+        "143221-2026",
+        "147723-2026",
+        "153391-2026",
+        "153996-2026"
       ]
     }
   ],
-  "unique_notices": 35,
+  "unique_notices": 34,
   "persistence": {
-    "fetched": 35,
-    "new": 35,
+    "fetched": 34,
+    "new": 34,
     "updated": 0,
     "unchanged": 0,
     "changes": 0,
-    "reassessments": 35,
+    "reassessments": 34,
     "failures": 0,
     "failure_details": []
   },
   "knowledge_base": {
-    "notices": 35,
-    "lots": 68,
+    "notices": 34,
+    "lots": 67,
     "requirements": 124,
-    "award_criteria": 62,
+    "award_criteria": 48,
     "security_findings": 0,
-    "evidence": 261,
-    "notice_versions": 35,
+    "evidence": 239,
+    "notice_versions": 34,
     "change_events": 0,
     "supplier_profiles": 1,
-    "assessments": 35,
-    "embeddings": 261,
+    "assessments": 34,
+    "embeddings": 239,
     "watchlist": 0
   },
   "xml_documents": {
@@ -137,15 +137,40 @@
     "failures": []
   },
   "embedding_index": {
-    "indexed": 261,
-    "latency_ms": 35719.437,
-    "model": "nomic-embed-text:latest"
+    "indexed": 239,
+    "latency_ms": 47694.3,
+    "model": "nomic-embed-text:latest",
+    "model_metrics": {
+      "latency_ms": 47694.3,
+      "prompt_tokens": 21551,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "model_total_duration_ms": 47592.403,
+      "model_load_duration_ms": 526.248,
+      "prompt_eval_duration_ms": null,
+      "generation_duration_ms": null,
+      "generation_tokens_per_second": null,
+      "done_reason": null
+    }
   },
   "retrieval": {
     "metrics": {
-      "retrieval_latency_ms": 175.213,
-      "embedding_latency_ms": 81.22,
-      "candidate_count": 195,
+      "retrieval_latency_ms": 170.951,
+      "embedding_latency_ms": 52.836,
+      "embedding_model_metrics": {
+        "latency_ms": 52.836,
+        "prompt_tokens": 9,
+        "completion_tokens": null,
+        "total_tokens": null,
+        "model_total_duration_ms": 36.851,
+        "model_load_duration_ms": 1.513,
+        "prompt_eval_duration_ms": null,
+        "generation_duration_ms": null,
+        "generation_tokens_per_second": null,
+        "done_reason": null
+      },
+      "candidate_count": 181,
+      "result_count": 5,
       "scan_strategy": "exact_cosine",
       "vector_weight": 0.5,
       "lexical_weight": 0.5,
@@ -166,9 +191,9 @@
         ],
         "estimated_value": null,
         "submission_deadline": "2026-07-22Z",
-        "vector_score": 0.365693,
+        "vector_score": 0.365624,
         "lexical_score": 1.0,
-        "hybrid_score": 0.682847
+        "hybrid_score": 0.682812
       },
       {
         "evidence_id": "ted:a37d3b3e-548d-491b-9666-f5c2de06eefc:notice:summary",
@@ -185,9 +210,9 @@
         ],
         "estimated_value": null,
         "submission_deadline": "2026-05-04Z",
-        "vector_score": 0.654458,
+        "vector_score": 0.65439,
         "lexical_score": 0.25,
-        "hybrid_score": 0.452229
+        "hybrid_score": 0.452195
       },
       {
         "evidence_id": "ted:cae17fc5-792f-44fb-9088-3e19cea11cc5:LOT-0000:award-1",
@@ -203,9 +228,9 @@
         ],
         "estimated_value": null,
         "submission_deadline": "2026-07-22Z",
-        "vector_score": 0.350018,
+        "vector_score": 0.349962,
         "lexical_score": 0.5,
-        "hybrid_score": 0.425009
+        "hybrid_score": 0.424981
       },
       {
         "evidence_id": "ted:cae17fc5-792f-44fb-9088-3e19cea11cc5:notice:summary",
@@ -221,9 +246,9 @@
         ],
         "estimated_value": null,
         "submission_deadline": "2026-07-22Z",
-        "vector_score": 0.695548,
+        "vector_score": 0.695472,
         "lexical_score": 0.125,
-        "hybrid_score": 0.410274
+        "hybrid_score": 0.410236
       },
       {
         "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
@@ -240,9 +265,9 @@
         ],
         "estimated_value": null,
         "submission_deadline": "2026-03-16Z",
-        "vector_score": 0.669274,
+        "vector_score": 0.669178,
         "lexical_score": 0.142857,
-        "hybrid_score": 0.406066
+        "hybrid_score": 0.406018
       }
     ]
   },
@@ -268,8 +293,8 @@
     "notice_url": "https://ted.europa.eu/en/notice/-/detail/131555-2026",
     "xml_url": "https://ted.europa.eu/en/notice/131555-2026/xml",
     "source": "TED Search API v3",
-    "discovered_at": "2026-08-19T14:54:03.081517+00:00",
-    "updated_at": "2026-08-19T14:54:03.081517+00:00",
+    "discovered_at": "2026-08-24T10:12:52.078972+00:00",
+    "updated_at": "2026-08-24T10:12:52.078972+00:00",
     "source_version": 1,
     "lots": [
       {
@@ -499,8 +524,8 @@
     "profile_version": 1,
     "status": "REVIEW",
     "strategic_fit": 40,
-    "assessment_json": "{\"status\": \"REVIEW\", \"strategic_fit\": 40, \"heuristic_fit_label\": \"MEDIUM\", \"lot_assessments\": [{\"lot_id\": \"LOT-0000\", \"status\": \"REVIEW\", \"heuristic_fit\": {\"score\": 40, \"label\": \"MEDIUM\", \"components\": [{\"name\": \"capability\", \"score\": 40, \"maximum\": 50, \"evidence\": \"Matched: Machine Learning, AI / LLM, Azure, Automation.\"}, {\"name\": \"geography\", \"score\": 0, \"maximum\": 20, \"evidence\": \"No exact country match; EU/EEA alone is not treated as evidence.\"}, {\"name\": \"contract_value\", \"score\": 0, \"maximum\": 20, \"evidence\": \"Lot value is missing; no positive score awarded.\"}, {\"name\": \"deadline\", \"score\": 0, \"maximum\": 10, \"evidence\": \"Lot deadline has passed.\"}]}, \"checks\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"blocking_requirements\": [], \"satisfied_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}], \"uncertain_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}]}], \"summary\": {\"eligible_lots\": [], \"blocked_lots\": [], \"review_lots\": [\"LOT-0000\"], \"insufficient_evidence_lots\": []}, \"checks\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"blocking_requirements\": [], \"satisfied_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}], \"uncertain_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"assessed_at\": \"2026-08-19T14:54:10.780962+00:00\", \"supplier_profile_id\": \"demo-eu-data-ai\", \"supplier_profile_version\": 1}",
-    "assessed_at": "2026-08-19T14:54:10.780962+00:00",
+    "assessment_json": "{\"status\": \"REVIEW\", \"strategic_fit\": 40, \"heuristic_fit_label\": \"MEDIUM\", \"lot_assessments\": [{\"lot_id\": \"LOT-0000\", \"status\": \"REVIEW\", \"heuristic_fit\": {\"score\": 40, \"label\": \"MEDIUM\", \"components\": [{\"name\": \"capability\", \"score\": 40, \"maximum\": 50, \"evidence\": \"Matched: Machine Learning, AI / LLM, Azure, Automation.\"}, {\"name\": \"geography\", \"score\": 0, \"maximum\": 20, \"evidence\": \"No exact country match; EU/EEA alone is not treated as evidence.\"}, {\"name\": \"contract_value\", \"score\": 0, \"maximum\": 20, \"evidence\": \"Lot value is missing; no positive score awarded.\"}, {\"name\": \"deadline\", \"score\": 0, \"maximum\": 10, \"evidence\": \"Lot deadline has passed.\"}]}, \"checks\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"blocking_requirements\": [], \"satisfied_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}], \"uncertain_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}]}], \"summary\": {\"eligible_lots\": [], \"blocked_lots\": [], \"review_lots\": [\"LOT-0000\"], \"insufficient_evidence_lots\": []}, \"checks\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"blocking_requirements\": [], \"satisfied_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"PASS\", \"reason\": \"Supplier covers an accepted language (eng).\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:submission-language\"}], \"uncertain_requirements\": [{\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:xml-selection:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:xml-selection-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:1\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-1\"}, {\"requirement_id\": \"2aedcdcc-1912-4080-8776-3e6f8827771e:req:2\", \"lot_id\": \"LOT-0000\", \"mandatory\": true, \"outcome\": \"UNKNOWN\", \"reason\": \"The requirement is not structured enough for deterministic comparison.\", \"evidence_id\": \"ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2\"}], \"assessed_at\": \"2026-08-24T10:13:02.618175+00:00\", \"supplier_profile_id\": \"demo-eu-data-ai\", \"supplier_profile_version\": 1}",
+    "assessed_at": "2026-08-24T10:13:02.618175+00:00",
     "trigger": "INITIAL",
     "assessment": {
       "status": "REVIEW",
@@ -692,31 +717,17 @@
           "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:LOT-0000:requirement-2"
         }
       ],
-      "assessed_at": "2026-08-19T14:54:10.780962+00:00",
+      "assessed_at": "2026-08-24T10:13:02.618175+00:00",
       "supplier_profile_id": "demo-eu-data-ai",
       "supplier_profile_version": 1
     }
   },
   "agent_execution": {
-    "answer": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy. [ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary]",
-    "citations": [
-      {
-        "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
-        "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
-        "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
-        "url": "https://ted.europa.eu/en/notice/-/detail/131555-2026"
-      }
-    ],
-    "claims": [
-      {
-        "text": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy.",
-        "evidence_ids": [
-          "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary"
-        ]
-      }
-    ],
-    "unknown": false,
-    "answer_status": "DETERMINISTIC_FALLBACK",
+    "answer": "Retrieved procurement evidence is insufficient to answer that question.",
+    "citations": [],
+    "claims": [],
+    "unknown": true,
+    "answer_status": "MODEL_UNAVAILABLE",
     "model": "qwen2.5:3b-instruct",
     "tool_calls": [
       {
@@ -725,67 +736,55 @@
           "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e"
         },
         "success": true,
-        "latency_ms": 3.085
+        "latency_ms": 3.944
       }
     ],
     "grounding": {
-      "answer": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy. [ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary]",
-      "claims": [
-        {
-          "text": "The stored notice is titled Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services and the buyer is Veikkaus Oy.",
-          "evidence_ids": [
-            "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary"
-          ]
-        }
-      ],
-      "citations": [
-        {
-          "evidence_id": "ted:2aedcdcc-1912-4080-8776-3e6f8827771e:notice:summary",
-          "notice_id": "2aedcdcc-1912-4080-8776-3e6f8827771e",
-          "title": "Finland – IT services: consulting, software development, Internet and support – Detection and response technology and services",
-          "url": "https://ted.europa.eu/en/notice/-/detail/131555-2026"
-        }
-      ],
-      "unknown": false,
+      "answer": "Retrieved procurement evidence is insufficient to answer that question.",
+      "claims": [],
+      "citations": [],
+      "unknown": true,
       "schema_valid": true,
-      "raw_supported_claims": 1,
+      "raw_supported_claims": 0,
       "raw_unsupported_claims": 0,
       "post_gate_unsupported_claims": 0,
       "citation_validity": 1.0,
-      "claim_support_rate": 1.0,
-      "factual_consistency": 1.0,
+      "claim_support_rate": 0.0,
+      "factual_consistency": 0.0,
       "unsupported_claim_rate": 0.0
     },
     "metrics": {
-      "trace_id": "1a86cf29-3b50-44db-ac3e-939feb6c7106",
-      "llm_latency_ms": 50794.323,
-      "total_latency_ms": 50798.767,
-      "prompt_tokens": 3122,
-      "completion_tokens": 843,
-      "tool_failures": [],
+      "trace_id": "e37485f2-5a03-4d2f-8e70-453f25060ec2",
+      "llm_latency_ms": 43069.651,
+      "total_latency_ms": 133083.958,
+      "prompt_tokens": 922,
+      "completion_tokens": 52,
+      "tool_failures": [
+        "MODEL_UNAVAILABLE: Ollama request to /api/chat failed: TimeoutError"
+      ],
       "tool_call_count": 1,
       "agent_steps": [
         {
           "step": 1,
           "kind": "tool_selection",
-          "latency_ms": 3083.989,
+          "latency_ms": 43070.545,
           "requested_tool_calls": 1
-        },
-        {
-          "step": 2,
-          "kind": "candidate_answer",
-          "latency_ms": 43892.596,
-          "requested_tool_calls": 0
         }
       ],
       "retrieved_evidence": 11,
-      "fallback_used": true,
-      "fallback_reason": "DETERMINISTIC_FALLBACK",
-      "failure_category": null,
-      "prompt_version": "tender-agent-v3",
-      "model": "qwen2.5:3b-instruct"
+      "fallback_used": false,
+      "fallback_reason": null,
+      "failure_category": "MODEL_UNAVAILABLE",
+      "prompt_version": "tender-agent-prompt-v4",
+      "model": "qwen2.5:3b-instruct",
+      "model_fingerprint": {
+        "configuredModel": "qwen2.5:3b-instruct",
+        "resolvedModel": "qwen2.5:3b-instruct",
+        "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "modifiedAt": "2026-08-18T18:50:57.9785592+03:00"
+      }
     }
   },
-  "elapsed_ms": 96775.481,
+  "elapsed_ms": 194720.879,
   "version_demo": "No live amendment is claimed here; deterministic version regression is documented separately."
 }

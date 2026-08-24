@@ -1,20 +1,88 @@
 {
-  "event_count": 7,
-  "corrupt_lines": 0,
-  "latency_ms": {
-    "p50": 28058.776,
-    "p95": 50798.767
+  "operationalReportSchemaVersion": "2.0.0",
+  "traceSchemaVersion": "2.0.0",
+  "eventCount": 7,
+  "traceCount": 2,
+  "corruptLineCount": 0,
+  "unsupportedSchemaEventCount": 0,
+  "schemaVersions": {
+    "2.0.0": 7
   },
-  "tool_latency_ms": {
-    "p50": 3.085,
-    "p95": 3.13
+  "latencyMs": {
+    "total": {
+      "p50": 133083.958,
+      "p95": 133083.958,
+      "eventCount": 1
+    },
+    "retrieval": {
+      "p50": 170.951,
+      "p95": 170.951,
+      "eventCount": 1
+    },
+    "embedding": {
+      "p50": 47694.3,
+      "p95": 47694.3,
+      "eventCount": 1
+    },
+    "llm": {
+      "p50": 43069.651,
+      "p95": 43069.651,
+      "eventCount": 1
+    },
+    "tool": {
+      "p50": 3.944,
+      "p95": 3.944,
+      "eventCount": 1
+    }
   },
-  "fallback_rate": 0.2857142857142857,
-  "tool_failure_rate": 0.0,
+  "tokens": {
+    "prompt": 922,
+    "completion": 52,
+    "total": 974,
+    "generationTokensPerSecond": 13.46
+  },
+  "apiMonetaryCost": "not applicable / not measured for local Ollama runtime",
+  "fallback": {
+    "count": 0,
+    "requests": 1,
+    "rate": 0.0,
+    "reasons": {}
+  },
+  "tools": {
+    "callCount": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "successRate": 1.0,
+    "failuresByCategory": {}
+  },
+  "requestFailures": {
+    "count": 1,
+    "byCategory": {
+      "MODEL_UNAVAILABLE": 1
+    }
+  },
+  "grounding": {
+    "eventCount": 1,
+    "rejectionCount": 0,
+    "postGateUnsupportedClaimCount": 0
+  },
+  "security": {
+    "rejectionCount": 0,
+    "categories": {}
+  },
   "models": [
+    "nomic-embed-text:latest",
     "qwen2.5:3b-instruct"
   ],
-  "prompt_versions": [
-    "tender-agent-v3"
-  ]
+  "modelFingerprints": [
+    "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+    "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b"
+  ],
+  "promptVersions": [
+    "tender-agent-prompt-v4"
+  ],
+  "evaluationVersions": [
+    "tender-eval-v2.0.0"
+  ],
+  "legacyPolicy": "Events without the exact v2 schema are counted but not silently reinterpreted."
 }
