@@ -46,6 +46,53 @@ function fetcher(manifestBody: BodyInit, snapshotBody: BodyInit, statuses = [200
   }) as typeof fetch;
 }
 
+async function callSevenDayApi(remoteFetch: typeof fetch) {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  globalThis.fetch = remoteFetch;
+  console.warn = () => undefined;
+  try {
+    clearRailPublicationCacheForTests();
+    const { GET } = await import("../app/api/rail/monitor/route.ts");
+    const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
+    return { response, body: await response.json() as Record<string, unknown> };
+  } finally {
+    clearRailPublicationCacheForTests();
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+}
+
+function agePublication(value: Record<string, unknown>, ageHours: number): void {
+  const gold = new Date(Date.now() - ageHours * 3_600_000);
+  const source = new Date(gold.getTime() - 60_000);
+  const end = new Date(Date.UTC(gold.getUTCFullYear(), gold.getUTCMonth(), gold.getUTCDate()) - 86_400_000);
+  const start = new Date(end.getTime() - 6 * 86_400_000);
+  const dates = Array.from({ length: 7 }, (_, offset) =>
+    new Date(start.getTime() + offset * 86_400_000).toISOString().slice(0, 10));
+  value.windowStart = `${dates[0]}T00:00:00.000Z`;
+  value.windowEnd = `${dates[6]}T23:59:59.999Z`;
+  value.latestCompletePartition = dates[6];
+  const coverage = value.coverage as Record<string, unknown>;
+  coverage.expectedDates = dates;
+  coverage.availableDates = dates;
+  value.retrievedAt = gold.toISOString();
+  value.sourceRetrievedAt = source.toISOString();
+  value.validatedAt = gold.toISOString();
+  value.goldPublishedAt = gold.toISOString();
+  value.freshness = {
+    state: "fresh",
+    evaluatedAt: gold.toISOString(),
+    ageMinutes: 0,
+    basis: "goldPublishedAt",
+    policyVersion: "rail-freshness-v1",
+    reason: "The governed publication is within its operating target.",
+    sourceRetrievedAt: source.toISOString(),
+    validatedAt: gold.toISOString(),
+    goldPublishedAt: gold.toISOString(),
+  };
+}
+
 test("remote publication validates manifest, exact digest and governed snapshot", async () => {
   const { bytes, manifest } = await fixture();
   clearRailPublicationCacheForTests();
@@ -96,20 +143,42 @@ test("snapshot validation rejects policy, mode, coverage, date and region defect
 
 test("7d API exposes verified remote provenance", async () => {
   const { bytes, manifest } = await fixture();
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = fetcher(JSON.stringify(manifest), bytes);
-  try {
-    clearRailPublicationCacheForTests();
-    const { GET } = await import("../app/api/rail/monitor/route.ts");
-    const response = await GET(new Request("https://example.test/api/rail/monitor?mode=7d"));
-    const body = await response.json() as Record<string, unknown>;
-    assert.equal(response.status, 200);
+  const { response, body } = await callSevenDayApi(fetcher(JSON.stringify(manifest), bytes));
+  assert.equal(response.status, 200);
+  assert.equal(body.publicationSource, "remote-governed");
+  assert.equal(body.publicationId, manifest.publicationId);
+  assert.equal(body.publicationDigest, manifest.snapshotSha256);
+  assert.equal(body.publicationWarning, undefined);
+});
+
+test("7d API recomputes warning and stale remote freshness at request time", async () => {
+  for (const [ageHours, expected] of [[40, "warning"], [70, "stale"]] as const) {
+    const { bytes, manifest } = await fixture((value) => agePublication(value, ageHours));
+    const { body } = await callSevenDayApi(fetcher(JSON.stringify(manifest), bytes));
     assert.equal(body.publicationSource, "remote-governed");
-    assert.equal(body.publicationId, manifest.publicationId);
-    assert.equal(body.publicationDigest, manifest.snapshotSha256);
-    assert.equal(body.publicationWarning, undefined);
-  } finally {
-    clearRailPublicationCacheForTests();
-    globalThis.fetch = originalFetch;
+    assert.equal((body.freshness as Record<string, unknown>).state, expected);
+  }
+});
+
+test("7d API fails closed to stale bundled data for tampered and incomplete remote publications", async () => {
+  const valid = await fixture();
+  const tampered = new Uint8Array(valid.bytes.length + 1);
+  tampered.set(valid.bytes);
+  tampered[tampered.length - 1] = 32;
+  const incomplete = await fixture((value) => {
+    const coverage = value.coverage as Record<string, unknown>;
+    coverage.status = "partial";
+    coverage.availableDates = (coverage.availableDates as unknown[]).slice(0, 6);
+    coverage.missingDates = [(coverage.expectedDates as string[])[6]];
+    coverage.coverageRatio = 6 / 7;
+  });
+  for (const remote of [
+    fetcher(JSON.stringify(valid.manifest), tampered),
+    fetcher(JSON.stringify(incomplete.manifest), incomplete.bytes),
+  ]) {
+    const { body } = await callSevenDayApi(remote);
+    assert.equal(body.publicationSource, "bundled-fallback");
+    assert.equal((body.freshness as Record<string, unknown>).state, "stale");
+    assert.match(body.publicationWarning as string, /not considered fresh/);
   }
 });
