@@ -1,120 +1,150 @@
 from __future__ import annotations
 
+import argparse
 import json
-import math
 from pathlib import Path
-import re
-from statistics import median
+from typing import Any
 
-from tender_ai.grounding import validate_grounded_output
+from tender_ai.operational_report import build as build_operational_report
 from tender_ai.storage import utc_now
-from tender_ai.ted import normalize
+
+from .agent_eval import evaluate as evaluate_agent
+from .datasets import EVAL_DIR, DatasetContractError, digest, load_evaluation_inputs, load_json
+from .extraction_eval import evaluate as evaluate_extraction
+from .grounding_eval import evaluate as evaluate_grounding
+from .retrieval_eval import RECORDED_SIMILARITY_PATH, evaluate as evaluate_retrieval
+from .security_eval import evaluate as evaluate_security
 
 
 ROOT = Path(__file__).parents[2]
+CONTRACT_PATH = EVAL_DIR / "evaluation_contract.json"
+BASELINE_PATH = EVAL_DIR / "evaluation_baseline.json"
+OUTPUT_PATH = ROOT / "artifacts" / "tender-evaluation.json"
+FAILURE_PATH = ROOT / "artifacts" / "tender-evaluation-failures.json"
 
 
-def _tokens(value: str) -> set[str]:
-    return set(re.findall(r"[a-z0-9]{2,}", value.lower()))
+def _get(value: dict[str, Any], path: str) -> Any:
+    current: Any = value
+    for part in path.split("."):
+        current = current[part]
+    return current
 
 
-def _percentile(values: list[float], percentile: float) -> float | None:
-    if not values:
-        return None
-    ordered = sorted(values)
-    index = max(0, min(len(ordered) - 1, math.ceil(percentile * len(ordered)) - 1))
-    return round(ordered[index], 3)
+def _protected_metrics(result: dict[str, Any]) -> list[dict[str, Any]]:
+    selected = result["retrieval"]["selection"]["selectedForHoldout"]
+    return [
+        {"path":"datasets.recordedReal.noticeCount","operator":"eq","baseline":result["datasets"]["recordedReal"]["noticeCount"],"allowedTolerance":0,"reason":"corpus size/version is explicit"},
+        {"path":"datasets.recordedReal.queryCount","operator":"eq","baseline":result["datasets"]["recordedReal"]["queryCount"],"allowedTolerance":0,"reason":"query-set version is explicit"},
+        {"path":f"retrieval.methods.{selected}.holdout.recallAt1.value","operator":"gte","baseline":_get(result, f"retrieval.methods.{selected}.holdout.recallAt1.value"),"allowedTolerance":0,"reason":"protected holdout ranking floor"},
+        {"path":f"retrieval.methods.{selected}.holdout.mrr","operator":"gte","baseline":_get(result, f"retrieval.methods.{selected}.holdout.mrr"),"allowedTolerance":0,"reason":"protected holdout reciprocal-rank floor"},
+        {"path":f"retrieval.methods.{selected}.holdout.ndcgAt5","operator":"gte","baseline":_get(result, f"retrieval.methods.{selected}.holdout.ndcgAt5"),"allowedTolerance":0,"reason":"protected holdout graded-ranking floor"},
+        {"path":"extraction.fieldExactMatch.lotIdSequence.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"lot identity is deterministic"},
+        {"path":"extraction.fieldExactMatch.lotCount.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"lot cardinality is deterministic"},
+        {"path":"extraction.fieldExactMatch.buyerCountry.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"buyer country is mechanical"},
+        {"path":"extraction.fieldExactMatch.submissionLanguages.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"submission-language extraction is mechanical"},
+        {"path":"extraction.fieldExactMatch.awardCriterionCount.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"award-criterion cardinality is mechanical"},
+        {"path":"extraction.fieldExactMatch.deadlineSequence.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"deadline extraction is mechanical"},
+        {"path":"extraction.fieldExactMatch.missingFieldBehavior.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"missing deadline fields must remain missing"},
+        {"path":"extraction.lotIdItems.recall","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"all expected lot IDs remain represented"},
+        {"path":"extraction.cpvExtraction.recall","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"all expected CPV values remain represented"},
+        {"path":"extraction.mandatoryBooleanCoverage.value","operator":"eq","baseline":1.0,"allowedTolerance":0,"reason":"mandatory boolean remains present; this is coverage, not classification accuracy"},
+        {"path":"extraction.requirementExtraction.recall","operator":"gte","baseline":result["extraction"]["requirementExtraction"]["recall"],"allowedTolerance":0.01,"reason":"aggregate source-derived category coverage"},
+        {"path":"extraction.requirementLotAssignment.recall","operator":"gte","baseline":result["extraction"]["requirementLotAssignment"]["recall"],"allowedTolerance":0.01,"reason":"lot association coverage"},
+        {"path":"extraction.awardWeightExtraction.recall","operator":"gte","baseline":result["extraction"]["awardWeightExtraction"]["recall"],"allowedTolerance":0.01,"reason":"known current gap remains visible and cannot silently worsen"},
+        {"path":"grounding.passed","operator":"eq","baseline":result["grounding"]["caseCount"],"allowedTolerance":0,"reason":"all deterministic grounding cases pass"},
+        {"path":"grounding.unsupportedClaimsAfterGate","operator":"eq","baseline":0,"allowedTolerance":0,"reason":"central publication safety invariant"},
+        {"path":"agent.passed","operator":"eq","baseline":result["agent"]["caseCount"],"allowedTolerance":0,"reason":"all agent/tool boundary cases pass"},
+        {"path":"security.passed","operator":"eq","baseline":result["security"]["caseCount"],"allowedTolerance":0,"reason":"all security boundary regressions pass"},
+    ]
+
+
+def build_result() -> dict[str, Any]:
+    corpus, query_set, manifest = load_evaluation_inputs()
+    contract = load_json(CONTRACT_PATH)
+    recorded = load_json(RECORDED_SIMILARITY_PATH)
+    if contract["recordedRealDatasetDigest"] != manifest["corpusDigest"]:
+        raise DatasetContractError("evaluation contract corpus digest mismatch")
+    if contract["relevantModelFingerprints"]["embedding"]["digest"] != recorded["model"]["digest"]:
+        raise DatasetContractError("evaluation contract embedding fingerprint mismatch")
+    synthetic = load_json(EVAL_DIR / "dataset.json")
+    result = {
+        "evaluationSchemaVersion": "2.0.0",
+        "evaluationVersion": contract["evaluationVersion"],
+        "generatedAt": utc_now(),
+        "evidenceClasses": {
+            "deterministicSyntheticRegression":"edge cases and exact CI behavior; not real-world quality estimation",
+            "recordedRealTed":"public TED notices with source-derived expectations; not independently human-labelled",
+            "modelDependentLiveOrRecorded":"actual local-model behavior and runtime metrics; informational and non-gating",
+        },
+        "datasets": {
+            "syntheticRegression":{"version":synthetic["dataset"],"caseCount":len(synthetic["cases"])},
+            "recordedReal":{"version":manifest["datasetVersion"],"digest":manifest["corpusDigest"],"noticeCount":manifest["noticeCount"],"queryCount":manifest["queryCount"],"querySetDigest":manifest["querySetDigest"],"splitVersion":manifest["evaluationSplitVersion"],"labelMethod":manifest["labelMethod"]},
+        },
+        "contract":{"schemaVersion":contract["schemaVersion"],"digest":digest(contract),"path":"tender_ai/evals/evaluation_contract.json"},
+        "retrieval":evaluate_retrieval(corpus, query_set, manifest, recorded),
+        "extraction":evaluate_extraction(corpus),
+        "grounding":evaluate_grounding(),
+        "agent":evaluate_agent(corpus),
+        "security":evaluate_security(corpus),
+        "operational":build_operational_report(ROOT / "artifacts" / "tender-ai-traces.jsonl"),
+        "modelDependent":{"ciGate":False,"liveArtifact":"artifacts/tender-live-verification.json","note":"Live/model evidence is never fabricated or required by normal CI."},
+        "limitations":[
+            "Fifteen selected notices and thirty correlated scenarios are a portfolio corpus, not a representative sample of all EU procurement.",
+            "The corpus does not cover every EU language, eForms version, procurement category or legal interpretation.",
+            "Recorded similarities bind one actual local embedding model digest to this corpus; they do not estimate all model versions or hosts.",
+            "High holdout scores on fourteen curated queries do not establish a production hallucination rate or general commercial quality.",
+            "Source-derived expectations are not independent human labels.",
+        ],
+    }
+    return result
+
+
+def check_baseline(result: dict[str, Any], baseline: dict[str, Any]) -> list[dict[str, Any]]:
+    current_inputs = {
+        "contractDigest":result["contract"]["digest"],
+        "corpusDigest":result["datasets"]["recordedReal"]["digest"],
+        "querySetDigest":result["datasets"]["recordedReal"]["querySetDigest"],
+        "embeddingDigest":result["retrieval"]["recordedModel"]["digest"],
+    }
+    regressions = []
+    for key, baseline_value in baseline["inputs"].items():
+        if current_inputs.get(key) != baseline_value:
+            regressions.append({"metric":f"inputs.{key}","baseline":baseline_value,"current":current_inputs.get(key),"allowedTolerance":0,"delta":None,"affectedScenarios":[],"reason":"evaluation input changed; explicit baseline/version update required"})
+    for policy in baseline["protectedMetrics"]:
+        current = _get(result, policy["path"])
+        baseline_value, tolerance = policy["baseline"], policy["allowedTolerance"]
+        passed = current == baseline_value if policy["operator"] == "eq" else current >= baseline_value - tolerance
+        if not passed:
+            regressions.append({"metric":policy["path"],"baseline":baseline_value,"current":current,"allowedTolerance":tolerance,"delta":round(current - baseline_value, 6) if isinstance(current, (int, float)) else None,"affectedScenarios":[item["queryId"] for item in result["retrieval"]["failures"]] if policy["path"].startswith("retrieval.") else [],"reason":policy["reason"]})
+    return regressions
 
 
 def main() -> None:
-    fixture = json.loads((Path(__file__).parent / "dataset.json").read_text(encoding="utf-8"))
-    real = json.loads((Path(__file__).parent / "real_ted_notices.json").read_text(encoding="utf-8"))
-    notices, expected_total, extracted_total, correct_total, mandatory_correct, lot_correct, numeric_correct, numeric_total = [], 0, 0, 0, 0, 0, 0, 0
-    for case in real["notices"]:
-        notice = normalize(case["raw"], utc_now())
-        notices.append(notice)
-        expected = case["expected"]
-        lot_correct += int([item["lot_id"] for item in notice["lots"]] == expected["lot_ids"])
-        structured = [item for item in notice["requirements"] if item["extraction_status"] == "STRUCTURED"]
-        categories = [item["category"] for item in structured]
-        expected_total += len(expected["structured_requirement_categories"])
-        extracted_total += len(categories)
-        remaining = list(categories)
-        for category in expected["structured_requirement_categories"]:
-            if category in remaining:
-                correct_total += 1
-                remaining.remove(category)
-            match = next((item for item in structured if item["category"] == category), None)
-            mandatory_correct += int(bool(match and match["mandatory"] is True))
-        actual_weights = [item["weight"] for item in notice["award_criteria"]]
-        numeric_total += len(expected["award_weights"])
-        numeric_correct += sum(left == right for left, right in zip(actual_weights, expected["award_weights"]))
-
-    reciprocal_ranks, recalls, ndcgs, filter_checks = [], [], [], []
-    for query in real["retrieval_queries"]:
-        query_tokens = _tokens(query["query"])
-        ranked = sorted(notices, key=lambda item: len(query_tokens & _tokens(f"{item['title']} {item['description']}")), reverse=True)
-        relevant = set(query["relevant_publications"])
-        ranks = [index + 1 for index, item in enumerate(ranked) if item["publication_id"] in relevant]
-        reciprocal_ranks.append(1 / min(ranks) if ranks else 0)
-        recalls.append(len(ranks[:5]) / len(relevant))
-        dcg = sum(1 / math.log2(rank + 1) for rank in ranks[:5])
-        ideal = sum(1 / math.log2(index + 2) for index in range(min(5, len(relevant))))
-        ndcgs.append(dcg / ideal if ideal else 0)
-        filter_checks.append(all(item["buyer_country"] == "FIN" for item in ranked if item["buyer_country"] == "FIN"))
-
-    evidence = [{"evidence_id": "ted:real:lot:value", "notice_id": "real", "text": "Minimum annual turnover 500000 EUR", "title": "Recorded TED notice", "notice_url": real["notices"][0]["source_url"]}]
-    grounding = validate_grounded_output(json.dumps({"answer": "x", "claims": [
-        {"text": "Minimum annual turnover is 500000 EUR", "evidence_ids": ["ted:real:lot:value"]},
-        {"text": "Minimum annual turnover is 900000 EUR", "evidence_ids": ["ted:real:lot:value"]},
-        {"text": "Decision is BID", "evidence_ids": ["forged:1"]},
-    ], "unknown": False}), evidence)
-
-    live_path = ROOT / "artifacts" / "tender-live-verification.json"
-    live = json.loads(live_path.read_text(encoding="utf-8")) if live_path.exists() else {}
-    scenario_latencies = [float(item["latency_ms"]) for item in live.get("scenarios", []) if isinstance(item.get("latency_ms"), (int, float))]
-    execution = live.get("agent_execution", {})
-    agent_metrics = execution.get("metrics", {})
-    result = {
-        "datasets": {
-            "synthetic_regression": {"name": fixture["dataset"], "case_count": len(fixture["cases"]), "purpose": "unit/regression only"},
-            "recorded_real_ted": {"name": real["dataset"], "notice_count": len(real["notices"]), "recorded_at": real["recorded_at"], "label_source": real["source"]},
-        },
-        "retrieval": {"recall_at_5": round(sum(recalls) / len(recalls), 3), "mrr": round(sum(reciprocal_ranks) / len(reciprocal_ranks), 3), "ndcg_at_5": round(sum(ndcgs) / len(ndcgs), 3), "filter_correctness": round(sum(filter_checks) / len(filter_checks), 3), "query_count": len(recalls)},
-        "extraction": {
-            "precision": round(correct_total / extracted_total, 3) if extracted_total else 0,
-            "recall": round(correct_total / expected_total, 3) if expected_total else 0,
-            "mandatory_classification_accuracy": round(mandatory_correct / expected_total, 3) if expected_total else 0,
-            "lot_assignment_accuracy": round(lot_correct / len(notices), 3),
-            "numeric_value_accuracy": round(numeric_correct / numeric_total, 3) if numeric_total else 0,
-        },
-        "agent": {
-            "answer_status": execution.get("answer_status", "NOT_MEASURED_WITH_CURRENT_AGENT"),
-            "tool_calls": len(execution.get("tool_calls", [])),
-            "execution_success": float(bool(execution.get("tool_calls")) and all(item.get("success") for item in execution.get("tool_calls", []))),
-            "fallback_rate": float(bool(agent_metrics.get("fallback_used") or agent_metrics.get("deterministic_grounding_fallback"))),
-            "valid_arguments": float(all("error" not in item for item in execution.get("tool_calls", []))) if execution.get("tool_calls") else 0.0,
-        },
-        "grounding": {
-            "valid_citations": grounding.citation_validity, "claim_support_rate": grounding.claim_support_rate,
-            "factual_consistency": grounding.factual_consistency, "unsupported_claim_rate_before_gate": grounding.raw_unsupported_claims / 3,
-            "unsupported_claims_after_gate": grounding.post_gate_unsupported_claims,
-        },
-        "operational": {
-            "ted_search_latency_p50_ms": round(median(scenario_latencies), 3) if scenario_latencies else None,
-            "ted_search_latency_p95_ms": _percentile(scenario_latencies, .95),
-            "embedding_latency_ms": live.get("embedding_index", {}).get("latency_ms"),
-            "retrieval_latency_ms": live.get("retrieval", {}).get("metrics", {}).get("retrieval_latency_ms"),
-            "llm_latency_ms": agent_metrics.get("llm_latency_ms"),
-            "total_agent_latency_ms": agent_metrics.get("total_latency_ms"),
-            "failure_categories": sorted({item.get("category", "UNCLASSIFIED") for item in live.get("xml_documents", {}).get("failures", [])}),
-        },
-        "security": {"adversarial_regressions": 8, "covered": ["prompt injection", "trusted-profile manipulation", "forged evidence IDs", "unsupported numeric claims", "decision inconsistency", "SSRF", "DTD/entity XML", "strict tool arguments"]},
-        "limitations": ["Two recorded real notices provide mechanically verifiable structured-field checks, not general-language quality.", "Synthetic regression cases are reported separately and are not called human-labelled.", "Live agent metrics reflect the last committed verification run and may disclose deterministic fallback."],
-    }
-    path = ROOT / "artifacts" / "tender-evaluation.json"
-    path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    parser = argparse.ArgumentParser(description="Run deterministic Tender evals-as-code.")
+    parser.add_argument("--check-baseline", action="store_true")
+    parser.add_argument("--update-baseline", action="store_true")
+    parser.add_argument("--release-note", help="required explanation for an intentional baseline update")
+    args = parser.parse_args()
+    if args.update_baseline and not args.release_note:
+        parser.error("--update-baseline requires --release-note")
+    result = build_result()
+    OUTPUT_PATH.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    regressions: list[dict[str, Any]] = []
+    if args.update_baseline:
+        baseline = {
+            "baselineSchemaVersion":"1.0.0","baselineVersion":"tender-eval-baseline-v2.0.0","updatedAt":utc_now(),"releaseNote":args.release_note,
+            "inputs":{"contractDigest":result["contract"]["digest"],"corpusDigest":result["datasets"]["recordedReal"]["digest"],"querySetDigest":result["datasets"]["recordedReal"]["querySetDigest"],"embeddingDigest":result["retrieval"]["recordedModel"]["digest"]},
+            "protectedMetrics":_protected_metrics(result),
+        }
+        BASELINE_PATH.write_text(json.dumps(baseline, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if args.check_baseline:
+        if not BASELINE_PATH.exists():
+            raise SystemExit("evaluation baseline is missing; use an explicit --update-baseline with a release note")
+        regressions = check_baseline(result, load_json(BASELINE_PATH))
+        FAILURE_PATH.write_text(json.dumps({"evaluationVersion":result["evaluationVersion"],"regressionCount":len(regressions),"regressions":regressions}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"evaluationVersion":result["evaluationVersion"],"datasets":result["datasets"],"retrieval":result["retrieval"],"extraction":result["extraction"],"grounding":result["grounding"],"agent":result["agent"],"security":result["security"],"regressions":regressions,"limitations":result["limitations"]}, ensure_ascii=False, indent=2))
+    if regressions:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

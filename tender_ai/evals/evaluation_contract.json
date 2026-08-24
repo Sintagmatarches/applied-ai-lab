@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "evaluationVersion": "tender-eval-v2.0.0",
+  "syntheticDatasetVersion": "eu-procurement-v1",
+  "recordedRealDatasetVersion": "recorded-real-ted-v2.0.0",
+  "recordedRealDatasetDigest": "61a7395e6f8fe6663c1348cfb286c088f525a1cbd07e554f471775dd0948c5fa",
+  "retrievalQuerySetVersion": "recorded-real-retrieval-v2.0.0",
+  "retrievalSplitVersion": "notice-grouped-split-v1",
+  "groundingSuiteVersion": "recorded-real-grounding-v2.0.0",
+  "securitySuiteVersion": "security-regression-v2.0.0",
+  "promptVersion": "tender-agent-prompt-v4",
+  "relevantModelFingerprints": {
+    "embedding": {
+      "configuredModel": "nomic-embed-text:latest",
+      "resolvedModel": "nomic-embed-text:latest",
+      "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f"
+    },
+    "chat": {
+      "configuredModel": "qwen2.5:3b-instruct",
+      "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+      "ciGate": false
+    }
+  },
+  "metricPolicies": {
+    "deterministic_ci_gate": [
+      "dataset, query-set, similarity and contract digests must match the baseline",
+      "exact source-derived field invariants cannot regress",
+      "recorded retrieval holdout floors cannot regress",
+      "all grounding, tool-boundary and security cases must pass",
+      "unsupported claims after the deterministic gate must equal zero"
+    ],
+    "informational_model_dependent": [
+      "live Ollama tool selection, natural-language output, token counts and latency",
+      "local model fallback rate and done reason"
+    ],
+    "informational_performance": [
+      "exact-cosine scan timings and memory estimates",
+      "network and host-specific latency percentiles"
+    ]
+  },
+  "baselinePolicy": "Normal runs never overwrite the baseline. --update-baseline requires an explicit release note and records all input digests.",
+  "costPolicy": "Local API monetary cost is not applicable/not measured; token and duration usage are reported when actually returned."
+}

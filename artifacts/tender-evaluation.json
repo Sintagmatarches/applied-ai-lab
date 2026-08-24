@@ -1,70 +1,850 @@
 {
+  "evaluationSchemaVersion": "2.0.0",
+  "evaluationVersion": "tender-eval-v2.0.0",
+  "generatedAt": "2026-08-24T10:34:29.974810+00:00",
+  "evidenceClasses": {
+    "deterministicSyntheticRegression": "edge cases and exact CI behavior; not real-world quality estimation",
+    "recordedRealTed": "public TED notices with source-derived expectations; not independently human-labelled",
+    "modelDependentLiveOrRecorded": "actual local-model behavior and runtime metrics; informational and non-gating"
+  },
   "datasets": {
-    "synthetic_regression": {
-      "name": "eu-procurement-v1",
-      "case_count": 14,
-      "purpose": "unit/regression only"
+    "syntheticRegression": {
+      "version": "eu-procurement-v1",
+      "caseCount": 14
     },
-    "recorded_real_ted": {
-      "name": "recorded-ted-structured-2026-08-19",
-      "notice_count": 2,
-      "recorded_at": "2026-08-19T00:00:00Z",
-      "label_source": "Official TED Search API v3 structured fields"
+    "recordedReal": {
+      "version": "recorded-real-ted-v2.0.0",
+      "digest": "61a7395e6f8fe6663c1348cfb286c088f525a1cbd07e554f471775dd0948c5fa",
+      "noticeCount": 15,
+      "queryCount": 30,
+      "querySetDigest": "1bd89d358dd1239e506f16f8af88b3a792026c0c3cbc051923877d007bed985d",
+      "splitVersion": "notice-grouped-split-v1",
+      "labelMethod": "source-derived expectations: mechanically verifiable fields plus explicitly documented interpretations only"
     }
   },
+  "contract": {
+    "schemaVersion": "1.0.0",
+    "digest": "e14a1e7696ee741f9b2d25edc8a0c7117366cbf776656e815ad9677cb170e872",
+    "path": "tender_ai/evals/evaluation_contract.json"
+  },
   "retrieval": {
-    "recall_at_5": 1.0,
-    "mrr": 1.0,
-    "ndcg_at_5": 1.0,
-    "filter_correctness": 1.0,
-    "query_count": 2
-  },
-  "extraction": {
-    "precision": 1.0,
-    "recall": 1.0,
-    "mandatory_classification_accuracy": 1.0,
-    "lot_assignment_accuracy": 1.0,
-    "numeric_value_accuracy": 1.0
-  },
-  "agent": {
-    "answer_status": "DETERMINISTIC_FALLBACK",
-    "tool_calls": 1,
-    "execution_success": 1.0,
-    "fallback_rate": 1.0,
-    "valid_arguments": 1.0
-  },
-  "grounding": {
-    "valid_citations": 0.6666666666666666,
-    "claim_support_rate": 0.3333333333333333,
-    "factual_consistency": 0.3333333333333333,
-    "unsupported_claim_rate_before_gate": 0.6666666666666666,
-    "unsupported_claims_after_gate": 0
-  },
-  "operational": {
-    "ted_search_latency_p50_ms": 507.215,
-    "ted_search_latency_p95_ms": 817.277,
-    "embedding_latency_ms": 35719.437,
-    "retrieval_latency_ms": 175.213,
-    "llm_latency_ms": 50794.323,
-    "total_agent_latency_ms": 50798.767,
-    "failure_categories": []
-  },
-  "security": {
-    "adversarial_regressions": 8,
-    "covered": [
-      "prompt injection",
-      "trusted-profile manipulation",
-      "forged evidence IDs",
-      "unsupported numeric claims",
-      "decision inconsistency",
-      "SSRF",
-      "DTD/entity XML",
-      "strict tool arguments"
+    "evidenceClass": "recorded-real with recorded actual-model similarity; deterministic replay in CI",
+    "querySetVersion": "recorded-real-retrieval-v2.0.0",
+    "splitVersion": "notice-grouped-split-v1",
+    "splitPolicy": "Publication numbers are assigned wholly to tuning or holdout. No notice contributes queries to both splits; the holdout is not used for weight selection.",
+    "queryCounts": {
+      "total": 30,
+      "tuning": 16,
+      "holdout": 14
+    },
+    "recordedModel": {
+      "configuredModel": "nomic-embed-text:latest",
+      "resolvedModel": "nomic-embed-text:latest",
+      "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "modifiedAt": "2026-08-18T19:08:13.017641+03:00"
+    },
+    "methods": {
+      "lexical": {
+        "tuning": {
+          "queryCount": 16,
+          "recallAt1": {
+            "value": 0.875,
+            "hits": 14,
+            "queries": 16
+          },
+          "recallAt3": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "recallAt5": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "mrr": 0.9104,
+          "ndcgAt5": 0.9144
+        },
+        "holdout": {
+          "queryCount": 14,
+          "recallAt1": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "mrr": 1.0,
+          "ndcgAt5": 1.0
+        }
+      },
+      "hybrid-25-75": {
+        "tuning": {
+          "queryCount": 16,
+          "recallAt1": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "mrr": 0.9688,
+          "ndcgAt5": 0.9769
+        },
+        "holdout": {
+          "queryCount": 14,
+          "recallAt1": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "mrr": 1.0,
+          "ndcgAt5": 1.0
+        }
+      },
+      "hybrid-50-50": {
+        "tuning": {
+          "queryCount": 16,
+          "recallAt1": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "mrr": 0.9688,
+          "ndcgAt5": 0.9769
+        },
+        "holdout": {
+          "queryCount": 14,
+          "recallAt1": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "mrr": 1.0,
+          "ndcgAt5": 1.0
+        }
+      },
+      "hybrid-75-25": {
+        "tuning": {
+          "queryCount": 16,
+          "recallAt1": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "mrr": 0.9688,
+          "ndcgAt5": 0.9769
+        },
+        "holdout": {
+          "queryCount": 14,
+          "recallAt1": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "mrr": 1.0,
+          "ndcgAt5": 1.0
+        }
+      },
+      "vector": {
+        "tuning": {
+          "queryCount": 16,
+          "recallAt1": {
+            "value": 0.9375,
+            "hits": 15,
+            "queries": 16
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 16,
+            "queries": 16
+          },
+          "mrr": 0.9688,
+          "ndcgAt5": 0.9769
+        },
+        "holdout": {
+          "queryCount": 14,
+          "recallAt1": {
+            "value": 0.9286,
+            "hits": 13,
+            "queries": 14
+          },
+          "recallAt3": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "recallAt5": {
+            "value": 1.0,
+            "hits": 14,
+            "queries": 14
+          },
+          "mrr": 0.9643,
+          "ndcgAt5": 0.9736
+        }
+      }
+    },
+    "selection": {
+      "tuningWinner": "hybrid-50-50",
+      "selectedForHoldout": "hybrid-50-50",
+      "materialDifferenceFromCurrent": false,
+      "productionConfigurationChanged": false,
+      "reason": "Tuning-only selection with a 0.02 materiality rule; ties prefer 50/50. The holdout was evaluated only after this rule was frozen."
+    },
+    "filterCorrectness": {
+      "passed": 15,
+      "cases": 15,
+      "scope": "queries with explicit country/buyer/CPV/deadline filters only"
+    },
+    "failures": [
+      {
+        "queryId": "dev-software-support-hard-negative",
+        "split": "tuning",
+        "scenario": "hard_negative",
+        "expectedPublications": [
+          "300384-2026"
+        ],
+        "bestExpectedRank": 2,
+        "topPublications": [
+          "131555-2026",
+          "300384-2026",
+          "300509-2026"
+        ],
+        "expectedContribution": {
+          "vector": 0.559618,
+          "lexical": 0.125,
+          "combined": 0.342309
+        },
+        "topContribution": {
+          "vector": 0.356869,
+          "lexical": 1.0,
+          "combined": 0.678435
+        },
+        "failureCategory": "semantic_or_lexical_confusion"
+      }
     ]
   },
+  "extraction": {
+    "evidenceClass": "recorded-real source-derived field evaluation",
+    "noticeCount": 15,
+    "fieldExactMatch": {
+      "lotIdSequence": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "lotCount": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "buyerCountry": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "submissionLanguages": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "awardCriterionCount": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "deadlineSequence": {
+        "passed": 15,
+        "cases": 15,
+        "value": 1.0
+      },
+      "missingFieldBehavior": {
+        "passed": 5,
+        "cases": 5,
+        "value": 1.0
+      }
+    },
+    "lotIdItems": {
+      "correct": 60,
+      "actual": 60,
+      "expected": 60,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "requirementExtraction": {
+      "correct": 103,
+      "actual": 111,
+      "expected": 111,
+      "precision": 0.9279,
+      "recall": 0.9279
+    },
+    "requirementLotAssignment": {
+      "correct": 70,
+      "actual": 74,
+      "expected": 74,
+      "precision": 0.9459,
+      "recall": 0.9459
+    },
+    "mandatoryBooleanCoverage": {
+      "present": 111,
+      "cases": 111,
+      "value": 1.0
+    },
+    "awardWeightExtraction": {
+      "correct": 29,
+      "actual": 29,
+      "expected": 52,
+      "precision": 1.0,
+      "recall": 0.5577
+    },
+    "cpvExtraction": {
+      "correct": 51,
+      "actual": 51,
+      "expected": 51,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "perNotice": [
+      {
+        "publication": "131555-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "71933-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "301751-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "301635-2026",
+        "passedFields": 8,
+        "evaluatedFields": 9,
+        "failures": [
+          "awardWeights"
+        ]
+      },
+      {
+        "publication": "300181-2026",
+        "passedFields": 8,
+        "evaluatedFields": 9,
+        "failures": [
+          "requirementCategories"
+        ]
+      },
+      {
+        "publication": "300406-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "300192-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "300133-2026",
+        "passedFields": 7,
+        "evaluatedFields": 10,
+        "failures": [
+          "awardWeights",
+          "requirementCategories",
+          "requirementLotAssignments"
+        ]
+      },
+      {
+        "publication": "300509-2026",
+        "passedFields": 7,
+        "evaluatedFields": 10,
+        "failures": [
+          "awardWeights",
+          "requirementCategories",
+          "requirementLotAssignments"
+        ]
+      },
+      {
+        "publication": "302075-2026",
+        "passedFields": 9,
+        "evaluatedFields": 10,
+        "failures": [
+          "awardWeights"
+        ]
+      },
+      {
+        "publication": "301468-2026",
+        "passedFields": 7,
+        "evaluatedFields": 10,
+        "failures": [
+          "awardWeights",
+          "requirementCategories",
+          "requirementLotAssignments"
+        ]
+      },
+      {
+        "publication": "301058-2026",
+        "passedFields": 10,
+        "evaluatedFields": 10,
+        "failures": []
+      },
+      {
+        "publication": "300384-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "301179-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      },
+      {
+        "publication": "323607-2026",
+        "passedFields": 9,
+        "evaluatedFields": 9,
+        "failures": []
+      }
+    ],
+    "limitations": [
+      "Expected values are independently represented source-derived fields, not outputs generated by normalize().",
+      "The mandatory boolean is reported as field coverage, not classification accuracy: this corpus contains no independently represented optional selection criterion."
+    ]
+  },
+  "grounding": {
+    "suiteVersion": "recorded-real-grounding-v2.0.0",
+    "caseCount": 12,
+    "passed": 12,
+    "citationValidityCases": {
+      "passed": 3,
+      "cases": 3
+    },
+    "supportedClaims": {
+      "correct": 2,
+      "cases": 2
+    },
+    "factualConsistency": {
+      "correct": 3,
+      "cases": 3
+    },
+    "unsupportedClaimsBeforeGate": 9,
+    "unsupportedClaimsAfterGate": 0,
+    "cases": [
+      {
+        "caseId": "supported-qualitative",
+        "category": "supported",
+        "expectedSupported": true,
+        "actualSupported": true,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "supported-numeric",
+        "category": "supported",
+        "expectedSupported": true,
+        "actualSupported": true,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "wrong-numeric",
+        "category": "contradicted",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "wrong-deadline",
+        "category": "contradicted",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "wrong-buyer",
+        "category": "contradicted",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "forged-citation",
+        "category": "citation_failure",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 0.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "cross-notice",
+        "category": "citation_failure",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "cross-lot",
+        "category": "citation_failure",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "unverifiable",
+        "category": "unverifiable",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "decision-inconsistent",
+        "category": "decision_consistency",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "decision-consistent",
+        "category": "decision_consistency",
+        "expectedSupported": true,
+        "actualSupported": true,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      },
+      {
+        "caseId": "indirect-injection",
+        "category": "security",
+        "expectedSupported": false,
+        "actualSupported": false,
+        "passed": true,
+        "citationValidity": 1.0,
+        "postGateUnsupportedClaims": 0
+      }
+    ]
+  },
+  "agent": {
+    "evidenceClass": "deterministic agent/tool software contract; no model intelligence claim",
+    "suiteVersion": "agent-contract-v2.0.0",
+    "caseCount": 7,
+    "passed": 7,
+    "cases": [
+      {
+        "caseId": "allowed-tool-set",
+        "passed": true,
+        "detail": {
+          "toolCount": 14
+        }
+      },
+      {
+        "caseId": "unknown-tool-rejected",
+        "passed": true
+      },
+      {
+        "caseId": "unknown-argument-rejected",
+        "passed": true
+      },
+      {
+        "caseId": "tool-argument-smuggling-rejected",
+        "passed": true
+      },
+      {
+        "caseId": "trusted-profile-boundary",
+        "passed": true
+      },
+      {
+        "caseId": "bounded-rounds",
+        "passed": true,
+        "detail": {
+          "maxSteps": 4,
+          "maxToolCalls": 6,
+          "maxSeconds": 180.0
+        }
+      },
+      {
+        "caseId": "tool-result-provenance",
+        "passed": true
+      }
+    ],
+    "modelDependent": {
+      "status": "reported only by live verification",
+      "ciGate": false
+    }
+  },
+  "security": {
+    "suiteVersion": "security-regression-v2.0.0",
+    "owaspNote": "Regression coverage informed by relevant OWASP GenAI risks; this is not a blanket compliance claim.",
+    "caseCount": 12,
+    "passed": 12,
+    "cases": [
+      {
+        "threat": "Direct/indirect prompt injection",
+        "boundary": "retrieved TED text remains untrusted data",
+        "test": "indirect-source-injection",
+        "passed": true
+      },
+      {
+        "threat": "Retrieved instruction execution",
+        "boundary": "grounding gate",
+        "test": "retrieval-injection-claim",
+        "passed": true
+      },
+      {
+        "threat": "Trusted profile manipulation",
+        "boundary": "tool schema/runtime profile",
+        "test": "trusted-profile-boundary",
+        "passed": true
+      },
+      {
+        "threat": "Tool argument smuggling",
+        "boundary": "strict additionalProperties=false schemas",
+        "test": "tool-argument-smuggling-rejected",
+        "passed": true
+      },
+      {
+        "threat": "Forged evidence ID",
+        "boundary": "claim/evidence gate",
+        "test": "forged-citation",
+        "passed": true
+      },
+      {
+        "threat": "Cross-document contamination",
+        "boundary": "publication scope check",
+        "test": "cross-notice",
+        "passed": true
+      },
+      {
+        "threat": "Cross-lot contamination",
+        "boundary": "lot scope check",
+        "test": "cross-lot",
+        "passed": true
+      },
+      {
+        "threat": "Unsupported numeric misinformation",
+        "boundary": "numeric containment gate",
+        "test": "wrong-numeric",
+        "passed": true
+      },
+      {
+        "threat": "Decision inconsistency",
+        "boundary": "deterministic assessment evidence",
+        "test": "decision-inconsistent",
+        "passed": true
+      },
+      {
+        "threat": "SSRF",
+        "boundary": "official HTTPS TED allowlist",
+        "test": "loopback-url",
+        "passed": true
+      },
+      {
+        "threat": "DTD/entity XML expansion",
+        "boundary": "pre-parse XML rejection",
+        "test": "unsafe-xml",
+        "passed": true
+      },
+      {
+        "threat": "Unbounded agency/resource use",
+        "boundary": "step/tool/time limits",
+        "test": "bounded-rounds",
+        "passed": true
+      }
+    ]
+  },
+  "operational": {
+    "operationalReportSchemaVersion": "2.0.0",
+    "traceSchemaVersion": "2.0.0",
+    "eventCount": 7,
+    "traceCount": 2,
+    "corruptLineCount": 0,
+    "unsupportedSchemaEventCount": 0,
+    "schemaVersions": {
+      "2.0.0": 7
+    },
+    "latencyMs": {
+      "total": {
+        "p50": 133083.958,
+        "p95": 133083.958,
+        "eventCount": 1
+      },
+      "retrieval": {
+        "p50": 170.951,
+        "p95": 170.951,
+        "eventCount": 1
+      },
+      "embedding": {
+        "p50": 47694.3,
+        "p95": 47694.3,
+        "eventCount": 1
+      },
+      "llm": {
+        "p50": 43069.651,
+        "p95": 43069.651,
+        "eventCount": 1
+      },
+      "tool": {
+        "p50": 3.944,
+        "p95": 3.944,
+        "eventCount": 1
+      }
+    },
+    "tokens": {
+      "prompt": 922,
+      "completion": 52,
+      "total": 974,
+      "generationTokensPerSecond": 13.46
+    },
+    "apiMonetaryCost": "not applicable / not measured for local Ollama runtime",
+    "fallback": {
+      "count": 0,
+      "requests": 1,
+      "rate": 0.0,
+      "reasons": {}
+    },
+    "tools": {
+      "callCount": 1,
+      "successCount": 1,
+      "failureCount": 0,
+      "successRate": 1.0,
+      "failuresByCategory": {}
+    },
+    "requestFailures": {
+      "count": 1,
+      "byCategory": {
+        "MODEL_UNAVAILABLE": 1
+      }
+    },
+    "grounding": {
+      "eventCount": 1,
+      "rejectionCount": 0,
+      "postGateUnsupportedClaimCount": 0
+    },
+    "security": {
+      "rejectionCount": 0,
+      "categories": {}
+    },
+    "models": [
+      "nomic-embed-text:latest",
+      "qwen2.5:3b-instruct"
+    ],
+    "modelFingerprints": [
+      "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b"
+    ],
+    "promptVersions": [
+      "tender-agent-prompt-v4"
+    ],
+    "evaluationVersions": [
+      "tender-eval-v2.0.0"
+    ],
+    "legacyPolicy": "Events without the exact v2 schema are counted but not silently reinterpreted."
+  },
+  "modelDependent": {
+    "ciGate": false,
+    "liveArtifact": "artifacts/tender-live-verification.json",
+    "note": "Live/model evidence is never fabricated or required by normal CI."
+  },
   "limitations": [
-    "Two recorded real notices provide mechanically verifiable structured-field checks, not general-language quality.",
-    "Synthetic regression cases are reported separately and are not called human-labelled.",
-    "Live agent metrics reflect the last committed verification run and may disclose deterministic fallback."
+    "Fifteen selected notices and thirty correlated scenarios are a portfolio corpus, not a representative sample of all EU procurement.",
+    "The corpus does not cover every EU language, eForms version, procurement category or legal interpretation.",
+    "Recorded similarities bind one actual local embedding model digest to this corpus; they do not estimate all model versions or hosts.",
+    "High holdout scores on fourteen curated queries do not establish a production hallucination rate or general commercial quality.",
+    "Source-derived expectations are not independent human labels."
   ]
 }

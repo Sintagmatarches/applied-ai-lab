@@ -13,8 +13,8 @@ class AiConfig:
     request_timeout_seconds: float = 90.0
     embedding_timeout_seconds: float = 90.0
     top_k: int = 5
-    # The committed two-query ablation cannot distinguish the blends. Use an
-    # intentionally neutral default until a larger judged set supports tuning.
+    # The v2 recorded-model tuning split ties 25/75, 50/50 and 75/25. The
+    # frozen tie-break preserves the intentionally neutral production default.
     retrieval_vector_weight: float = 0.5
     retrieval_lexical_weight: float = 0.5
     vector_scan_limit: int = 10_000

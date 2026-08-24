@@ -1,67 +1,43 @@
 {
-  "measured_at": "2026-08-19T15:00:18.579078+00:00",
-  "method": "Single-process CPython exact cosine scan; deterministic 768-d float32 vectors; no embedding/network time.",
+  "benchmarkSchemaVersion": "2.0.0",
+  "measured_at": "2026-08-24T10:27:35.205238+00:00",
+  "evidenceClass": "informational synthetic performance microbenchmark; never semantic retrieval quality",
+  "method": "Single-process CPython exact cosine scan over deterministic 768-d float32 vectors; excludes embedding and network time.",
   "scan": [
     {
       "candidate_count": 1000,
       "dimensions": 768,
-      "scan_ms": 176.567,
-      "candidates_per_second": 5663.6,
+      "scan_ms": 166.45,
+      "candidates_per_second": 6007.8,
       "packed_vector_memory_mb": 3.07,
       "best_score_guard": 0.736673
     },
     {
       "candidate_count": 5000,
       "dimensions": 768,
-      "scan_ms": 908.736,
-      "candidates_per_second": 5502.1,
+      "scan_ms": 831.449,
+      "candidates_per_second": 6013.6,
       "packed_vector_memory_mb": 15.36,
       "best_score_guard": 0.736673
     },
     {
       "candidate_count": 10000,
       "dimensions": 768,
-      "scan_ms": 1680.396,
-      "candidates_per_second": 5951.0,
+      "scan_ms": 1655.161,
+      "candidates_per_second": 6041.7,
       "packed_vector_memory_mb": 30.72,
       "best_score_guard": 0.736673
-    }
-  ],
-  "weight_ablation": [
-    {
-      "vector_weight": 1.0,
-      "lexical_weight": 0.0,
-      "mrr": 1.0
-    },
-    {
-      "vector_weight": 0.75,
-      "lexical_weight": 0.25,
-      "mrr": 1.0
-    },
-    {
-      "vector_weight": 0.5,
-      "lexical_weight": 0.5,
-      "mrr": 1.0
-    },
-    {
-      "vector_weight": 0.25,
-      "lexical_weight": 0.75,
-      "mrr": 1.0
-    },
-    {
-      "vector_weight": 0.0,
-      "lexical_weight": 1.0,
-      "mrr": 1.0
     }
   ],
   "selected_weights": {
     "vector": 0.5,
     "lexical": 0.5
   },
-  "selection_reason": "All blends tie on the two-query recorded set, so a neutral blend is safer than claiming unsupported tuning.",
+  "quality_evidence": "artifacts/tender-evaluation.json retrieval block; actual nomic-embed-text similarity matrix with tuning/holdout separation",
+  "selection_reason": "The real recorded-model tuning evaluation ties 25/75, 50/50 and 75/25; the frozen tie-break preserves neutral 50/50. This microbenchmark does not select weights.",
   "scale_boundary": "Exact scan is deliberately capped at 10,000 candidates. Add a local ANN index and a larger judged query set before increasing the cap.",
   "limitations": [
-    "Microbenchmark CPU and storage overhead vary by host.",
-    "The recorded dataset is too small to estimate general retrieval quality."
+    "Microbenchmark timing varies by host.",
+    "Synthetic vectors measure scan cost only and make no semantic-quality claim."
   ]
 }

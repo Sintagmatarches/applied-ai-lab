@@ -78,8 +78,8 @@ class ToolRegistry:
 
     def _evidence(self,notice:dict[str,Any])->list[dict[str,Any]]:
         rows=[]
-        for item in notice.get("evidence",[]): rows.append({**item,"text":item.get("excerpt",""),"title":notice.get("title"),"buyer":notice.get("buyer"),"notice_url":notice.get("notice_url")})
-        if not rows: rows=[{"evidence_id":f"ted:{notice['notice_id']}:notice","notice_id":notice["notice_id"],"text":notice.get("description","") or notice.get("title",""),"title":notice.get("title"),"buyer":notice.get("buyer"),"notice_url":notice.get("notice_url")}]
+        for item in notice.get("evidence",[]): rows.append({**item,"publication_id":notice.get("publication_id"),"text":item.get("excerpt",""),"title":notice.get("title"),"buyer":notice.get("buyer"),"notice_url":notice.get("notice_url")})
+        if not rows: rows=[{"evidence_id":f"ted:{notice['notice_id']}:notice","notice_id":notice["notice_id"],"publication_id":notice.get("publication_id"),"text":notice.get("description","") or notice.get("title",""),"title":notice.get("title"),"buyer":notice.get("buyer"),"notice_url":notice.get("notice_url")}]
         return rows
 
     def _search_tenders(self,a):

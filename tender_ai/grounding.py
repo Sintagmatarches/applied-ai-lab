@@ -38,6 +38,20 @@ def _numbers(value: str) -> set[str]:
     return {item.replace(",", ".") for item in re.findall(r"(?<![a-z])\d+(?:[.,]\d+)?", value.lower())}
 
 
+def _scope_consistent(claim: str, cited: list[dict[str, Any]]) -> bool:
+    publication_mentions = set(re.findall(r"\b\d{5,8}-20\d{2}\b", claim))
+    lot_mentions = set(re.findall(r"\bLOT-\d{4}\b", claim.upper()))
+    uuid_mentions = set(re.findall(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", claim.lower()))
+    cited_publications = {str(item.get("publication_id", "")) for item in cited}
+    cited_lots = {str(item.get("lot_id", "")).upper() for item in cited}
+    cited_notices = {str(item.get("notice_id", "")).lower() for item in cited}
+    return (
+        (not publication_mentions or publication_mentions <= cited_publications)
+        and (not lot_mentions or lot_mentions <= cited_lots)
+        and (not uuid_mentions or uuid_mentions <= cited_notices)
+    )
+
+
 @dataclass(frozen=True)
 class GroundingResult:
     answer: str
@@ -90,8 +104,9 @@ def validate_grounded_output(raw: str, evidence: list[dict[str, Any]]) -> Ground
         decision_words = set(re.findall(r"\b(?:BID|NO_BID|REVIEW|INSUFFICIENT_EVIDENCE)\b", claim_text.upper()))
         assessment_evidence = any(known[item].get("_tool_name") in {"assess_supplier_fit", "explain_bid_decision", "find_supplier_gaps"} for item in valid_ids)
         decisions_consistent = not decision_words or assessment_evidence and all(word in evidence_text.upper() for word in decision_words)
+        scope_consistent = _scope_consistent(claim_text, [known[item] for item in valid_ids])
         malicious = re.search(r"ignore all previous|system prompt|fake:\d+|<untrusted", claim_text, re.I)
-        if valid_ids and len(valid_ids) == len(ids) and overlap >= .5 and numeric_consistent and decisions_consistent and not malicious:
+        if valid_ids and len(valid_ids) == len(ids) and overlap >= .5 and numeric_consistent and decisions_consistent and scope_consistent and not malicious:
             supported.append({"text": claim_text, "evidence_ids": valid_ids})
         else:
             unsupported += 1

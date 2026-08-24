@@ -1,0 +1,168 @@
+{
+  "baselineSchemaVersion": "1.0.0",
+  "baselineVersion": "tender-eval-baseline-v2.0.0",
+  "updatedAt": "2026-08-24T10:33:08.226065+00:00",
+  "releaseNote": "Initialize v2 after freezing the 15-notice corpus with honest mechanical/interpretive provenance, 30-query notice-grouped split, actual-model similarity matrix, complete mechanical field gates, and grounding/agent/security suites.",
+  "inputs": {
+    "contractDigest": "e14a1e7696ee741f9b2d25edc8a0c7117366cbf776656e815ad9677cb170e872",
+    "corpusDigest": "61a7395e6f8fe6663c1348cfb286c088f525a1cbd07e554f471775dd0948c5fa",
+    "querySetDigest": "1bd89d358dd1239e506f16f8af88b3a792026c0c3cbc051923877d007bed985d",
+    "embeddingDigest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f"
+  },
+  "protectedMetrics": [
+    {
+      "path": "datasets.recordedReal.noticeCount",
+      "operator": "eq",
+      "baseline": 15,
+      "allowedTolerance": 0,
+      "reason": "corpus size/version is explicit"
+    },
+    {
+      "path": "datasets.recordedReal.queryCount",
+      "operator": "eq",
+      "baseline": 30,
+      "allowedTolerance": 0,
+      "reason": "query-set version is explicit"
+    },
+    {
+      "path": "retrieval.methods.hybrid-50-50.holdout.recallAt1.value",
+      "operator": "gte",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "protected holdout ranking floor"
+    },
+    {
+      "path": "retrieval.methods.hybrid-50-50.holdout.mrr",
+      "operator": "gte",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "protected holdout reciprocal-rank floor"
+    },
+    {
+      "path": "retrieval.methods.hybrid-50-50.holdout.ndcgAt5",
+      "operator": "gte",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "protected holdout graded-ranking floor"
+    },
+    {
+      "path": "extraction.fieldExactMatch.lotIdSequence.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "lot identity is deterministic"
+    },
+    {
+      "path": "extraction.fieldExactMatch.lotCount.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "lot cardinality is deterministic"
+    },
+    {
+      "path": "extraction.fieldExactMatch.buyerCountry.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "buyer country is mechanical"
+    },
+    {
+      "path": "extraction.fieldExactMatch.submissionLanguages.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "submission-language extraction is mechanical"
+    },
+    {
+      "path": "extraction.fieldExactMatch.awardCriterionCount.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "award-criterion cardinality is mechanical"
+    },
+    {
+      "path": "extraction.fieldExactMatch.deadlineSequence.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "deadline extraction is mechanical"
+    },
+    {
+      "path": "extraction.fieldExactMatch.missingFieldBehavior.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "missing deadline fields must remain missing"
+    },
+    {
+      "path": "extraction.lotIdItems.recall",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "all expected lot IDs remain represented"
+    },
+    {
+      "path": "extraction.cpvExtraction.recall",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "all expected CPV values remain represented"
+    },
+    {
+      "path": "extraction.mandatoryBooleanCoverage.value",
+      "operator": "eq",
+      "baseline": 1.0,
+      "allowedTolerance": 0,
+      "reason": "mandatory boolean remains present; this is coverage, not classification accuracy"
+    },
+    {
+      "path": "extraction.requirementExtraction.recall",
+      "operator": "gte",
+      "baseline": 0.9279,
+      "allowedTolerance": 0.01,
+      "reason": "aggregate source-derived category coverage"
+    },
+    {
+      "path": "extraction.requirementLotAssignment.recall",
+      "operator": "gte",
+      "baseline": 0.9459,
+      "allowedTolerance": 0.01,
+      "reason": "lot association coverage"
+    },
+    {
+      "path": "extraction.awardWeightExtraction.recall",
+      "operator": "gte",
+      "baseline": 0.5577,
+      "allowedTolerance": 0.01,
+      "reason": "known current gap remains visible and cannot silently worsen"
+    },
+    {
+      "path": "grounding.passed",
+      "operator": "eq",
+      "baseline": 12,
+      "allowedTolerance": 0,
+      "reason": "all deterministic grounding cases pass"
+    },
+    {
+      "path": "grounding.unsupportedClaimsAfterGate",
+      "operator": "eq",
+      "baseline": 0,
+      "allowedTolerance": 0,
+      "reason": "central publication safety invariant"
+    },
+    {
+      "path": "agent.passed",
+      "operator": "eq",
+      "baseline": 7,
+      "allowedTolerance": 0,
+      "reason": "all agent/tool boundary cases pass"
+    },
+    {
+      "path": "security.passed",
+      "operator": "eq",
+      "baseline": 12,
+      "allowedTolerance": 0,
+      "reason": "all security boundary regressions pass"
+    }
+  ]
+}
