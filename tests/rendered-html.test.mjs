@@ -50,7 +50,7 @@ test("renders only completed projects on the public home page", async () => {
   assert.doesNotMatch(html, /href="\/(?:housing-value-forecast|credit-risk-assessment|document-processing|image-recognition)"/);
   assert.doesNotMatch(html, /Housing Value Forecast|Credit Risk Assessment|Document Processing|Image Recognition/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260824-rail-publication-plane-1/);
+  assert.match(html, /favicon\.svg\?v=20260824-tender-evals-v2-1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
@@ -93,7 +93,10 @@ test("renders the EU Tender Intelligence dashboard without hardcoded opportuniti
   assert.match(html, /Search live TED/);
   assert.match(html, /Editable fictional supplier/);
   assert.match(html, /Public Cloudflare never calls localhost Ollama/);
-  assert.match(html, /RECORDED VERIFIED EVIDENCE/);
+  assert.match(html, /RECORDED-REAL EVALUATION/);
+  assert.match(html, /15<!-- --> notices/);
+  assert.match(html, /14<!-- -->\/<!-- -->14<!-- --> curated holdout queries/);
+  assert.match(html, /MODEL_UNAVAILABLE/);
   assert.match(html, /Source code/);
   assert.doesNotMatch(html, /Arbeitnow|Jobicy|Search public jobs/);
 

@@ -1,23 +1,29 @@
 {
-  "verifiedAt": "2026-08-19T14:55:39.854072+00:00",
+  "verifiedAt": "2026-08-24T10:16:06.795975+00:00",
   "source": "Official TED Search API v3",
-  "uniqueNotices": 35,
+  "uniqueNotices": 34,
   "model": "qwen2.5:3b-instruct",
   "retrieval": {
     "hits": 5,
-    "candidateCount": 195,
-    "latencyMs": 175.213
+    "candidateCount": 181,
+    "latencyMs": 170.951
   },
   "agent": {
-    "answerStatus": "DETERMINISTIC_FALLBACK",
+    "answerStatus": "MODEL_UNAVAILABLE",
     "toolCalls": 1,
-    "fallbackUsed": true,
+    "fallbackUsed": false,
     "citationValidity": 1,
-    "claimSupportRate": 1
+    "claimSupportRate": 0
   },
   "evaluation": {
-    "cases": 14,
-    "scope": "synthetic regression + recorded live verification",
-    "securityTests": 8
+    "syntheticCases": 14,
+    "recordedNotices": 15,
+    "retrievalScenarios": 30,
+    "tuningQueries": 16,
+    "holdoutQueries": 14,
+    "holdoutRecallAt1Hits": 14,
+    "securityTests": 12,
+    "postGateUnsupportedClaims": 0,
+    "scope": "Source-derived recorded-real evidence; not independent human labels"
   }
 }

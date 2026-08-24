@@ -16,3 +16,7 @@
 - **PUBLIC LIVE:** anonymous current TED query and browser-side deterministic assessment.
 - **LOCAL AI:** XML, persistence, embeddings, agent and scheduled watch path run by the operator.
 - **RECORDED VERIFIED EVIDENCE:** committed timestamped outputs from an actual prior run, not a live browser execution.
+- **DETERMINISTIC SYNTHETIC REGRESSION:** source-controlled edge/adversarial software cases used as CI gates; never a real-world quality estimate.
+- **RECORDED-REAL TED EVALUATION:** committed published TED fields plus source-derived expectations and curated retrieval scenarios; not independently human-labelled.
+- **MODEL-DEPENDENT LIVE/RECORDED VERIFICATION:** actual Ollama/network behavior, tokens and durations; informative and non-gating in normal CI.
+- **Evaluation baseline:** a versioned contract binding input digests and protected metrics; a dataset change requires an explicit baseline/version update rather than being mislabeled as model regression.

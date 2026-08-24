@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260818-data-platform-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260824-tender-evals-v2-1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -22,6 +22,8 @@ The agent implements **discover → qualify per lot → watch → detect change 
 
 The local runtime adds bounded official eForms XML enrichment, SQLite/FTS5 persistence, separate TED source versions and ingestion revisions, material field diffs, automatic lot reassessment, Nomic embeddings, hybrid retrieval, a bounded multi-step Qwen tool loop and a deterministic claim/evidence gate. The supplier profile is injected by trusted runtime code and is absent from model-controlled tool arguments. Source documents are untrusted data: prompt-like text cannot select tools, change eligibility or forge citations.
 
+The evaluation layer is source-controlled and release-gated: 15 recorded public TED notices from eight buyer countries, 30 curated retrieval scenarios split by notice into 16 tuning and 14 holdout queries, a recorded similarity matrix from the actual local `nomic-embed-text` digest, field/lot extraction checks, 12 grounding cases and 12 security-boundary regressions. On this bounded set, the selected 50/50 hybrid found the expected publication at rank 1 for 14/14 holdout queries; vector-only found 13/14. These correlated curated scenarios are not general EU-procurement accuracy. The extraction report also exposes current gaps instead of hiding them: award-weight recall is 29/52 on the committed source-derived expectations.
+
 ```mermaid
 flowchart LR
   T["TED Search API v3 + linked XML"] --> K["Procurement knowledge base"]
@@ -38,7 +40,7 @@ Reproduce the local path directly:
 ```bash
 python -m pip install -r requirements-ai.txt
 python -m unittest discover -s tender_ai/tests
-python -m tender_ai.evals.run
+python -m tender_ai.evals.run --check-baseline
 python -m tender_ai.retrieval_benchmark
 python -m tender_ai.live_verify
 python -m uvicorn tender_ai.server:app --host 127.0.0.1 --port 8099
@@ -53,7 +55,7 @@ docker compose exec ollama ollama pull qwen2.5:3b-instruct
 docker compose up --build tender-ai
 ```
 
-The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, lot normalization and deterministic assessment are public; persistent history, XML enrichment, embeddings and agent execution remain local unless the supplied private Azure Container Apps IaC is deployed with user-owned credentials. See the [architecture](docs/tender-ai-architecture.md), [evaluation](docs/tender-ai-evaluation.md), [live verification](docs/tender-ai-live-verification.md), [threat model](docs/tender-ai-threat-model.md), [decision definitions](docs/tender-ai-data-definitions.md) and [runbook](docs/tender-ai-runbook.md).
+Normal CI replays the frozen similarity matrix and fails on protected dataset, retrieval, extraction, grounding, agent or security regressions; it never downloads Ollama or mutates the corpus. JSONL trace schema v2 correlates request/model/tool/grounding/fallback stages while storing query hashes and lengths rather than raw questions or supplier profiles. The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, lot normalization and deterministic assessment are public; persistent history, XML enrichment, embeddings and agent execution remain local unless the supplied private Azure Container Apps IaC is deployed with user-owned credentials. See the [architecture](docs/tender-ai-architecture.md), [evaluation](docs/tender-ai-evaluation.md), [live verification](docs/tender-ai-live-verification.md), [threat model](docs/tender-ai-threat-model.md), [decision definitions](docs/tender-ai-data-definitions.md) and [runbook](docs/tender-ai-runbook.md).
 
 ## Finland Rail Monitoring System
 
@@ -214,7 +216,7 @@ npm test
 npm run test:rail
 npm run test:ml
 npm run test:tender-ai
-npm run eval:tender-ai
+npm run eval:tender-ai -- --check-baseline
 npm run typecheck
 npm run lint
 ```

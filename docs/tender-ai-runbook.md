@@ -14,7 +14,13 @@ The browser watchlist is intentionally different: it stores IDs on the device an
 
 ## Verification and incidents
 
-Run `npm test`, `python -m tender_ai.evals.run`, `python -m tender_ai.retrieval_benchmark` and `python -m tender_ai.live_verify`. Inspect `artifacts/tender-live-verification.json`, the JSONL trace and `python -m tender_ai.operational_report`. A high fallback rate means model answer quality regressed even when a deterministic answer was safely returned.
+Run `npm test`, `python -m tender_ai.evals.run --check-baseline`, `python -m tender_ai.retrieval_benchmark` and, separately, `python -m tender_ai.live_verify`. Inspect `artifacts/tender-evaluation.json`, `artifacts/tender-evaluation-failures.json`, `artifacts/tender-live-verification.json`, the v2 JSONL trace and `python -m tender_ai.operational_report`. A high fallback rate means model answer quality regressed even when a deterministic answer was safely returned.
+
+Normal evaluation and CI are offline/deterministic. A corpus refresh is deliberate: run `python -m tender_ai.evals.collect_real_ted`, inspect the candidate and official notice links, then use `--replace-committed` only for an intentional dataset version. Update `retrieval_queries.json`, bump versions, run `python -m tender_ai.evals.update_manifest --write`, regenerate actual-model similarities with `python -m tender_ai.evals.record_similarity --write`, update the contract digests, and review the full result.
+
+Normal runs never overwrite `evaluation_baseline.json`. After a legitimate versioned change, update it explicitly with `python -m tender_ai.evals.run --update-baseline --release-note "reason"`, inspect the diff/artifacts, then rerun `--check-baseline`. A digest mismatch means inputs changed; it is not automatically an AI regression.
+
+Trace schema v2 rejects raw questions, prompts, profiles, environment/authentication data and secrets. Query hashes/lengths, IDs, stage/status, retrieval/model/tool durations, actually returned token counts, fingerprints, prompt/eval versions, grounding and fallback fields are allowed. Events without the exact schema are counted as legacy/unsupported by the operational report rather than silently reinterpreted.
 
 For TED 429/5xx failures, honor the recorded retry category and reduce polling frequency; the client already applies Retry-After/backoff/jitter. For integrity failures, stop writers, preserve the damaged DB, run `PRAGMA integrity_check`, restore backup and re-ingest since TED is the source of truth. If evidence changes, stale embeddings are deleted and must be re-indexed.
 

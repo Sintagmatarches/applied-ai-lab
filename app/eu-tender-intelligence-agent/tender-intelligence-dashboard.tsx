@@ -15,7 +15,7 @@ export type PublicTenderEvidence = {
   verifiedAt: string; source: string; uniqueNotices: number; model: string;
   retrieval: { hits: number; candidateCount: number; latencyMs: number };
   agent: { answerStatus: string; toolCalls: number; fallbackUsed: boolean; citationValidity: number; claimSupportRate: number };
-  evaluation: { cases: number; scope: string; securityTests: number };
+  evaluation: { syntheticCases: number; recordedNotices: number; retrievalScenarios: number; tuningQueries: number; holdoutQueries: number; holdoutRecallAt1Hits: number; securityTests: number; postGateUnsupportedClaims: number; scope: string };
 };
 
 const PROFILE_KEY = "eu-tender-demo-supplier-v2";
@@ -155,8 +155,9 @@ export function TenderIntelligenceDashboard({ defaultDateRange, publicEvidence }
 
     <section className="tender-secondary-grid">
       <article><p className="eyebrow">PUBLIC WATCHLIST</p><h2>{watchlist.length} saved notices</h2><p>Device-local list. Recheck explicitly reruns the current official query and refreshes watched notices present in the returned batch.</p><button type="button" disabled={!watchlist.length || loading} onClick={() => void search()}>Recheck watched notices</button></article>
-      <article><p className="eyebrow">RECORDED VERIFIED EVIDENCE</p><h2>{publicEvidence.uniqueNotices} live notices · {publicEvidence.retrieval.hits} retrieval hits</h2><p>Verified {publicEvidence.verifiedAt.slice(0, 10)} against {publicEvidence.source}. Model: {publicEvidence.model}. Last answer status: {publicEvidence.agent.answerStatus}; fallback {publicEvidence.agent.fallbackUsed ? "used and disclosed" : "not used"}.</p></article>
-      <article><p className="eyebrow">GROUNDING</p><h2>{Math.round(publicEvidence.agent.citationValidity * 100)}% valid citations</h2><p>Claim support {Math.round(publicEvidence.agent.claimSupportRate * 100)}% in the recorded run. Security suite: {publicEvidence.evaluation.securityTests} adversarial regression checks. Scope: {publicEvidence.evaluation.scope}.</p></article>
+      <article><p className="eyebrow">RECORDED-REAL EVALUATION</p><h2>{publicEvidence.evaluation.recordedNotices} notices · {publicEvidence.evaluation.retrievalScenarios} scenarios</h2><p>Notice-grouped split: {publicEvidence.evaluation.tuningQueries} tuning / {publicEvidence.evaluation.holdoutQueries} holdout. Selected retrieval found the expected publication at rank 1 for {publicEvidence.evaluation.holdoutRecallAt1Hits}/{publicEvidence.evaluation.holdoutQueries} curated holdout queries. {publicEvidence.evaluation.scope}.</p></article>
+      <article><p className="eyebrow">SAFETY REGRESSION</p><h2>{publicEvidence.evaluation.securityTests}/{publicEvidence.evaluation.securityTests} boundaries pass</h2><p>{publicEvidence.evaluation.postGateUnsupportedClaims} unsupported claims after the deterministic gate on the committed suite. This is bounded regression evidence, not general AI accuracy.</p></article>
+      <article><p className="eyebrow">LIVE MODEL VERIFICATION</p><h2>{publicEvidence.uniqueNotices} TED notices · {publicEvidence.retrieval.hits} retrieval hits</h2><p>Verified {publicEvidence.verifiedAt.slice(0, 10)}. Model: {publicEvidence.model}. Last status: {publicEvidence.agent.answerStatus}; fallback {publicEvidence.agent.fallbackUsed ? "used and disclosed" : "not used"}.</p></article>
     </section>
 
     <section className="supplier-profile"><div><p className="eyebrow">Editable fictional supplier</p><h2>{profile.companyName}</h2><p>Used only by deterministic code. The LLM cannot send or replace these values in tool arguments.</p></div><form onSubmit={(event) => { event.preventDefault(); updateProfile(profile); }}>

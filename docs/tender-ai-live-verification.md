@@ -1,36 +1,42 @@
 # Live TED and local-model verification
 
-Executed 19 August 2026 with `python -m tender_ai.live_verify` against the official anonymous TED Search API v3 and the locally installed Ollama models. This is a timestamped network run, not replayed fixture output.
+Executed 24 August 2026 with `python -m tender_ai.live_verify` against the official anonymous TED Search API v3 and the installed local Ollama models. This is a timestamped network/model run, not deterministic fixture replay and not a CI requirement.
 
-## Official search results
+## Official TED results
 
-The 180-day window was 20 February–19 August 2026. Six queries yielded 35 unique notices after deduplication:
+The 180-day window was 25 February–24 August 2026. Six queries produced 34 unique notices after deduplication:
 
-| Scenario | Returned batch / TED total |
+| Scenario | Returned batch / current TED total |
 | --- | ---: |
-| Finland + `data` | 8 / 178 |
-| Finland + `software` | 8 / 647 |
+| Finland + `data` | 8 / 180 |
+| Finland + `software` | 8 / 637 |
 | Finland + `artificial intelligence` | 5 / 5 |
 | Finland + `analytics` | 8 / 20 |
-| EU + `machine learning` | 8 / 44 |
-| Finland + ICT/Data CPV `72*` | 8 / 543 |
+| EU + `machine learning` | 8 / 45 |
+| Finland + ICT/Data CPV `72*` | 8 / 535 |
 
-These are procurement full-text/CPV matches, not job vacancies or evidence that an organisation is hiring a “data analyst.” A match may be software, security, data-platform, consultancy or another contract whose notice text contains the term. The UI example therefore uses Finland + CPV `72*` rather than pretending TED is a job-search source.
+All 34 normalized notices persisted without failures: 67 lots, 124 requirements, 48 award criteria and 239 evidence rows. Twelve linked official XML documents were bounded and parsed with zero failures. These are procurement matches, not jobs or proof that buyers are hiring for the query wording.
 
-All 35 notices persisted without failures: 68 lots, 124 requirements, 62 award criteria and 261 evidence rows. The run created 35 initial source snapshots and 35 lot-level assessments. Twelve official linked XML documents were bounded and parsed with zero failures in this run.
+The corpus acquisition utility separately looked up and froze the 15 evaluation publications through the same official API on this date. Live verification does not replace that committed corpus.
 
-`nomic-embed-text:latest` indexed all 261 evidence rows in 35.719 seconds. The 50/50 hybrid retrieval returned five hits from 195 filtered candidates in 175 ms (query embedding 81 ms). Exact scan remained below the 10,000-candidate safety boundary.
+## Embedding and retrieval
+
+Local `nomic-embed-text:latest`, digest `0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f`, indexed 239 evidence rows in 47.694 seconds. Ollama returned 21,551 input tokens, 47.592 seconds total model duration and 0.526 seconds load duration; the embedding response did not return generation counts/duration or a done reason, so none are invented.
+
+The 50/50 exact-cosine/FTS retrieval returned five hits from 181 country-filtered candidates in 170.951 ms, including a 52.836 ms query embedding. That embedding response returned nine input tokens, 36.851 ms total model duration and 1.513 ms load duration. The 10,000-candidate boundary was not approached.
 
 ## Agent and grounding result
 
-`qwen2.5:3b-instruct` selected `get_notice` for real notice [131555-2026](https://ted.europa.eu/en/notice/-/detail/131555-2026) and the tool succeeded in 3 ms. The bounded loop used two model steps, 3,122 prompt tokens, 843 completion tokens and 50.799 seconds total model/agent time.
+Local `qwen2.5:3b-instruct`, digest `357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b`, completed its first tool-selection call in 43.070 seconds, selected `get_notice`, and executed it successfully in 3.944 ms. The response returned 922 prompt tokens, 52 completion tokens, 43.067 seconds model duration, 17.950 seconds load, 21.232 seconds prompt evaluation, 3.863 seconds generation and `done_reason=stop` (13.46 generated tokens/second).
 
-The model still did not produce an acceptable supported claim set after the strict structured-final repair. The safety path therefore published a deterministic title/buyer claim with the real summary evidence ID. The recorded status is explicitly `DETERMINISTIC_FALLBACK`, fallback rate 1.0 for this single live agent case, citation validity 1.0, claim support 1.0 and zero unsupported claims after the gate. This is a safe grounded result, but it is not reported as successful model answering.
+The required structured final call then exceeded the 90-second HTTP timeout. The final recorded status is therefore `MODEL_UNAVAILABLE`, not model answered and not deterministic fallback. No model claim or citation was published; the result is unknown with zero unsupported post-gate claims. Total bounded agent time was 133.084 seconds. A successful tool call does not convert the failed final answer into model success.
 
-An earlier cold run exceeded the former 45-second model HTTP timeout. The per-call timeout was increased to 90 seconds while the agent remains bounded by steps, tool calls and a 180-second overall target. The successful rerun above is the committed evidence; the open-source 3B model's final-answer reliability remains a known limitation.
+## Observability result
 
-## Change boundary
+`artifacts/tender-ai-traces.jsonl` contains seven schema-v2 events across two trace IDs: embedding, retrieval, request start/end, one successful model call, one successful tool call and grounding. Query text and supplier data are absent; full SHA-256 and length are present. Both model digests, prompt `tender-agent-prompt-v4`, eval `tender-eval-v2.0.0`, optional durations/tokens, failure/fallback and grounding fields are recorded.
 
-Latest-only search did not expose a defensible amendment/corrigendum pair, so no real amendment is claimed. Synthetic version regression remains labelled synthetic and verifies stable source fingerprints, immutable ingestion revisions, field diffs and automatic reassessment.
+The v2 operational report has zero corrupt or unsupported-schema lines. Because this is one live agent request, its p50 and p95 are both 133.084 seconds; embedding is 47.694 seconds, retrieval 170.951 ms, recorded successful LLM call 43.070 seconds and tool call 3.944 ms. Totals are 922 prompt / 52 completion / 974 chat tokens. Fallback rate is 0/1; request failure is 1/1 (`MODEL_UNAVAILABLE`); tool success is 1/1; post-gate unsupported claims are zero. Local API monetary cost is explicitly not applicable/not measured—not reported as “free.”
 
-Raw evidence is in `artifacts/tender-live-verification.json`; the agent event is in `artifacts/tender-live-agent-trace.jsonl`. The public page reads only the compact committed `artifacts/tender-public-evidence.json` and does not contact local Ollama.
+## Boundary
+
+No real amendment/corrigendum pair is claimed. Latest-only search cannot prove a notice change, so deterministic source-version regression remains the evidence for diff/reassessment behavior. Raw results are in `artifacts/tender-live-verification.json`; live trace/report are separate from the deterministic baseline.
