@@ -1,0 +1,16 @@
+{
+  "coverageStatus": "complete",
+  "freshnessPolicyVersion": "rail-freshness-v1",
+  "generatedAt": "2026-08-24T07:41:40.803552Z",
+  "kpiDefinitionVersion": "rail-regional-kpi-v1",
+  "latestCompletePartition": "2026-08-23",
+  "publicationId": "2026-08-23-abc47bdaac25",
+  "sampleSupportPolicyVersion": "rail-sample-support-v1",
+  "schemaVersion": "rail-publication-manifest-v1",
+  "snapshotPath": "snapshots/2026-08-23-abc47bdaac25.json",
+  "snapshotSchemaVersion": "rail-regional-snapshot-v2",
+  "snapshotSha256": "abc47bdaac25f7a55e9ac9ba3f03e1ed2435c11282dace317017c595b7efd682",
+  "source": "Fintraffic / Digitraffic",
+  "windowEnd": "2026-08-23T23:59:59.999Z",
+  "windowStart": "2026-08-17T00:00:00.000Z"
+}
