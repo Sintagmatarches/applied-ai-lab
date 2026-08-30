@@ -61,9 +61,13 @@ test("published rail monitor changes thresholds and stays readable", async ({
   await page.getByRole("button", { name: "24 HOURS" }).click();
   await expect(page.getByText("Rolling window", { exact: true })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "7 DAYS" }).click();
-  await expect(page.getByText("Governed Gold window", { exact: true })).toBeVisible();
-  await expect(page.getByText("Coverage: complete (7/7 dates)", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Gold published/)).toBeVisible();
+  const railDataStatus = page.getByRole("status", { name: "Rail data status" });
+  await expect(railDataStatus).toHaveAttribute("data-monitor-mode", "7d");
+  await expect(railDataStatus).toHaveAttribute("data-publication-source", "remote-governed");
+  await expect(railDataStatus).toHaveAttribute("data-coverage-status", "complete");
+  await expect(railDataStatus).toHaveAttribute("data-available-dates", "7");
+  await expect(railDataStatus).toHaveAttribute("data-expected-dates", "7");
+  await expect(railDataStatus).toHaveAttribute("data-gold-published", "true");
   await page.getByRole("button", { name: "HISTORICAL" }).click();
   await expect(page.getByText("2025-08-01 → 2026-07-31", { exact: true })).toBeVisible();
   await expect(page.getByText("Historical network view", { exact: true })).toBeVisible();

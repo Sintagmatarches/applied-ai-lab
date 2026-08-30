@@ -18,7 +18,7 @@ type RegionFeature = {
 };
 type RegionGeoJson = { type: "FeatureCollection"; features: RegionFeature[] };
 
-const CACHE_VERSION = "20260824-rail-publication-plane-1";
+const CACHE_VERSION = "20260830-live-smoke-contract-1";
 const MODES: Array<{ value: RailMonitorMode; label: string; description: string }> = [
   { value: "live", label: "LIVE", description: "Current 3-hour operating window" },
   { value: "24h", label: "24 HOURS", description: "Rolling previous 24 hours" },
@@ -301,7 +301,17 @@ export function RegionalRailMonitor() {
 
       {snapshot ? (
         <>
-          <div className="monitor-freshness" role="status">
+          <div
+            className="monitor-freshness"
+            role="status"
+            aria-label="Rail data status"
+            data-monitor-mode={mode}
+            data-publication-source={snapshot.publicationSource ?? "not-applicable"}
+            data-coverage-status={snapshot.coverage.status}
+            data-available-dates={snapshot.coverage.availableDates.length}
+            data-expected-dates={snapshot.coverage.expectedDates.length}
+            data-gold-published={snapshot.goldPublishedAt ? "true" : "false"}
+          >
             <span className={`freshness-dot freshness-${snapshot.freshness.state}`} aria-hidden="true" />
             <strong>{snapshot.freshness.state === "not-applicable" ? "Dated snapshot" : `Freshness: ${snapshot.freshness.state}`}</strong>
             <span>{mode === "live" ? "Live Digitraffic" : mode === "24h" ? "Rolling window" : mode === "7d" ? (snapshot.publicationSource === "remote-governed" ? "Governed daily publication" : "Last-known-good fallback") : "Dated historical snapshot"}</span>
