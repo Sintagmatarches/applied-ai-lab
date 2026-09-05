@@ -87,7 +87,14 @@ function profileFromPayload(value: unknown): SupplierProfile {
 export async function POST(request: Request): Promise<Response> {
   let payload: Record<string, unknown>;
   try {
-    payload = await request.json() as Record<string, unknown>;
+    const parsed: unknown = await request.json();
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return Response.json(
+        { error: "Search request must be a JSON object." },
+        { status: 422, headers: { "cache-control": "no-store" } },
+      );
+    }
+    payload = parsed as Record<string, unknown>;
   } catch {
     return Response.json({ error: "A JSON search request is required." }, { status: 400 });
   }

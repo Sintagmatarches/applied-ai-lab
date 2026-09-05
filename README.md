@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260830-live-smoke-contract-1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260905-input-validation-v1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 

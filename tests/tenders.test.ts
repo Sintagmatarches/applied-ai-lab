@@ -3,6 +3,22 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { applyClientFilters, assessTender, buildTedQuery, DEMO_SUPPLIER_PROFILE, normalizeTedNotice } from "../lib/tenders";
 
+test("search rejects non-object JSON before contacting TED", async (context) => {
+  const fetchMock = context.mock.method(globalThis, "fetch", async () => {
+    throw new Error("Invalid input must not reach TED");
+  });
+  const { POST } = await import("../app/api/tenders/search/route");
+  for (const payload of [null, [], [1], true, 42, "search"]) {
+    const response = await POST(new Request("https://lab.test/api/tenders/search", {
+      method: "POST", body: JSON.stringify(payload),
+    }));
+    assert.equal(response.status, 422);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await response.json(), { error: "Search request must be a JSON object." });
+  }
+  assert.equal(fetchMock.mock.callCount(), 0);
+});
+
 const raw = {
   "notice-identifier": "fixture-notice", "publication-number": "123456-2026", "notice-version": 2,
   "notice-title": { eng: "Finland – AI and data engineering services" }, "buyer-name": { eng: ["Test City"] },

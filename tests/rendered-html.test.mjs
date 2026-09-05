@@ -50,7 +50,7 @@ test("renders only completed projects on the public home page", async () => {
   assert.doesNotMatch(html, /href="\/(?:housing-value-forecast|credit-risk-assessment|document-processing|image-recognition)"/);
   assert.doesNotMatch(html, /Housing Value Forecast|Credit Risk Assessment|Document Processing|Image Recognition/);
   assert.doesNotMatch(html, /predictor-form/);
-  assert.match(html, /favicon\.svg\?v=20260830-live-smoke-contract-1/);
+  assert.match(html, /favicon\.svg\?v=20260905-input-validation-v1/);
   assert.doesNotMatch(html, /og\.png\?v=/);
 });
 
