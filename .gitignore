@@ -60,3 +60,14 @@ __pycache__/
 
 # Terraform provider/plugin working directories; keep dependency lock files.
 **/.terraform/*
+
+# Local Worker secrets, private keys and Terraform state/variable values.
+.dev.vars
+.dev.vars.*
+*.key
+*.tfvars
+*.tfvars.json
+*.tfstate
+*.tfstate.*
+*.db
+*.db-*
