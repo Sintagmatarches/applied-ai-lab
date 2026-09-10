@@ -214,6 +214,8 @@ test("preserves the dark lab visual system and adds scoped predictor styles", as
   assert.match(css, /\.rail-page\s*\{/);
   assert.match(css, /\.regional-monitor\s*\{/);
   assert.match(css, /\.finland-region-map\s*\{/);
+  assert.match(css, /\.region-shape-outline\s*\{/);
+  assert.match(css, /\.region-shape-outline\s*\{[^}]*pointer-events:\s*none/s);
   assert.match(css, /\.threshold-control\s*\{/);
   assert.match(css, /\.lahti-profile\s*\{/);
   assert.match(css, /\.tender-page\s*\{/);

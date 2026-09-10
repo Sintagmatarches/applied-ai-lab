@@ -998,10 +998,17 @@ tbody td {
 .region-shape:hover,
 .region-shape:focus-visible,
 .region-shape.is-selected {
-  stroke: #f4fbff;
-  stroke-width: 3;
   outline: none;
   filter: brightness(1.12);
+}
+
+.region-shape-outline {
+  fill: none;
+  stroke: #f4fbff;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
 }
 
 .region-shape-normal,

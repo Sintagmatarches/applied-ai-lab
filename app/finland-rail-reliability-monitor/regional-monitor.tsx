@@ -18,7 +18,7 @@ type RegionFeature = {
 };
 type RegionGeoJson = { type: "FeatureCollection"; features: RegionFeature[] };
 
-const CACHE_VERSION = "20260905-input-validation-v1";
+const CACHE_VERSION = "20260910-map-outline-v1";
 const MODES: Array<{ value: RailMonitorMode; label: string; description: string }> = [
   { value: "live", label: "LIVE", description: "Current 3-hour operating window" },
   { value: "24h", label: "24 HOURS", description: "Rolling previous 24 hours" },
@@ -184,6 +184,8 @@ export function RegionalRailMonitor() {
   const [snapshots, setSnapshots] = useState<Partial<Record<RailMonitorMode, RegionalRailSnapshot>>>({});
   const [geoJson, setGeoJson] = useState<RegionGeoJson | null>(null);
   const [selectedCode, setSelectedCode] = useState("01");
+  const [hoveredCode, setHoveredCode] = useState<string | null>(null);
+  const [focusedCode, setFocusedCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -253,6 +255,9 @@ export function RegionalRailMonitor() {
     };
     return geoJson.features.map((feature) => ({ feature, path: featurePath(feature, bounds) }));
   }, [geoJson]);
+  const highlightedPath = paths.find(
+    ({ feature }) => feature.properties.code === (hoveredCode ?? focusedCode ?? selected?.code),
+  );
 
   return (
     <section className="regional-monitor" aria-labelledby="regional-monitor-title">
@@ -365,6 +370,10 @@ export function RegionalRailMonitor() {
                   tabIndex={0}
                   aria-label={label}
                   onClick={() => setSelectedCode(feature.properties.code)}
+                  onPointerEnter={() => setHoveredCode(feature.properties.code)}
+                  onPointerLeave={() => setHoveredCode(null)}
+                  onFocus={() => setFocusedCode(feature.properties.code)}
+                  onBlur={() => setFocusedCode(null)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -376,6 +385,14 @@ export function RegionalRailMonitor() {
                 </path>
               );
             })}
+            {highlightedPath ? (
+              <path
+                d={highlightedPath.path}
+                className="region-shape-outline"
+                fillRule="evenodd"
+                aria-hidden="true"
+              />
+            ) : null}
           </svg>
           <div className="map-legend" aria-label="Map status legend">
             <span><i className="legend-normal" />Normal</span>
