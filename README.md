@@ -1,6 +1,6 @@
 # Applied AI Lab
 
-![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260905-input-validation-v1)
+![Applied AI Lab — Olist and Finland Rail projects](public/og.png?v=20260921-operations-v1)
 
 [![CI](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Sintagmatarches/applied-ai-lab/actions/workflows/ci.yml)
 
@@ -55,7 +55,7 @@ docker compose exec ollama ollama pull qwen2.5:3b-instruct
 docker compose up --build tender-ai
 ```
 
-Normal CI replays the frozen similarity matrix and fails on protected dataset, retrieval, extraction, grounding, agent or security regressions; it never downloads Ollama or mutates the corpus. JSONL trace schema v2 correlates request/model/tool/grounding/fallback stages while storing query hashes and lengths rather than raw questions or supplier profiles. The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, lot normalization and deterministic assessment are public; persistent history, XML enrichment, embeddings and agent execution remain local unless the supplied private Azure Container Apps IaC is deployed with user-owned credentials. See the [architecture](docs/tender-ai-architecture.md), [evaluation](docs/tender-ai-evaluation.md), [live verification](docs/tender-ai-live-verification.md), [threat model](docs/tender-ai-threat-model.md), [decision definitions](docs/tender-ai-data-definitions.md) and [runbook](docs/tender-ai-runbook.md).
+Normal CI replays the frozen similarity matrix and fails on protected dataset, retrieval, extraction, grounding, agent or security regressions; it never downloads Ollama or mutates the corpus. The private runtime emits allowlisted JSON logs, low-cardinality metrics and OpenTelemetry spans with correlation IDs; raw questions, supplier profiles, source text and secrets are excluded. `/live` reports process liveness and `/ready` verifies the SQLite schema and configured Ollama models. Bounded upstream retries and timeouts, a deployment smoke test, alert queries, rollback steps and an explicit SLO proposal are documented in the [operations runbook](docs/tender-ai-operations.md). The public Cloudflare deployment never claims access to loopback Ollama. Live TED search, lot normalization and deterministic assessment are public; persistent history, XML enrichment, embeddings and agent execution remain local unless the supplied private Azure Container Apps IaC is deployed with user-owned credentials. See the [architecture](docs/tender-ai-architecture.md), [evaluation](docs/tender-ai-evaluation.md), [live verification](docs/tender-ai-live-verification.md), [threat model](docs/tender-ai-threat-model.md), [decision definitions](docs/tender-ai-data-definitions.md) and [runbook](docs/tender-ai-runbook.md).
 
 ## Finland Rail Monitoring System
 
@@ -120,7 +120,7 @@ flowchart LR
 
 The Python standard-library pipeline downloads only missing source partitions, validates each daily train array/date/passenger population before atomic publication and again on cache read, respects Digitraffic identification/compression guidance, splits FMI requests into the official seven-day maximum, converts UTC using `Europe/Helsinki`, and produces a compact public artifact plus ignored full-grain curated CSVs. Raw third-party responses and the 41 MB journey fact are not committed.
 
-The production-like data-platform layer is executable locally and in CI: PySpark 4.0.4 transforms nested train events into Delta Lake 4.0.1 Bronze/Silver/Gold tables, while content-hash watermarks make unchanged reruns no-ops and changed/forced dates replace only affected daily and rolling partitions. Blocking gates prevent invalid data from receiving a watermark. A governed 19-region dimension/bridge and additive date×region fact avoid threshold-duplicated denominators. The KPI formula and protected regression fixture remain unchanged.
+The production-like data-platform layer is executable locally and in CI: PySpark 4.0.4 transforms nested train events into Delta Lake 4.0.1 Bronze/Silver/Gold tables. Ingestion first copies each source partition into an immutable content-addressed snapshot, verifies the copied bytes, then derives the watermark from that exact snapshot. Unchanged reruns are no-ops; corrected dates replace only affected daily and rolling partitions. Blocking gates prevent invalid data from receiving a watermark, and a failure after Gold but before watermark commit is covered by a retry test. A governed 19-region dimension/bridge and additive date×region fact avoid threshold-duplicated denominators. The KPI formula and protected regression fixture remain unchanged. See the [source snapshot contract](docs/rail/source-snapshot-contract.md).
 
 ```bash
 python -m rail.pipeline
@@ -204,7 +204,7 @@ npm run ml:train
 npm run test:ml
 ```
 
-See [`artifacts/model-card.md`](artifacts/model-card.md), [`ml/train_model.py`](ml/train_model.py), [`lib/olist-model.ts`](lib/olist-model.ts) and [`tests/model-parity.test.ts`](tests/model-parity.test.ts).
+The public prediction contract is explicitly versioned as `schema_version=1`. `GET /api/olist/model` reports the deployed model version, feature contract and SHA-256 digest of the runtime artifact so a smoke test can bind the serving process to the reviewed model. See the [serving and rollback contract](docs/olist-serving-contract.md), [`artifacts/model-card.md`](artifacts/model-card.md), [`ml/train_model.py`](ml/train_model.py), [`lib/olist-model.ts`](lib/olist-model.ts) and [`tests/model-parity.test.ts`](tests/model-parity.test.ts).
 
 ## Application and validation
 

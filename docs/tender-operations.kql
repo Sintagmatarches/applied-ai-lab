@@ -1,0 +1,21 @@
+// Log Analytics Container Apps console table; aggregate only app-owned JSON.
+// Proposed HTTP failure alert: >5% over 15 min, at least 20 requests.
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(15m)
+| extend event = parse_json(Log_s)
+| where toint(event.schema_version) == 1 and tostring(event.operation) == "http"
+| where tostring(event.route) == "/ask"
+| where toint(event.status_code) >= 200 and toint(event.status_code) !between (400 .. 499)
+| summarize requests=count(), failures=countif(tostring(event.outcome) == "failure")
+| extend failure_rate = todouble(failures) / requests
+| where requests >= 20 and failure_rate > 0.05
+
+// Run separately for degraded model outcomes (includes HTTP-200 unavailability).
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(15m)
+| extend event = parse_json(Log_s)
+| where toint(event.schema_version) == 1 and tostring(event.operation) == "agent"
+| summarize requests=count(), degraded=countif(tostring(event.outcome) in
+    ("MODEL_UNAVAILABLE", "DETERMINISTIC_FALLBACK"))
+| extend degraded_rate = todouble(degraded) / requests
+| where requests >= 20 and degraded_rate > 0.20

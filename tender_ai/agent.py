@@ -11,6 +11,7 @@ from .grounding import ANSWER_SCHEMA, validate_grounded_output
 from .observability import TraceWriter, safe_query_metadata, safe_tool_arguments
 from .ollama import OllamaClient, OllamaUnavailable
 from .tools import ToolRegistry, ToolValidationError
+from .telemetry import instrument
 
 
 TENDER_AGENT_PROMPT_VERSION = "tender-agent-prompt-v4"
@@ -35,6 +36,7 @@ class TenderAgent:
         self.ollama, self.tools, self.traces = ollama, tools, traces
         self.max_steps, self.max_tool_calls, self.max_seconds = max_steps, max_tool_calls, max_seconds
 
+    @instrument("agent")
     def ask(self, question: str, profile: SupplierProfile | None = None) -> AgentResult:
         trace_id, started = str(uuid4()), time.perf_counter()
         query_metadata = safe_query_metadata(question)

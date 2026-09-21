@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 
 from .extraction import extract_requirements, parse_money
+from .telemetry import instrument
 
 
 SEARCH_URL = "https://api.ted.europa.eu/v3/notices/search"
@@ -86,6 +87,7 @@ def _read_bounded(response: Any, maximum: int, content_types: tuple[str, ...]) -
     return b"".join(chunks)
 
 
+@instrument("ted")
 def _request(url: str, *, data: bytes | None, accept: str, maximum: int, content_types: tuple[str, ...], timeout: float = 20, attempts: int = 3) -> bytes:
     _validate_official_url(url)
     for attempt in range(attempts):

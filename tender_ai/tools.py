@@ -9,6 +9,7 @@ from .domain import DEMO_PROFILE, SupplierProfile
 from .retrieval import HybridRetriever
 from .storage import TenderKnowledgeBase
 from .versioning import structured_diff
+from .telemetry import instrument
 
 
 class ToolValidationError(ValueError): pass
@@ -68,6 +69,7 @@ class ToolRegistry:
             for key,item in value.items():
                 if key in properties: self._validate_value(f"{path}.{key}",item,properties[key])
 
+    @instrument("tool")
     def execute(self,name:str,arguments:Any,*,trusted_profile:SupplierProfile|None=None)->ToolExecution:
         if name not in self.definitions: raise ToolValidationError(f"unknown tool: {name}")
         self._validate_value("arguments",arguments,self.definitions[name][1])

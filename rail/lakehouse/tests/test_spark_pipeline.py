@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 from rail.lakehouse.pipeline import LakehousePipeline
 from rail.lakehouse.spark import build_spark
@@ -68,6 +69,21 @@ class SparkPipelineTests(unittest.TestCase):
             self.assertEqual((first["processedPartitions"], second["skippedPartitions"], recovered["processedPartitions"]), (1, 1, 1))
             self.assertEqual(facts.count(), 1)
             self.assertEqual((row.final_delay_minutes, row.on_time_5, row.on_time_15), (12, False, True))
+            old_watermarks = pipeline.successful_hashes()
+            corrected = train(1)
+            corrected["timeTableRows"][-1]["differenceInMinutes"] = 4
+            corrected["timeTableRows"][-1]["actualTime"] = "2026-01-01T09:04:00Z"
+            self._write_partition(source, [corrected])
+            # Fault after all Gold writes but before the successful watermark.
+            with patch.object(pipeline, "advance_watermarks", side_effect=RuntimeError("injected commit failure")):
+                with self.assertRaisesRegex(RuntimeError, "injected commit failure"):
+                    pipeline.process(date(2026, 1, 1), date(2026, 1, 1))
+            self.assertEqual(pipeline.successful_hashes(), old_watermarks)
+            retried = pipeline.process(date(2026, 1, 1), date(2026, 1, 1))
+            self.assertEqual(retried["processedPartitions"], 1)
+            updated = self.spark.read.format("delta").load(str(lakehouse / "gold/fact_train_journey"))
+            self.assertEqual(updated.count(), 1)
+            self.assertEqual(updated.select("final_delay_minutes").first()[0], 4)
 
     def test_duplicate_partition_is_rejected_without_watermark(self):
         with tempfile.TemporaryDirectory() as temporary:

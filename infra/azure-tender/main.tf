@@ -43,8 +43,15 @@ resource "azurerm_container_app" "api" {
       liveness_probe {
         transport        = "HTTP"
         port             = 8099
-        path             = "/health"
+        path             = "/live"
         interval_seconds = 30
+      }
+      readiness_probe {
+        transport        = "HTTP"
+        port             = 8099
+        path             = "/ready"
+        interval_seconds = 30
+        timeout          = 10
       }
     }
   }

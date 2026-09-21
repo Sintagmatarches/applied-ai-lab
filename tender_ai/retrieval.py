@@ -7,6 +7,7 @@ from typing import Any
 
 from .ollama import OllamaClient
 from .storage import TenderKnowledgeBase
+from .telemetry import instrument
 
 
 def cosine(left: list[float], right: list[float]) -> float:
@@ -36,6 +37,7 @@ class HybridRetriever:
         for row, vector in zip(rows, vectors): self.storage.set_embedding(row["evidence_id"], self.ollama.config.embedding_model, vector)
         return {"indexed": len(rows), "latency_ms": metrics.latency_ms, "model": self.ollama.config.embedding_model, "model_metrics": metrics.public()}
 
+    @instrument("retrieval")
     def search(self, query: str, *, top_k: int | None = None, country: str | None = None, cpv: str | None = None, buyer: str | None = None, min_value: float | None = None, deadline_before: str | None = None) -> tuple[list[SearchHit], dict[str, Any]]:
         started=time.perf_counter(); vectors, embed_metrics=self.ollama.embed([query]); query_vector=vectors[0]
         lexical_ids=self.storage.lexical_search(query, 50); lexical_rank={item: 1/(rank+1) for rank,item in enumerate(lexical_ids)}

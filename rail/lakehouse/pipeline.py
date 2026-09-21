@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import gzip
 import hashlib
 import json
-import shutil
 import sys
 import uuid
 from datetime import date, datetime, timezone
@@ -15,12 +13,13 @@ from delta.tables import DeltaTable
 from pyspark.sql import functions as F
 from pyspark.sql.types import BooleanType, DoubleType, StringType, StructField, StructType
 
-from rail.pipeline import validate_train_partition, write_json
+from rail.pipeline import write_json
 
 from .contracts import ContractRegistry
 from .planning import affected_complete_windows, date_range, select_partitions
 from .quality import QualityResult, require_no_failures, row_count_anomaly
 from .spark import build_spark, delta_exists, replace_partitions
+from .snapshot import snapshot_partition
 from .transforms import journey_fact, network_daily, normalize, regional_daily, rolling_regional_7d, route_performance, station_performance
 
 
@@ -37,13 +36,6 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
-
-
-def load_and_validate(path: Path, day: date) -> tuple[list[dict[str, Any]], str]:
-    digest = sha256_file(path)
-    with gzip.open(path, "rt", encoding="utf-8") as handle:
-        payload = json.load(handle)
-    return validate_train_partition(day, payload), digest
 
 
 def station_frame(spark, path: Path):
@@ -218,14 +210,10 @@ class LakehousePipeline:
             regions, station_region = region_frames(self.spark, self.stations_path)
             for decision in selected:
                 day = decision.departure_date.isoformat()
-                payload, digest = load_and_validate(decision.source_path, decision.departure_date)
+                payload, digest, immutable = snapshot_partition(
+                    decision.source_path, self.root, decision.departure_date, decision.source_sha256
+                )
                 historical_counts = self.source_counts()
-                immutable = self.root / f"bronze/digitraffic_trains/departure_date={day}/content_sha256={digest}/trains.json.gz"
-                immutable.parent.mkdir(parents=True, exist_ok=True)
-                if not immutable.exists():
-                    temporary = immutable.with_suffix(".json.gz.tmp")
-                    shutil.copyfile(decision.source_path, temporary)
-                    temporary.replace(immutable)
                 self.commit_manifest(run_id, day, digest, immutable, len(payload))
                 raw = self.spark.read.option("multiLine", "true").json(str(immutable))
                 hashes = self.spark.createDataFrame([(day, digest)], ["source_departure_date", "source_content_sha256"])

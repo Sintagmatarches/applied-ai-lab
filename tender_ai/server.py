@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import asynccontextmanager
+import sqlite3
 from typing import Any
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -12,9 +14,20 @@ from .ollama import OllamaUnavailable
 from .runtime import create_runtime
 from .ted import TedClient, normalize
 from .storage import utc_now
+from .telemetry import RequestTelemetry, configure
 
 
-runtime=create_runtime(); ted=TedClient(); app=FastAPI(title="Applied AI Lab · EU Tender Intelligence",version="2.0.0")
+@asynccontextmanager
+async def lifespan(app):
+    shutdown = configure()
+    try:
+        yield
+    finally:
+        shutdown()
+
+
+runtime=create_runtime(); ted=TedClient(); app=FastAPI(title="Applied AI Lab · EU Tender Intelligence",version="2.1.0", lifespan=lifespan)
+app.add_middleware(RequestTelemetry)
 app.add_middleware(CORSMiddleware,allow_origins=["http://localhost:3000","http://127.0.0.1:3000"],allow_credentials=False,allow_methods=["GET","POST"],allow_headers=["content-type"])
 
 
@@ -25,6 +38,25 @@ class IngestRequest(BaseModel):
     include_documents:bool=True
 class AskRequest(BaseModel):
     question:str=Field(min_length=2,max_length=1000); profile:dict[str,Any]=Field(default_factory=lambda:DEMO_PROFILE.public())
+
+
+@app.get("/live")
+async def live():
+    return {"status": "alive"}
+
+
+@app.get("/ready")
+def ready():
+    try:
+        # A real read from the required schema; no expensive counts or model generation.
+        with runtime.storage.connection() as connection:
+            connection.execute("SELECT notice_id FROM notices LIMIT 1").fetchone()
+        models = runtime.ollama.available_models()
+        if not {runtime.config.chat_model, runtime.config.embedding_model}.issubset(models):
+            raise OllamaUnavailable("Required models unavailable")
+    except (sqlite3.Error, OSError, OllamaUnavailable):
+        raise HTTPException(status_code=503, detail="Dependencies unavailable") from None
+    return {"status": "ready"}
 
 
 def profile_from(value:dict[str,Any]|None)->SupplierProfile:

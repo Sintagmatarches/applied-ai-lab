@@ -97,6 +97,7 @@ export type OlistPredictionInput = {
 };
 
 export type OlistPrediction = {
+  schema_version: 1;
   risk_score: number;
   risk_level: "low" | "medium" | "high";
   decision: "top risk group" | "below top risk group";
@@ -265,6 +266,9 @@ export function validatePredictionInput(payload: unknown): OlistPredictionInput 
       ? (payload as Record<string, unknown>)
       : {};
   const issues: string[] = [];
+  if (body.schema_version !== undefined && body.schema_version !== 1) {
+    issues.push("schema_version must be 1; omitted versions use the legacy v1 contract.");
+  }
   const sellerState = String(body.seller_state ?? "").trim().toUpperCase();
   if (!isBrazilianStateCode(sellerState)) {
     issues.push("seller_state must be a valid Brazilian state code.");
@@ -641,6 +645,7 @@ export function predictOlistDelay(input: OlistPredictionInput): OlistPrediction 
         ? "medium"
         : "low";
   return {
+    schema_version: 1,
     risk_score: result.risk_score,
     risk_level: riskLevel,
     decision:
@@ -658,6 +663,7 @@ export function predictOlistDelay(input: OlistPredictionInput): OlistPrediction 
 }
 
 export const olistModelMetadata = {
+  schemaVersion: 1,
   version: model.model_version,
   modelType: model.model_type,
   displayMode: model.display_mode,
