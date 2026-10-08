@@ -1,16 +1,16 @@
 {
   "coverageStatus": "complete",
   "freshnessPolicyVersion": "rail-freshness-v1",
-  "generatedAt": "2026-10-07T11:07:31.422733Z",
+  "generatedAt": "2026-10-08T11:25:07.074160Z",
   "kpiDefinitionVersion": "rail-regional-kpi-v1",
-  "latestCompletePartition": "2026-10-06",
-  "publicationId": "2026-10-06-c7fd52318e93",
+  "latestCompletePartition": "2026-10-07",
+  "publicationId": "2026-10-07-eb345f430764",
   "sampleSupportPolicyVersion": "rail-sample-support-v1",
   "schemaVersion": "rail-publication-manifest-v1",
-  "snapshotPath": "snapshots/2026-10-06-c7fd52318e93.json",
+  "snapshotPath": "snapshots/2026-10-07-eb345f430764.json",
   "snapshotSchemaVersion": "rail-regional-snapshot-v2",
-  "snapshotSha256": "c7fd52318e938bb6e878224c72b3caf42a71ed42b5a72ea2ef6d8753f6b5bb14",
+  "snapshotSha256": "eb345f4307643d63208d48f28e292e04a3c6c5f1c8826ca4ece1457b32af3a2c",
   "source": "Fintraffic / Digitraffic",
-  "windowEnd": "2026-10-06T23:59:59.999Z",
-  "windowStart": "2026-09-30T00:00:00.000Z"
+  "windowEnd": "2026-10-07T23:59:59.999Z",
+  "windowStart": "2026-10-01T00:00:00.000Z"
 }
